@@ -20,7 +20,9 @@ import {
   Archive,
   FileDown,
   Layers,
+  Upload,
 } from 'lucide-react';
+import type { AppPresetFile, PresetSlide } from './presets/PresetSchema';
 
 type Point = { x: number; y: number };
 
@@ -66,6 +68,8 @@ type AppPreset = {
   title: string;
   subtitle: string;
   settings: Partial<Settings>;
+  /** Optional per-slide copy from JSON. Indexed by slide number (0-based). */
+  slides?: PresetSlide[];
 };
 
 type SectionKey = 'presets' | 'layout' | 'device' | 'typography';
@@ -184,6 +188,30 @@ const PRESET_SELECTION_KEY = 'mockup-selected-preset-v1';
 
 const makeId = () => Math.random().toString(36).slice(2, 11);
 
+/** Convert a parsed AppPresetFile JSON into an AppPreset usable by the app */
+function jsonFileToPreset(file: AppPresetFile): AppPreset {
+  return {
+    id: makeId(),
+    name: file.name,
+    title: file.defaultTitle,
+    subtitle: file.defaultSubtitle,
+    settings: file.settings as Partial<Settings>,
+    slides: file.slides,
+  };
+}
+
+/** Basic validation so a bad JSON shows a clear error instead of silent failure */
+function validatePresetFile(obj: unknown): obj is AppPresetFile {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return (
+    typeof o.name === 'string' &&
+    typeof o.defaultTitle === 'string' &&
+    typeof o.defaultSubtitle === 'string' &&
+    typeof o.settings === 'object'
+  );
+}
+
 const PanelSection = ({
   title,
   description,
@@ -262,7 +290,6 @@ const MockupTemplate = ({
     }
   };
 
-  // FIX: cursor should only be move when dragEnabled, not fighting with pointer on children
   const dragClass = dragEnabled ? 'cursor-move touch-none select-none' : '';
 
   const TextContent = () => (
@@ -322,9 +349,9 @@ const MockupTemplate = ({
       ${isNone ? 'rounded-[56px]' : ''}
     `;
 
-    // FIX: object-top should always apply, not just in cover mode
-    const imgClasses = `w-full h-full object-top ${settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'
-      }`;
+    const imgClasses = `w-full h-full object-top ${
+      settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'
+    }`;
 
     if (!settings.deviceFrame) {
       return (
@@ -374,8 +401,9 @@ const MockupTemplate = ({
           </div>
           <DeviceWrapper
             bleed={settings.phonePositionMode === 'centered' ? 'none' : 'bottom'}
-            className={`flex-1 w-full flex ${getDeviceAlignClass()} ${settings.phonePositionMode === 'centered' ? 'items-start pt-8' : 'items-start pt-16'
-              }`}
+            className={`flex-1 w-full flex ${getDeviceAlignClass()} ${
+              settings.phonePositionMode === 'centered' ? 'items-start pt-8' : 'items-start pt-16'
+            }`}
           />
         </>
       )}
@@ -384,8 +412,9 @@ const MockupTemplate = ({
         <>
           <DeviceWrapper
             bleed={settings.phonePositionMode === 'centered' ? 'none' : 'top'}
-            className={`flex-1 w-full flex ${getDeviceAlignClass()} items-end ${settings.phonePositionMode === 'centered' ? 'pb-8' : 'pb-16'
-              }`}
+            className={`flex-1 w-full flex ${getDeviceAlignClass()} items-end ${
+              settings.phonePositionMode === 'centered' ? 'pb-8' : 'pb-16'
+            }`}
           />
           <div className="flex-none pt-12 pb-24 z-10 flex flex-col items-center justify-center w-full">
             <TextContent />
@@ -405,18 +434,20 @@ const MockupTemplate = ({
       {dragEnabled && (
         <div className="absolute top-6 right-6 flex gap-2 z-30 pointer-events-none">
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'text'
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
+              draggingTarget === 'text'
                 ? 'bg-indigo-600 text-white border-indigo-600'
                 : 'bg-white/90 text-gray-700 border-gray-200'
-              }`}
+            }`}
           >
             Text
           </span>
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'device'
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
+              draggingTarget === 'device'
                 ? 'bg-indigo-600 text-white border-indigo-600'
                 : 'bg-white/90 text-gray-700 border-gray-200'
-              }`}
+            }`}
           >
             Device
           </span>
@@ -429,13 +460,13 @@ const MockupTemplate = ({
 export default function App() {
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  // FIX: applyToAll default is true but was invisible — now shown prominently
   const [applyToAll, setApplyToAll] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [dragMode, setDragMode] = useState(true);
   const [draggingTarget, setDraggingTarget] = useState<'text' | 'device' | null>(null);
   const [isFileDragging, setIsFileDragging] = useState(false);
+  const [jsonImportError, setJsonImportError] = useState<string | null>(null);
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     presets: true,
     layout: true,
@@ -483,7 +514,6 @@ export default function App() {
     ? { ...settings, ...activeScreenshot.settingsOverrides }
     : settings;
 
-  // FIX: depend only on selectedPresetId, not selectedPreset object (avoids infinite loop)
   useEffect(() => {
     const preset = appPresets.find((p) => p.id === selectedPresetId);
     if (!preset) return;
@@ -492,7 +522,6 @@ export default function App() {
       title: preset.title,
       subtitle: preset.subtitle,
     });
-    // Also instantly apply preset settings to global settings when user changes the dropdown
     setSettings((prev) => ({ ...prev, ...preset.settings }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPresetId]);
@@ -599,28 +628,38 @@ export default function App() {
     if (scope === 'all') {
       setSettings((prev) => ({ ...prev, ...selectedPreset.settings }));
       setScreenshots((prev) =>
-        prev.map((slide) => ({
-          ...slide,
-          title: selectedPreset.title || slide.title,
-          subtitle: selectedPreset.subtitle || slide.subtitle,
-          textOffset: { x: 0, y: 0 },
-          deviceOffset: { x: 0, y: 0 },
-          settingsOverrides: undefined,
-        }))
+        prev.map((slide, i) => {
+          const slideData = selectedPreset.slides?.find((s) => s.index === i) ??
+            selectedPreset.slides?.[i];
+          return {
+            ...slide,
+            title: slideData?.title ?? selectedPreset.title ?? slide.title,
+            subtitle: slideData?.subtitle ?? selectedPreset.subtitle ?? slide.subtitle,
+            textOffset: { x: 0, y: 0 },
+            deviceOffset: { x: 0, y: 0 },
+            settingsOverrides: slideData?.settingsOverrides
+              ? { ...selectedPreset.settings, ...slideData.settingsOverrides }
+              : undefined,
+          };
+        })
       );
       return;
     }
     if (!activeScreenshot) return;
+    const slideData = selectedPreset.slides?.find((s) => s.index === activeIndex) ??
+      selectedPreset.slides?.[activeIndex];
     setScreenshots((prev) =>
       prev.map((slide, index) => {
         if (index !== activeIndex) return slide;
         return {
           ...slide,
-          title: selectedPreset.title || slide.title,
-          subtitle: selectedPreset.subtitle || slide.subtitle,
+          title: slideData?.title ?? selectedPreset.title ?? slide.title,
+          subtitle: slideData?.subtitle ?? selectedPreset.subtitle ?? slide.subtitle,
           textOffset: { x: 0, y: 0 },
           deviceOffset: { x: 0, y: 0 },
-          settingsOverrides: { ...slide.settingsOverrides, ...selectedPreset.settings },
+          settingsOverrides: slideData?.settingsOverrides
+            ? { ...slide.settingsOverrides, ...selectedPreset.settings, ...slideData.settingsOverrides }
+            : { ...slide.settingsOverrides, ...selectedPreset.settings },
         };
       })
     );
@@ -634,11 +673,56 @@ export default function App() {
     }));
   };
 
+  // ── JSON IMPORT ──────────────────────────────────────────────────────────
+  const handleJsonImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setJsonImportError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string);
+        // Support both a single preset object and an array of presets
+        const items: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
+        const valid = items.filter(validatePresetFile) as AppPresetFile[];
+        if (valid.length === 0) {
+          setJsonImportError('Invalid preset JSON. Make sure it has name, defaultTitle, defaultSubtitle, and settings.');
+          return;
+        }
+        const converted = valid.map(jsonFileToPreset);
+        setAppPresets((prev) => [...prev, ...converted]);
+        // Auto-select the first imported preset
+        setSelectedPresetId(converted[0].id);
+      } catch {
+        setJsonImportError('Could not parse JSON file. Please check for syntax errors.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // ── JSON EXPORT ──────────────────────────────────────────────────────────
+  const handleExportPresetsJson = () => {
+    const exportData: AppPresetFile[] = appPresets.map((p) => ({
+      name: p.name,
+      defaultTitle: p.title,
+      defaultSubtitle: p.subtitle,
+      settings: p.settings,
+      slides: p.slides,
+    }));
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mockup-presets.json';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files as FileList);
     addImages(files.filter((f) => f.type.startsWith('image/')));
-    // FIX: reset input so same file can be re-uploaded
     e.target.value = '';
   };
 
@@ -660,21 +744,26 @@ export default function App() {
   const addImages = (files: File[]) => {
     if (files.length === 0) return;
     const preset = selectedPreset || DEFAULT_PRESETS[0];
-    const newScreenshots: Screenshot[] = files.map((file) => ({
-      id: makeId(),
-      url: URL.createObjectURL(file),
-      title: preset.title,
-      subtitle: preset.subtitle,
-      textOffset: { x: 0, y: 0 },
-      deviceOffset: { x: 0, y: 0 },
-      settingsOverrides: { ...preset.settings },
-    }));
-    // FIX: use functional form to get fresh prev and correctly set activeIndex
     setScreenshots((prev) => {
-      const next = [...prev, ...newScreenshots];
-      // Set to first newly added slide if this is the first upload
+      const newScreenshots: Screenshot[] = files.map((file, fileIdx) => {
+        const slideIndex = prev.length + fileIdx;
+        // Use per-slide copy from JSON if available
+        const slideData = preset.slides?.find((s) => s.index === slideIndex) ??
+          preset.slides?.[slideIndex];
+        return {
+          id: makeId(),
+          url: URL.createObjectURL(file),
+          title: slideData?.title ?? preset.title,
+          subtitle: slideData?.subtitle ?? preset.subtitle,
+          textOffset: { x: 0, y: 0 },
+          deviceOffset: { x: 0, y: 0 },
+          settingsOverrides: slideData?.settingsOverrides
+            ? { ...preset.settings, ...slideData.settingsOverrides }
+            : { ...preset.settings },
+        };
+      });
       if (prev.length === 0) setActiveIndex(0);
-      return next;
+      return [...prev, ...newScreenshots];
     });
   };
 
@@ -789,7 +878,6 @@ export default function App() {
     );
   };
 
-  // FIX: nudge covers all 4 directions for both text and device
   const nudgeCurrent = (
     target: 'text' | 'device',
     axis: 'x' | 'y',
@@ -888,12 +976,11 @@ export default function App() {
             </div>
           </div>
 
-          {/* FIX: Apply-to-all toggle now visible prominently at top of left panel */}
+          {/* Apply-to-all toggle */}
           <div
-            className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ${applyToAll
-                ? 'bg-indigo-50 border-indigo-200'
-                : 'bg-amber-50 border-amber-200'
-              }`}
+            className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ${
+              applyToAll ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
+            }`}
           >
             <div>
               <p className={`text-sm font-semibold ${applyToAll ? 'text-indigo-800' : 'text-amber-800'}`}>
@@ -905,12 +992,14 @@ export default function App() {
             </div>
             <button
               onClick={() => setApplyToAll((v) => !v)}
-              className={`relative inline-flex w-11 h-6 rounded-full transition-colors shrink-0 ${applyToAll ? 'bg-indigo-600' : 'bg-amber-400'
-                }`}
+              className={`relative inline-flex w-11 h-6 rounded-full transition-colors shrink-0 ${
+                applyToAll ? 'bg-indigo-600' : 'bg-amber-400'
+              }`}
             >
               <span
-                className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${applyToAll ? 'translate-x-5' : 'translate-x-0'
-                  }`}
+                className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${
+                  applyToAll ? 'translate-x-5' : 'translate-x-0'
+                }`}
               />
             </button>
           </div>
@@ -918,7 +1007,7 @@ export default function App() {
           {/* Brand Presets */}
           <PanelSection
             title="Brand Presets"
-            description="Switching preset instantly previews that look. Save a polished style per app."
+            description="Switching preset instantly previews that look. Import a JSON file to load a per-app preset."
             open={openSections.presets}
             onToggle={() => toggleSection('presets')}
           >
@@ -934,6 +1023,36 @@ export default function App() {
                 ))}
               </select>
               <p className="text-xs text-indigo-600 font-medium">↑ Switching preset instantly applies its look to the canvas.</p>
+            </div>
+
+            {/* JSON import / export row */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preset JSON</label>
+              <div className="flex gap-2">
+                <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 text-sm font-medium cursor-pointer hover:bg-indigo-100 transition-colors">
+                  <Upload size={14} /> Import JSON
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={handleJsonImport}
+                  />
+                </label>
+                <button
+                  onClick={handleExportPresetsJson}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <FileDown size={14} /> Export JSON
+                </button>
+              </div>
+              {jsonImportError && (
+                <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{jsonImportError}</p>
+              )}
+              <p className="text-xs text-gray-400">
+                Create a <code className="bg-gray-100 px-1 py-0.5 rounded">.json</code> file per app with
+                slide-by-slide titles. See{' '}
+                <code className="bg-gray-100 px-1 py-0.5 rounded">src/presets/example-fitness-app.json</code> for the format.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -1031,10 +1150,11 @@ export default function App() {
                   <button
                     key={i}
                     onClick={() => updateSetting({ background: bg })}
-                    className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${activeSettings.background === bg
+                    className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${
+                      activeSettings.background === bg
                         ? 'border-indigo-600 scale-110 shadow-md'
                         : 'border-transparent shadow-sm'
-                      }`}
+                    }`}
                     style={{ background: bg }}
                     title={bg}
                   />
@@ -1072,10 +1192,11 @@ export default function App() {
                   <button
                     key={l}
                     onClick={() => updateSetting({ layout: l })}
-                    className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.layout === l
+                    className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${
+                      activeSettings.layout === l
                         ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
                         : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
+                    }`}
                   >
                     {l === 'text-top' ? 'Text Top' : l === 'text-bottom' ? 'Text Bottom' : 'Centered'}
                   </button>
@@ -1091,14 +1212,14 @@ export default function App() {
                     key={align}
                     onClick={() => {
                       updateSetting({ textAlign: align });
-                      // FIX: only reset x offset, preserve y
                       if (activeScreenshot)
                         updateCurrentScreenshot({ textOffset: { x: 0, y: activeScreenshot.textOffset.y } });
                     }}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.textAlign === align
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
+                      activeSettings.textAlign === align
                         ? 'bg-white shadow text-indigo-700'
                         : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                    }`}
                   >
                     {align}
                   </button>
@@ -1115,10 +1236,11 @@ export default function App() {
                   <button
                     key={mode}
                     onClick={() => updateSetting({ phonePositionMode: mode })}
-                    className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${activeSettings.phonePositionMode === mode
+                    className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${
+                      activeSettings.phonePositionMode === mode
                         ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
                         : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
+                    }`}
                   >
                     {mode === 'centered' ? 'Centered' : 'Half Down'}
                   </button>
@@ -1132,14 +1254,14 @@ export default function App() {
                       key={align}
                       onClick={() => {
                         updateSetting({ deviceAlign: align });
-                        // FIX: only reset x offset, preserve y
                         if (activeScreenshot)
                           updateCurrentScreenshot({ deviceOffset: { x: 0, y: activeScreenshot.deviceOffset.y } });
                       }}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.deviceAlign === align
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
+                        activeSettings.deviceAlign === align
                           ? 'bg-white shadow text-indigo-700'
                           : 'text-gray-600 hover:text-gray-900'
-                        }`}
+                      }`}
                     >
                       {align}
                     </button>
@@ -1155,10 +1277,11 @@ export default function App() {
                   <button
                     key={fit}
                     onClick={() => updateSetting({ imageFit: fit })}
-                    className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${activeSettings.imageFit === fit
+                    className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${
+                      activeSettings.imageFit === fit
                         ? 'bg-white shadow text-indigo-700'
                         : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                    }`}
                   >
                     {fit}
                   </button>
@@ -1188,12 +1311,14 @@ export default function App() {
                     onChange={(e) => updateSetting({ deviceFrame: e.target.checked })}
                   />
                   <div
-                    className={`block w-10 h-6 rounded-full transition-colors ${activeSettings.deviceFrame ? 'bg-indigo-600' : 'bg-gray-300'
-                      }`}
+                    className={`block w-10 h-6 rounded-full transition-colors ${
+                      activeSettings.deviceFrame ? 'bg-indigo-600' : 'bg-gray-300'
+                    }`}
                   />
                   <div
-                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${activeSettings.deviceFrame ? 'translate-x-4' : ''
-                      }`}
+                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                      activeSettings.deviceFrame ? 'translate-x-4' : ''
+                    }`}
                   />
                 </div>
               </label>
@@ -1239,10 +1364,11 @@ export default function App() {
                   <button
                     key={angle}
                     onClick={() => updateSetting({ deviceRotation: angle })}
-                    className={`py-2 rounded-xl text-xs font-medium border transition-colors ${activeSettings.deviceRotation === angle
+                    className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
+                      activeSettings.deviceRotation === angle
                         ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
                         : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
+                    }`}
                   >
                     {angle}°
                   </button>
@@ -1404,7 +1530,6 @@ export default function App() {
 
       {/* ── CENTER CANVAS ── */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        {/* Top bar */}
         <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold text-gray-800">Mockup Generator</h1>
@@ -1445,10 +1570,11 @@ export default function App() {
               <button
                 onClick={exportCurrent}
                 disabled={!hasSlides || isExporting}
-                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
+                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
+                  !hasSlides
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
-                  }`}
+                }`}
               >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
                 Export Current
@@ -1456,10 +1582,11 @@ export default function App() {
               <button
                 onClick={exportAll}
                 disabled={!hasSlides || isExporting}
-                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
+                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
+                  !hasSlides
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
-                  }`}
+                }`}
               >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 Export All (PNGs)
@@ -1467,10 +1594,11 @@ export default function App() {
               <button
                 onClick={exportZip}
                 disabled={!hasSlides || isExporting}
-                className={`px-4 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
+                className={`px-4 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
+                  !hasSlides
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md active:scale-95'
-                  }`}
+                }`}
               >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Archive size={16} />}
                 Export ZIP
@@ -1479,10 +1607,10 @@ export default function App() {
           </div>
         </div>
 
-        {/* Canvas area */}
         <div
-          className={`flex-1 overflow-auto relative p-8 transition-colors ${isFileDragging ? 'bg-indigo-50' : 'bg-gray-100'
-            }`}
+          className={`flex-1 overflow-auto relative p-8 transition-colors ${
+            isFileDragging ? 'bg-indigo-50' : 'bg-gray-100'
+          }`}
           ref={containerRef}
           onDragOver={(e) => { e.preventDefault(); setIsFileDragging(true); }}
           onDragLeave={() => setIsFileDragging(false)}
@@ -1536,17 +1664,17 @@ export default function App() {
           </div>
         </div>
 
-        {/* Filmstrip */}
         {hasSlides && (
           <div className="h-36 bg-white border-t border-gray-200 flex items-center px-6 gap-4 overflow-x-auto shrink-0 z-10">
             {screenshots.map((s, i) => (
               <div
                 key={s.id}
                 onClick={() => setActiveIndex(i)}
-                className={`relative h-24 w-16 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 transition-all group ${i === activeIndex
+                className={`relative h-24 w-16 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 transition-all group ${
+                  i === activeIndex
                     ? 'border-indigo-600 shadow-md scale-105'
                     : 'border-transparent opacity-60 hover:opacity-100'
-                  }`}
+                }`}
               >
                 <img src={s.url} className="w-full h-full object-cover" alt={`Slide ${i + 1}`} />
                 <button
@@ -1570,7 +1698,7 @@ export default function App() {
         )}
       </div>
 
-      {/* ── RIGHT PANEL ── always rendered so it's accessible even before upload */}
+      {/* ── RIGHT PANEL ── */}
       <div className="w-80 bg-white border-l border-gray-200 flex flex-col overflow-y-auto shrink-0">
         {hasSlides && activeScreenshot ? (
           <div className="p-6 space-y-6">
@@ -1636,13 +1764,15 @@ export default function App() {
                 </label>
                 <button
                   onClick={() => setDragMode((v) => !v)}
-                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${dragMode ? 'bg-indigo-600' : 'bg-gray-300'
-                    }`}
+                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${
+                    dragMode ? 'bg-indigo-600' : 'bg-gray-300'
+                  }`}
                   title={dragMode ? 'Disable drag mode' : 'Enable drag mode'}
                 >
                   <span
-                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${dragMode ? 'translate-x-4' : 'translate-x-0'
-                      }`}
+                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${
+                      dragMode ? 'translate-x-4' : 'translate-x-0'
+                    }`}
                   />
                 </button>
               </div>
@@ -1652,7 +1782,6 @@ export default function App() {
                   : 'Enable drag mode to move elements on canvas.'}
               </p>
 
-              {/* FIX: complete nudge grid — all 4 directions for both text and device */}
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Text</p>
                 <div className="grid grid-cols-4 gap-1.5 text-xs">
@@ -1701,7 +1830,6 @@ export default function App() {
             </div>
           </div>
         ) : (
-          // FIX: right panel always shown — display helpful state when no slides
           <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
               <Layers size={28} className="text-gray-400" />
@@ -1718,7 +1846,7 @@ export default function App() {
         )}
       </div>
 
-      {/* Hidden export layer — FIX: use visibility:hidden + z-index 0 so toPng can read layout */}
+      {/* Hidden export layer */}
       <div
         className="fixed top-0 left-0 pointer-events-none"
         style={{ zIndex: 0, visibility: 'hidden' }}
