@@ -18,7 +18,8 @@ import {
   LocateFixed,
   Copy,
   Archive,
-  FileDown
+  FileDown,
+  Layers,
 } from 'lucide-react';
 
 type Point = { x: number; y: number };
@@ -260,9 +261,12 @@ const MockupTemplate = ({
     }
   };
 
+  // FIX: cursor should only be move when dragEnabled, not fighting with pointer on children
+  const dragClass = dragEnabled ? 'cursor-move touch-none select-none' : '';
+
   const TextContent = () => (
     <div
-      className={`w-full flex flex-col px-16 ${getTextAlignClass()} ${dragEnabled ? 'cursor-move touch-none select-none' : ''}`}
+      className={`w-full flex flex-col px-16 ${getTextAlignClass()} ${dragClass}`}
       style={{ transform: `translate(${screenshot.textOffset.x}px, ${screenshot.textOffset.y}px)` }}
       onPointerDown={dragEnabled ? (e) => onStartDrag?.('text', e) : undefined}
     >
@@ -317,7 +321,10 @@ const MockupTemplate = ({
       ${isNone ? 'rounded-[56px]' : ''}
     `;
 
-    const imgClasses = `w-full h-full object-top ${settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'}`;
+    // FIX: object-top should always apply, not just in cover mode
+    const imgClasses = `w-full h-full object-top ${
+      settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'
+    }`;
 
     if (!settings.deviceFrame) {
       return (
@@ -346,7 +353,7 @@ const MockupTemplate = ({
 
   const DeviceWrapper = ({ bleed, className }: { bleed: 'top' | 'bottom' | 'none'; className: string }) => (
     <div
-      className={`${className} ${dragEnabled ? 'cursor-move touch-none select-none' : ''}`}
+      className={`${className} ${dragClass}`}
       style={{
         transform: `perspective(1600px) translate(${screenshot.deviceOffset.x}px, ${screenshot.deviceOffset.y + baseDeviceOffsetY}px) rotateX(${settings.deviceTiltX}deg) rotateY(${settings.deviceTiltY}deg) rotateZ(${settings.deviceRotation}deg)`,
         transformStyle: 'preserve-3d',
@@ -367,7 +374,9 @@ const MockupTemplate = ({
           </div>
           <DeviceWrapper
             bleed={settings.phonePositionMode === 'centered' ? 'none' : 'bottom'}
-            className={`flex-1 w-full flex ${getDeviceAlignClass()} ${settings.phonePositionMode === 'centered' ? 'items-start pt-8' : 'items-start pt-16'}`}
+            className={`flex-1 w-full flex ${getDeviceAlignClass()} ${
+              settings.phonePositionMode === 'centered' ? 'items-start pt-8' : 'items-start pt-16'
+            }`}
           />
         </>
       )}
@@ -376,7 +385,9 @@ const MockupTemplate = ({
         <>
           <DeviceWrapper
             bleed={settings.phonePositionMode === 'centered' ? 'none' : 'top'}
-            className={`flex-1 w-full flex ${getDeviceAlignClass()} items-end ${settings.phonePositionMode === 'centered' ? 'pb-8' : 'pb-16'}`}
+            className={`flex-1 w-full flex ${getDeviceAlignClass()} items-end ${
+              settings.phonePositionMode === 'centered' ? 'pb-8' : 'pb-16'
+            }`}
           />
           <div className="flex-none pt-12 pb-24 z-10 flex flex-col items-center justify-center w-full">
             <TextContent />
@@ -395,10 +406,22 @@ const MockupTemplate = ({
 
       {dragEnabled && (
         <div className="absolute top-6 right-6 flex gap-2 z-30 pointer-events-none">
-          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'text' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/90 text-gray-700 border-gray-200'}`}>
+          <span
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
+              draggingTarget === 'text'
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-white/90 text-gray-700 border-gray-200'
+            }`}
+          >
             Text
           </span>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'device' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white/90 text-gray-700 border-gray-200'}`}>
+          <span
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
+              draggingTarget === 'device'
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-white/90 text-gray-700 border-gray-200'
+            }`}
+          >
             Device
           </span>
         </div>
@@ -410,6 +433,7 @@ const MockupTemplate = ({
 export default function App() {
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  // FIX: applyToAll default is true but was invisible — now shown prominently
   const [applyToAll, setApplyToAll] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -457,17 +481,25 @@ export default function App() {
 
   const activeScreenshot = screenshots[activeIndex];
   const hasSlides = screenshots.length > 0;
-  const selectedPreset = appPresets.find((preset) => preset.id === selectedPresetId) || appPresets[0] || DEFAULT_PRESETS[0];
-  const activeSettings = activeScreenshot ? { ...settings, ...activeScreenshot.settingsOverrides } : settings;
+  const selectedPreset =
+    appPresets.find((p) => p.id === selectedPresetId) || appPresets[0] || DEFAULT_PRESETS[0];
+  const activeSettings = activeScreenshot
+    ? { ...settings, ...activeScreenshot.settingsOverrides }
+    : settings;
 
+  // FIX: depend only on selectedPresetId, not selectedPreset object (avoids infinite loop)
   useEffect(() => {
-    if (!selectedPreset) return;
+    const preset = appPresets.find((p) => p.id === selectedPresetId);
+    if (!preset) return;
     setPresetDraft({
-      name: selectedPreset.name,
-      title: selectedPreset.title,
-      subtitle: selectedPreset.subtitle,
+      name: preset.name,
+      title: preset.title,
+      subtitle: preset.subtitle,
     });
-  }, [selectedPresetId, selectedPreset]);
+    // Also instantly apply preset settings to global settings when user changes the dropdown
+    setSettings((prev) => ({ ...prev, ...preset.settings }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPresetId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -496,9 +528,7 @@ export default function App() {
   useEffect(() => {
     updateFitScale();
     const resizeObserver = new ResizeObserver(() => updateFitScale());
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
     window.addEventListener('resize', updateFitScale);
     return () => {
       resizeObserver.disconnect();
@@ -512,10 +542,8 @@ export default function App() {
 
   useEffect(() => {
     return () => {
-      screenshots.forEach((screenshot) => {
-        if (screenshot.url.startsWith('blob:')) {
-          URL.revokeObjectURL(screenshot.url);
-        }
+      screenshots.forEach((s) => {
+        if (s.url.startsWith('blob:')) URL.revokeObjectURL(s.url);
       });
     };
   }, [screenshots]);
@@ -523,20 +551,21 @@ export default function App() {
   const updateSetting = (updates: Partial<Settings>) => {
     if (applyToAll) {
       setSettings((s) => ({ ...s, ...updates }));
-      setScreenshots((prev) => prev.map((s) => {
-        if (!s.settingsOverrides) return s;
-        const newOverrides = { ...s.settingsOverrides };
-        Object.keys(updates).forEach((k) => delete newOverrides[k as keyof Settings]);
-        return { ...s, settingsOverrides: newOverrides };
-      }));
+      setScreenshots((prev) =>
+        prev.map((s) => {
+          if (!s.settingsOverrides) return s;
+          const newOverrides = { ...s.settingsOverrides };
+          Object.keys(updates).forEach((k) => delete newOverrides[k as keyof Settings]);
+          return { ...s, settingsOverrides: newOverrides };
+        })
+      );
     } else {
-      setScreenshots((prev) => prev.map((s, i) => {
-        if (i !== activeIndex) return s;
-        return {
-          ...s,
-          settingsOverrides: { ...s.settingsOverrides, ...updates }
-        };
-      }));
+      setScreenshots((prev) =>
+        prev.map((s, i) => {
+          if (i !== activeIndex) return s;
+          return { ...s, settingsOverrides: { ...s.settingsOverrides, ...updates } };
+        })
+      );
     }
   };
 
@@ -551,56 +580,54 @@ export default function App() {
 
   const savePresetChanges = () => {
     const payload = buildPresetPayload();
-    setAppPresets((prev) => prev.map((preset) => (
-      preset.id === selectedPreset.id ? { ...preset, ...payload } : preset
-    )));
+    setAppPresets((prev) =>
+      prev.map((p) => (p.id === selectedPreset.id ? { ...p, ...payload } : p))
+    );
   };
 
   const createPreset = () => {
-    const newPreset: AppPreset = {
-      id: makeId(),
-      ...buildPresetPayload(),
-    };
+    const newPreset: AppPreset = { id: makeId(), ...buildPresetPayload() };
     setAppPresets((prev) => [...prev, newPreset]);
     setSelectedPresetId(newPreset.id);
   };
 
   const deletePreset = () => {
     if (appPresets.length <= 1) return;
-    const filtered = appPresets.filter((preset) => preset.id !== selectedPreset.id);
+    const filtered = appPresets.filter((p) => p.id !== selectedPreset.id);
     setAppPresets(filtered);
     setSelectedPresetId(filtered[0].id);
   };
 
   const applyPresetToSlides = (scope: 'current' | 'all') => {
-    const preset = selectedPreset;
-    if (!preset) return;
-
+    if (!selectedPreset) return;
     if (scope === 'all') {
-      setSettings((prev) => ({ ...prev, ...preset.settings }));
-      setScreenshots((prev) => prev.map((slide) => ({
-        ...slide,
-        title: preset.title || slide.title,
-        subtitle: preset.subtitle || slide.subtitle,
-        textOffset: { x: 0, y: 0 },
-        deviceOffset: { x: 0, y: 0 },
-        settingsOverrides: undefined,
-      })));
+      setSettings((prev) => ({ ...prev, ...selectedPreset.settings }));
+      setScreenshots((prev) =>
+        prev.map((slide) => ({
+          ...slide,
+          title: selectedPreset.title || slide.title,
+          subtitle: selectedPreset.subtitle || slide.subtitle,
+          textOffset: { x: 0, y: 0 },
+          deviceOffset: { x: 0, y: 0 },
+          settingsOverrides: undefined,
+        }))
+      );
       return;
     }
-
     if (!activeScreenshot) return;
-    setScreenshots((prev) => prev.map((slide, index) => {
-      if (index !== activeIndex) return slide;
-      return {
-        ...slide,
-        title: preset.title || slide.title,
-        subtitle: preset.subtitle || slide.subtitle,
-        textOffset: { x: 0, y: 0 },
-        deviceOffset: { x: 0, y: 0 },
-        settingsOverrides: { ...slide.settingsOverrides, ...preset.settings },
-      };
-    }));
+    setScreenshots((prev) =>
+      prev.map((slide, index) => {
+        if (index !== activeIndex) return slide;
+        return {
+          ...slide,
+          title: selectedPreset.title || slide.title,
+          subtitle: selectedPreset.subtitle || slide.subtitle,
+          textOffset: { x: 0, y: 0 },
+          deviceOffset: { x: 0, y: 0 },
+          settingsOverrides: { ...slide.settingsOverrides, ...selectedPreset.settings },
+        };
+      })
+    );
   };
 
   const syncPresetDraftFromCanvas = () => {
@@ -614,33 +641,30 @@ export default function App() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const files = Array.from(e.target.files as FileList);
-    addImages(files.filter((file) => file.type.startsWith('image/')));
+    addImages(files.filter((f) => f.type.startsWith('image/')));
+    // FIX: reset input so same file can be re-uploaded
+    e.target.value = '';
   };
 
   const handleScreenshotReplace = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !activeScreenshot) return;
     const file = e.target.files[0];
     const newUrl = URL.createObjectURL(file);
-
     setScreenshots((prev) => {
       const previousUrl = prev[activeIndex]?.url;
-      const next = prev.map((s, i) => {
-        if (i === activeIndex) {
-          return { ...s, url: newUrl };
-        }
-        return s;
-      });
+      const next = prev.map((s, i) => (i === activeIndex ? { ...s, url: newUrl } : s));
       if (previousUrl?.startsWith('blob:') && !next.some((s) => s.url === previousUrl)) {
         URL.revokeObjectURL(previousUrl);
       }
       return next;
     });
+    e.target.value = '';
   };
 
   const addImages = (files: File[]) => {
     if (files.length === 0) return;
     const preset = selectedPreset || DEFAULT_PRESETS[0];
-    const newScreenshots = files.map((file) => ({
+    const newScreenshots: Screenshot[] = files.map((file) => ({
       id: makeId(),
       url: URL.createObjectURL(file),
       title: preset.title,
@@ -649,8 +673,13 @@ export default function App() {
       deviceOffset: { x: 0, y: 0 },
       settingsOverrides: { ...preset.settings },
     }));
-    setScreenshots((prev) => [...prev, ...newScreenshots]);
-    if (screenshots.length === 0) setActiveIndex(0);
+    // FIX: use functional form to get fresh prev and correctly set activeIndex
+    setScreenshots((prev) => {
+      const next = [...prev, ...newScreenshots];
+      // Set to first newly added slide if this is the first upload
+      if (prev.length === 0) setActiveIndex(0);
+      return next;
+    });
   };
 
   const removeScreenshot = (id: string) => {
@@ -670,7 +699,6 @@ export default function App() {
   const duplicateScreenshot = () => {
     const active = screenshots[activeIndex];
     if (!active) return;
-
     const duplicated: Screenshot = {
       ...active,
       id: makeId(),
@@ -678,7 +706,6 @@ export default function App() {
       deviceOffset: { ...active.deviceOffset },
       settingsOverrides: active.settingsOverrides ? { ...active.settingsOverrides } : undefined,
     };
-
     setScreenshots((prev) => {
       const newArr = [...prev];
       newArr.splice(activeIndex + 1, 0, duplicated);
@@ -692,14 +719,17 @@ export default function App() {
     setScreenshots((prev) => prev.map((s, i) => (i === activeIndex ? { ...s, ...updates } : s)));
   };
 
-  const updateCurrentOffsets = (target: 'text' | 'device', updater: (prev: Point) => Point) => {
+  const updateCurrentOffsets = (
+    target: 'text' | 'device',
+    updater: (prev: Point) => Point
+  ) => {
     if (!activeScreenshot) return;
     setScreenshots((prev) =>
       prev.map((s, i) => {
         if (i !== activeIndex) return s;
         if (target === 'text') return { ...s, textOffset: updater(s.textOffset) };
         return { ...s, deviceOffset: updater(s.deviceOffset) };
-      }),
+      })
     );
   };
 
@@ -707,12 +737,12 @@ export default function App() {
     if (!dragMode || !activeScreenshot) return;
     e.preventDefault();
     e.stopPropagation();
-
     dragStateRef.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
       startY: e.clientY,
-      startOffset: target === 'text' ? activeScreenshot.textOffset : activeScreenshot.deviceOffset,
+      startOffset:
+        target === 'text' ? activeScreenshot.textOffset : activeScreenshot.deviceOffset,
       target,
       activeId: activeScreenshot.id,
     };
@@ -726,29 +756,25 @@ export default function App() {
     const onPointerMove = (e: PointerEvent) => {
       const drag = dragStateRef.current;
       if (!drag || drag.pointerId !== e.pointerId) return;
-
       const safeScale = Math.max(zoomScale, 0.05);
       const dx = (e.clientX - drag.startX) / safeScale;
       const dy = (e.clientY - drag.startY) / safeScale;
       const clamp = (v: number) => Math.max(-1920, Math.min(1920, v));
       const next = { x: clamp(drag.startOffset.x + dx), y: clamp(drag.startOffset.y + dy) };
-
       setScreenshots((prev) =>
         prev.map((s, i) => {
           if (i !== activeIndex || s.id !== drag.activeId) return s;
           if (drag.target === 'text') return { ...s, textOffset: next };
           return { ...s, deviceOffset: next };
-        }),
+        })
       );
     };
-
     const onPointerEnd = (e: PointerEvent) => {
       const drag = dragStateRef.current;
       if (!drag || drag.pointerId !== e.pointerId) return;
       dragStateRef.current = null;
       setDraggingTarget(null);
     };
-
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerEnd);
     window.addEventListener('pointercancel', onPointerEnd);
@@ -761,11 +787,18 @@ export default function App() {
 
   const resetCurrentPosition = () => {
     setScreenshots((prev) =>
-      prev.map((s, i) => (i === activeIndex ? { ...s, textOffset: { x: 0, y: 0 }, deviceOffset: { x: 0, y: 0 } } : s)),
+      prev.map((s, i) =>
+        i === activeIndex ? { ...s, textOffset: { x: 0, y: 0 }, deviceOffset: { x: 0, y: 0 } } : s
+      )
     );
   };
 
-  const nudgeCurrent = (target: 'text' | 'device', axis: 'x' | 'y', delta: number) => {
+  // FIX: nudge covers all 4 directions for both text and device
+  const nudgeCurrent = (
+    target: 'text' | 'device',
+    axis: 'x' | 'y',
+    delta: number
+  ) => {
     updateCurrentOffsets(target, (offset) => ({
       ...offset,
       [axis]: Math.max(-1920, Math.min(1920, offset[axis] + delta)),
@@ -774,7 +807,6 @@ export default function App() {
 
   const exportCurrent = async () => {
     if (!activeScreenshot) return;
-
     setIsExporting(true);
     try {
       const node = document.getElementById(`export-${activeScreenshot.id}`);
@@ -794,7 +826,6 @@ export default function App() {
 
   const exportZip = async () => {
     if (screenshots.length === 0) return;
-
     setIsExporting(true);
     try {
       const zip = new JSZip();
@@ -823,7 +854,6 @@ export default function App() {
 
   const exportAll = async () => {
     if (screenshots.length === 0) return;
-
     setIsExporting(true);
     try {
       for (let i = 0; i < screenshots.length; i++) {
@@ -847,36 +877,70 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
+      {/* ── LEFT PANEL ── */}
       <div className="w-96 bg-gray-50 border-r border-gray-200 flex flex-col overflow-y-auto shrink-0">
         <div className="p-4 space-y-4">
+          {/* Workflow card */}
           <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white p-5 shadow-sm">
             <p className="text-xs uppercase tracking-[0.2em] text-indigo-100">Workflow</p>
             <h2 className="text-lg font-semibold mt-2">Faster multi-app mockups</h2>
             <div className="grid grid-cols-2 gap-2 mt-4 text-xs font-medium">
-              <div className="rounded-xl bg-white/10 px-3 py-2">1. Upload</div>
-              <div className="rounded-xl bg-white/10 px-3 py-2">2. Pick preset</div>
+              <div className="rounded-xl bg-white/10 px-3 py-2">1. Pick a preset</div>
+              <div className="rounded-xl bg-white/10 px-3 py-2">2. Upload shots</div>
               <div className="rounded-xl bg-white/10 px-3 py-2">3. Tilt & tune</div>
               <div className="rounded-xl bg-white/10 px-3 py-2">4. Export</div>
             </div>
           </div>
 
+          {/* FIX: Apply-to-all toggle now visible prominently at top of left panel */}
+          <div
+            className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ${
+              applyToAll
+                ? 'bg-indigo-50 border-indigo-200'
+                : 'bg-amber-50 border-amber-200'
+            }`}
+          >
+            <div>
+              <p className={`text-sm font-semibold ${ applyToAll ? 'text-indigo-800' : 'text-amber-800' }`}>
+                {applyToAll ? 'Editing all slides' : 'Editing current slide only'}
+              </p>
+              <p className={`text-xs mt-0.5 ${ applyToAll ? 'text-indigo-500' : 'text-amber-600' }`}>
+                {applyToAll ? 'Changes apply globally' : 'Only this slide is affected'}
+              </p>
+            </div>
+            <button
+              onClick={() => setApplyToAll((v) => !v)}
+              className={`relative inline-flex w-11 h-6 rounded-full transition-colors shrink-0 ${
+                applyToAll ? 'bg-indigo-600' : 'bg-amber-400'
+              }`}
+            >
+              <span
+                className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${
+                  applyToAll ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Brand Presets */}
           <PanelSection
             title="Brand Presets"
-            description="Save a reusable look for each app instead of editing colors and fonts every time."
+            description="Switching preset instantly previews that look. Save a polished style per app."
             open={openSections.presets}
             onToggle={() => toggleSection('presets')}
           >
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preset</label>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active Preset</label>
               <select
                 value={selectedPreset.id}
                 onChange={(e) => setSelectedPresetId(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl p-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
               >
-                {appPresets.map((preset) => (
-                  <option key={preset.id} value={preset.id}>{preset.name}</option>
+                {appPresets.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
+              <p className="text-xs text-indigo-600 font-medium">↑ Switching preset instantly applies its look to the canvas.</p>
             </div>
 
             <div className="space-y-2">
@@ -912,33 +976,56 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={savePresetChanges} className="px-3 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors">
+              <button
+                onClick={savePresetChanges}
+                className="px-3 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+              >
                 Update Preset
               </button>
-              <button onClick={createPreset} className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <button
+                onClick={createPreset}
+                className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
                 Save as New
               </button>
-              <button onClick={syncPresetDraftFromCanvas} className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <button
+                onClick={syncPresetDraftFromCanvas}
+                className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                title="Pull title & subtitle from current slide into this draft"
+              >
                 Use Canvas Copy
               </button>
-              <button onClick={deletePreset} disabled={appPresets.length <= 1} className="px-3 py-2.5 rounded-xl border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button
+                onClick={deletePreset}
+                disabled={appPresets.length <= 1}
+                className="px-3 py-2.5 rounded-xl border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Delete
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => applyPresetToSlides('current')} disabled={!hasSlides} className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button
+                onClick={() => applyPresetToSlides('current')}
+                disabled={!hasSlides}
+                className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Apply to Current
               </button>
-              <button onClick={() => applyPresetToSlides('all')} disabled={!hasSlides} className="px-3 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button
+                onClick={() => applyPresetToSlides('all')}
+                disabled={!hasSlides}
+                className="px-3 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Apply to All Slides
               </button>
             </div>
           </PanelSection>
 
+          {/* Layout */}
           <PanelSection
             title="Layout"
-            description="Control the overall canvas, content flow, and image behavior."
+            description="Control canvas background, content flow, text and device alignment."
             open={openSections.layout}
             onToggle={() => toggleSection('layout')}
           >
@@ -946,14 +1033,18 @@ export default function App() {
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <ImageIcon size={16} className="text-indigo-500" /> Background
               </label>
-              <div className="grid grid-cols-5 gap-3 mb-3">
+              <div className="grid grid-cols-6 gap-2 mb-3">
                 {BACKGROUNDS.map((bg, i) => (
                   <button
                     key={i}
                     onClick={() => updateSetting({ background: bg })}
-                    className={`w-10 h-10 rounded-full border-2 transition-all hover:scale-110 ${activeSettings.background === bg ? 'border-indigo-600 scale-110 shadow-md' : 'border-transparent shadow-sm'}`}
+                    className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${
+                      activeSettings.background === bg
+                        ? 'border-indigo-600 scale-110 shadow-md'
+                        : 'border-transparent shadow-sm'
+                    }`}
                     style={{ background: bg }}
-                    title="Select Preset"
+                    title={bg}
                   />
                 ))}
               </div>
@@ -961,7 +1052,11 @@ export default function App() {
                 <span className="text-sm font-medium text-gray-700">Custom</span>
                 <input
                   type="color"
-                  value={activeSettings.background.startsWith('#') ? activeSettings.background.slice(0, 7) : '#ffffff'}
+                  value={
+                    activeSettings.background.startsWith('#')
+                      ? activeSettings.background.slice(0, 7)
+                      : '#ffffff'
+                  }
                   onChange={(e) => updateSetting({ background: e.target.value })}
                   className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
                   title="Solid Color"
@@ -972,45 +1067,52 @@ export default function App() {
                   value={activeSettings.background}
                   onChange={(e) => updateSetting({ background: e.target.value })}
                   className="flex-1 min-w-0 border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
-                  title="CSS Background"
                 />
               </div>
             </div>
 
             <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Layout size={16} className="text-indigo-500" /> Layout & Alignment
+                <Layout size={16} className="text-indigo-500" /> Layout
               </label>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {(['text-top', 'text-bottom', 'centered'] as const).map((l) => (
                   <button
                     key={l}
                     onClick={() => updateSetting({ layout: l })}
-                    className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors text-left ${activeSettings.layout === l ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${
+                      activeSettings.layout === l
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
                   >
-                    {l.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    {l === 'text-top' ? 'Text Top' : l === 'text-bottom' ? 'Text Bottom' : 'Centered'}
                   </button>
                 ))}
               </div>
-              <div className="flex bg-gray-100 p-1 rounded-xl mt-2">
-                <button
-                  onClick={() => { updateSetting({ textAlign: 'left' }); if (activeScreenshot) updateCurrentScreenshot({ textOffset: { ...activeScreenshot.textOffset, x: 0 } }); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${activeSettings.textAlign === 'left' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Left
-                </button>
-                <button
-                  onClick={() => { updateSetting({ textAlign: 'center' }); if (activeScreenshot) updateCurrentScreenshot({ textOffset: { ...activeScreenshot.textOffset, x: 0 } }); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${activeSettings.textAlign === 'center' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Center
-                </button>
-                <button
-                  onClick={() => { updateSetting({ textAlign: 'right' }); if (activeScreenshot) updateCurrentScreenshot({ textOffset: { ...activeScreenshot.textOffset, x: 0 } }); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${activeSettings.textAlign === 'right' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Right
-                </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Text Align</label>
+              <div className="flex bg-gray-100 p-1 rounded-xl">
+                {(['left', 'center', 'right'] as const).map((align) => (
+                  <button
+                    key={align}
+                    onClick={() => {
+                      updateSetting({ textAlign: align });
+                      // FIX: only reset x offset, preserve y
+                      if (activeScreenshot)
+                        updateCurrentScreenshot({ textOffset: { x: 0, y: activeScreenshot.textOffset.y } });
+                    }}
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
+                      activeSettings.textAlign === align
+                        ? 'bg-white shadow text-indigo-700'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {align}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -1018,74 +1120,79 @@ export default function App() {
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <Smartphone size={16} className="text-indigo-500" /> Phone Position
               </label>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <button
-                  onClick={() => updateSetting({ phonePositionMode: 'centered' })}
-                  className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${activeSettings.phonePositionMode === 'centered' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                >
-                  Centered Y
-                </button>
-                <button
-                  onClick={() => updateSetting({ phonePositionMode: 'half-down' })}
-                  className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${activeSettings.phonePositionMode === 'half-down' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                >
-                  Half Down Y
-                </button>
+              <div className="grid grid-cols-2 gap-2">
+                {(['centered', 'half-down'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => updateSetting({ phonePositionMode: mode })}
+                    className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${
+                      activeSettings.phonePositionMode === mode
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {mode === 'centered' ? 'Centered' : 'Half Down'}
+                  </button>
+                ))}
               </div>
-              <div className="flex bg-gray-100 p-1 rounded-xl">
-                <button
-                  onClick={() => { updateSetting({ deviceAlign: 'left' }); if (activeScreenshot) updateCurrentScreenshot({ deviceOffset: { ...activeScreenshot.deviceOffset, x: 0 } }); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${activeSettings.deviceAlign === 'left' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Left
-                </button>
-                <button
-                  onClick={() => { updateSetting({ deviceAlign: 'center' }); if (activeScreenshot) updateCurrentScreenshot({ deviceOffset: { ...activeScreenshot.deviceOffset, x: 0 } }); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${activeSettings.deviceAlign === 'center' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Center
-                </button>
-                <button
-                  onClick={() => { updateSetting({ deviceAlign: 'right' }); if (activeScreenshot) updateCurrentScreenshot({ deviceOffset: { ...activeScreenshot.deviceOffset, x: 0 } }); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${activeSettings.deviceAlign === 'right' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Right
-                </button>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Device Align</label>
+                <div className="flex bg-gray-100 p-1 rounded-xl">
+                  {(['left', 'center', 'right'] as const).map((align) => (
+                    <button
+                      key={align}
+                      onClick={() => {
+                        updateSetting({ deviceAlign: align });
+                        // FIX: only reset x offset, preserve y
+                        if (activeScreenshot)
+                          updateCurrentScreenshot({ deviceOffset: { x: 0, y: activeScreenshot.deviceOffset.y } });
+                      }}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
+                        activeSettings.deviceAlign === align
+                          ? 'bg-white shadow text-indigo-700'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      {align}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <ImageIcon size={16} className="text-indigo-500" /> Image Fit
-              </label>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Image Fit</label>
               <div className="flex bg-gray-100 p-1 rounded-xl">
-                <button
-                  onClick={() => updateSetting({ imageFit: 'cover' })}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeSettings.imageFit === 'cover' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Cover
-                </button>
-                <button
-                  onClick={() => updateSetting({ imageFit: 'contain' })}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeSettings.imageFit === 'contain' ? 'bg-white shadow text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  Contain
-                </button>
+                {(['cover', 'contain'] as const).map((fit) => (
+                  <button
+                    key={fit}
+                    onClick={() => updateSetting({ imageFit: fit })}
+                    className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${
+                      activeSettings.imageFit === fit
+                        ? 'bg-white shadow text-indigo-700'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    {fit}
+                  </button>
+                ))}
               </div>
             </div>
           </PanelSection>
 
+          {/* Device */}
           <PanelSection
             title="Device"
-            description="Add scale, frame, rotation, tilt, and shadow for more modern-looking mockups."
+            description="Scale, frame, rotate, tilt, and shadow for modern-looking mockups."
             open={openSections.device}
             onToggle={() => toggleSection('device')}
           >
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Smartphone size={16} className="text-indigo-500" /> Device Frame
-              </label>
-              <label className="flex items-center cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+              <label className="flex items-center justify-between cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Device Frame</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Show phone bezel around screenshot</p>
+                </div>
                 <div className="relative">
                   <input
                     type="checkbox"
@@ -1093,19 +1200,26 @@ export default function App() {
                     checked={activeSettings.deviceFrame}
                     onChange={(e) => updateSetting({ deviceFrame: e.target.checked })}
                   />
-                  <div className={`block w-10 h-6 rounded-full transition-colors ${activeSettings.deviceFrame ? 'bg-indigo-600' : 'bg-gray-300'}`}></div>
-                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${activeSettings.deviceFrame ? 'translate-x-4' : ''}`}></div>
+                  <div
+                    className={`block w-10 h-6 rounded-full transition-colors ${
+                      activeSettings.deviceFrame ? 'bg-indigo-600' : 'bg-gray-300'
+                    }`}
+                  />
+                  <div
+                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                      activeSettings.deviceFrame ? 'translate-x-4' : ''
+                    }`}
+                  />
                 </div>
-                <span className="ml-3 text-sm font-medium text-gray-700">{activeSettings.deviceFrame ? 'Enabled' : 'Disabled'}</span>
               </label>
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Scale ({activeSettings.deviceScale}%)</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Scale ({activeSettings.deviceScale}%)
+              </span>
               <input
-                type="range"
-                min={50}
-                max={100}
+                type="range" min={40} max={100}
                 value={activeSettings.deviceScale}
                 onChange={(e) => updateSetting({ deviceScale: Number(e.target.value) })}
                 className="w-full"
@@ -1113,11 +1227,11 @@ export default function App() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Border ({activeSettings.deviceBorder}px)</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Border ({activeSettings.deviceBorder}px)
+              </span>
               <input
-                type="range"
-                min={0}
-                max={40}
+                type="range" min={0} max={40}
                 value={activeSettings.deviceBorder}
                 onChange={(e) => updateSetting({ deviceBorder: Number(e.target.value) })}
                 className="w-full"
@@ -1126,21 +1240,25 @@ export default function App() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rotation ({activeSettings.deviceRotation}°)</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Rotation ({activeSettings.deviceRotation}°)
+              </span>
               <input
-                type="range"
-                min={-45}
-                max={45}
+                type="range" min={-45} max={45}
                 value={activeSettings.deviceRotation}
                 onChange={(e) => updateSetting({ deviceRotation: Number(e.target.value) })}
                 className="w-full"
               />
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-1.5">
                 {[-45, -20, 0, 20, 45].map((angle) => (
                   <button
                     key={angle}
                     onClick={() => updateSetting({ deviceRotation: angle })}
-                    className={`py-2 rounded-xl text-xs font-medium border transition-colors ${activeSettings.deviceRotation === angle ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
+                      activeSettings.deviceRotation === angle
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
                   >
                     {angle}°
                   </button>
@@ -1150,22 +1268,22 @@ export default function App() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tilt X ({activeSettings.deviceTiltX}°)</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Tilt X ({activeSettings.deviceTiltX}°)
+                </span>
                 <input
-                  type="range"
-                  min={-20}
-                  max={20}
+                  type="range" min={-20} max={20}
                   value={activeSettings.deviceTiltX}
                   onChange={(e) => updateSetting({ deviceTiltX: Number(e.target.value) })}
                   className="w-full"
                 />
               </div>
               <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tilt Y ({activeSettings.deviceTiltY}°)</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Tilt Y ({activeSettings.deviceTiltY}°)
+                </span>
                 <input
-                  type="range"
-                  min={-20}
-                  max={20}
+                  type="range" min={-20} max={20}
                   value={activeSettings.deviceTiltY}
                   onChange={(e) => updateSetting({ deviceTiltY: Number(e.target.value) })}
                   className="w-full"
@@ -1174,11 +1292,11 @@ export default function App() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Shadow ({activeSettings.deviceShadow})</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Shadow ({activeSettings.deviceShadow})
+              </span>
               <input
-                type="range"
-                min={0}
-                max={80}
+                type="range" min={0} max={80}
                 value={activeSettings.deviceShadow}
                 onChange={(e) => updateSetting({ deviceShadow: Number(e.target.value) })}
                 className="w-full"
@@ -1186,69 +1304,112 @@ export default function App() {
             </div>
           </PanelSection>
 
+          {/* Typography */}
           <PanelSection
             title="Typography"
-            description="Tune title and subtitle appearance, then save the look back into a preset."
+            description="Tune title and subtitle fonts, sizes, weights, and colors."
             open={openSections.typography}
             onToggle={() => toggleSection('typography')}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Type size={16} className="text-indigo-500" /> Typography Colors
+                <Type size={16} className="text-indigo-500" /> Colors
               </label>
-              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
-                <span className="text-sm font-medium text-gray-700">Title Color</span>
-                <input type="color" value={activeSettings.titleColor} onChange={(e) => updateSetting({ titleColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
-              </div>
-              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
-                <span className="text-sm font-medium text-gray-700">Accent Color</span>
-                <input type="color" value={activeSettings.accentColor} onChange={(e) => updateSetting({ accentColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
-              </div>
-              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
-                <span className="text-sm font-medium text-gray-700">Subtitle Color</span>
-                <input type="color" value={activeSettings.subtitleColor} onChange={(e) => updateSetting({ subtitleColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
-              </div>
+              {[
+                { label: 'Title', key: 'titleColor' as const },
+                { label: 'Accent', key: 'accentColor' as const },
+                { label: 'Subtitle', key: 'subtitleColor' as const },
+              ].map(({ label, key }) => (
+                <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
+                  <span className="text-sm font-medium text-gray-700">{label} Color</span>
+                  <input
+                    type="color"
+                    value={activeSettings[key] as string}
+                    onChange={(e) => updateSetting({ [key]: e.target.value })}
+                    className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+                  />
+                </div>
+              ))}
             </div>
 
             <div className="space-y-4 pt-2">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <Type size={16} className="text-indigo-500" /> Fonts
               </label>
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title Font</span>
-                <select value={activeSettings.titleFontFamily} onChange={(e) => updateSetting({ titleFontFamily: e.target.value })} className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-                  {FONT_OPTIONS.map((font) => <option key={`title-${font.value}`} value={font.value}>{font.label}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Subtitle Font</span>
-                <select value={activeSettings.subtitleFontFamily} onChange={(e) => updateSetting({ subtitleFontFamily: e.target.value })} className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-                  {FONT_OPTIONS.map((font) => <option key={`subtitle-${font.value}`} value={font.value}>{font.label}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title Size ({activeSettings.titleFontSize}px)</span>
-                <input type="range" min={32} max={160} value={activeSettings.titleFontSize} onChange={(e) => updateSetting({ titleFontSize: Number(e.target.value) })} className="w-full" />
-              </div>
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Subtitle Size ({activeSettings.subtitleFontSize}px)</span>
-                <input type="range" min={16} max={80} value={activeSettings.subtitleFontSize} onChange={(e) => updateSetting({ subtitleFontSize: Number(e.target.value) })} className="w-full" />
-              </div>
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Text Spacing ({activeSettings.textSpacing}px)</span>
-                <input type="range" min={0} max={120} value={activeSettings.textSpacing} onChange={(e) => updateSetting({ textSpacing: Number(e.target.value) })} className="w-full" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title Weight</span>
-                  <select value={activeSettings.titleFontWeight} onChange={(e) => updateSetting({ titleFontWeight: Number(e.target.value) })} className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white">
-                    {[500, 600, 700, 800, 900].map((weight) => <option key={`title-weight-${weight}`} value={weight}>{weight}</option>)}
+              {[
+                { label: 'Title Font', key: 'titleFontFamily' as const },
+                { label: 'Subtitle Font', key: 'subtitleFontFamily' as const },
+              ].map(({ label, key }) => (
+                <div key={key} className="space-y-1">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
+                  <select
+                    value={activeSettings[key] as string}
+                    onChange={(e) => updateSetting({ [key]: e.target.value })}
+                    className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    {FONT_OPTIONS.map((f) => (
+                      <option key={`${key}-${f.value}`} value={f.value}>{f.label}</option>
+                    ))}
                   </select>
                 </div>
-                <div className="space-y-2">
+              ))}
+
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Title Size ({activeSettings.titleFontSize}px)
+                </span>
+                <input
+                  type="range" min={32} max={160}
+                  value={activeSettings.titleFontSize}
+                  onChange={(e) => updateSetting({ titleFontSize: Number(e.target.value) })}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Subtitle Size ({activeSettings.subtitleFontSize}px)
+                </span>
+                <input
+                  type="range" min={16} max={80}
+                  value={activeSettings.subtitleFontSize}
+                  onChange={(e) => updateSetting({ subtitleFontSize: Number(e.target.value) })}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Text Spacing ({activeSettings.textSpacing}px)
+                </span>
+                <input
+                  type="range" min={0} max={120}
+                  value={activeSettings.textSpacing}
+                  onChange={(e) => updateSetting({ textSpacing: Number(e.target.value) })}
+                  className="w-full"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title Weight</span>
+                  <select
+                    value={activeSettings.titleFontWeight}
+                    onChange={(e) => updateSetting({ titleFontWeight: Number(e.target.value) })}
+                    className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white"
+                  >
+                    {[500, 600, 700, 800, 900].map((w) => (
+                      <option key={`tw-${w}`} value={w}>{w}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Subtitle Weight</span>
-                  <select value={activeSettings.subtitleFontWeight} onChange={(e) => updateSetting({ subtitleFontWeight: Number(e.target.value) })} className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white">
-                    {[400, 500, 600, 700].map((weight) => <option key={`subtitle-weight-${weight}`} value={weight}>{weight}</option>)}
+                  <select
+                    value={activeSettings.subtitleFontWeight}
+                    onChange={(e) => updateSetting({ subtitleFontWeight: Number(e.target.value) })}
+                    className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white"
+                  >
+                    {[400, 500, 600, 700].map((w) => (
+                      <option key={`sw-${w}`} value={w}>{w}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -1257,45 +1418,91 @@ export default function App() {
         </div>
       </div>
 
+      {/* ── CENTER CANVAS ── */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
+        {/* Top bar */}
         <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10">
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold text-gray-800">Mockup Generator</h1>
-            <div className="hidden xl:flex items-center gap-2 text-xs font-medium text-gray-500">
-              <span className="px-2.5 py-1 rounded-full bg-gray-100">Upload</span>
-              <span className="px-2.5 py-1 rounded-full bg-gray-100">Preset</span>
-              <span className="px-2.5 py-1 rounded-full bg-gray-100">Compose</span>
-              <span className="px-2.5 py-1 rounded-full bg-gray-100">Export</span>
-            </div>
           </div>
           <div className="flex items-center gap-3">
             {hasSlides && (
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 mr-2">
-                <button onClick={() => setZoomScale((z) => Math.max(0.08, z - 0.03))} className="p-1.5 rounded hover:bg-white text-gray-600" title="Zoom out"><ZoomOut size={16} /></button>
-                <input type="range" min={0.08} max={1.1} step={0.01} value={zoomScale} onChange={(e) => setZoomScale(Number(e.target.value))} className="w-28" />
-                <button onClick={() => setZoomScale((z) => Math.min(1.1, z + 0.03))} className="p-1.5 rounded hover:bg-white text-gray-600" title="Zoom in"><ZoomIn size={16} /></button>
-                <button onClick={() => setZoomScale(fitScale)} className="text-xs font-semibold px-2 py-1 rounded bg-white border border-gray-200 text-gray-700 hover:border-indigo-300" title="Fit to viewport">Fit</button>
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5">
+                <button
+                  onClick={() => setZoomScale((z) => Math.max(0.08, z - 0.03))}
+                  className="p-1.5 rounded hover:bg-white text-gray-600"
+                  title="Zoom out"
+                >
+                  <ZoomOut size={16} />
+                </button>
+                <input
+                  type="range" min={0.08} max={1.1} step={0.01}
+                  value={zoomScale}
+                  onChange={(e) => setZoomScale(Number(e.target.value))}
+                  className="w-28"
+                />
+                <button
+                  onClick={() => setZoomScale((z) => Math.min(1.1, z + 0.03))}
+                  className="p-1.5 rounded hover:bg-white text-gray-600"
+                  title="Zoom in"
+                >
+                  <ZoomIn size={16} />
+                </button>
+                <button
+                  onClick={() => setZoomScale(fitScale)}
+                  className="text-xs font-semibold px-2 py-1 rounded bg-white border border-gray-200 text-gray-700 hover:border-indigo-300"
+                  title="Fit to viewport"
+                >
+                  Fit
+                </button>
               </div>
             )}
             <div className="flex items-center gap-2">
-              <button onClick={exportCurrent} disabled={!hasSlides || isExporting} className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'}`}>
+              <button
+                onClick={exportCurrent}
+                disabled={!hasSlides || isExporting}
+                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
+                  !hasSlides
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
+                }`}
+              >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
                 Export Current
               </button>
-              <button onClick={exportAll} disabled={!hasSlides || isExporting} className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'}`}>
+              <button
+                onClick={exportAll}
+                disabled={!hasSlides || isExporting}
+                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
+                  !hasSlides
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
+                }`}
+              >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 Export All (PNGs)
               </button>
-              <button onClick={exportZip} disabled={!hasSlides || isExporting} className={`px-4 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md active:scale-95'}`}>
+              <button
+                onClick={exportZip}
+                disabled={!hasSlides || isExporting}
+                className={`px-4 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
+                  !hasSlides
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md active:scale-95'
+                }`}
+              >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Archive size={16} />}
-                Export All (ZIP)
+                Export ZIP
               </button>
             </div>
           </div>
         </div>
 
+        {/* Canvas area */}
         <div
-          className={`flex-1 overflow-auto relative p-8 transition-colors ${isFileDragging ? 'bg-indigo-50' : 'bg-gray-100'}`}
+          className={`flex-1 overflow-auto relative p-8 transition-colors ${
+            isFileDragging ? 'bg-indigo-50' : 'bg-gray-100'
+          }`}
           ref={containerRef}
           onDragOver={(e) => { e.preventDefault(); setIsFileDragging(true); }}
           onDragLeave={() => setIsFileDragging(false)}
@@ -1303,28 +1510,44 @@ export default function App() {
             e.preventDefault();
             setIsFileDragging(false);
             if (e.dataTransfer.files) {
-              const filesArray = Array.from(e.dataTransfer.files as FileList);
-              addImages(filesArray.filter((f) => f.type.startsWith('image/')));
+              const arr = Array.from(e.dataTransfer.files as FileList);
+              addImages(arr.filter((f) => f.type.startsWith('image/')));
             }
           }}
         >
           <div className="min-h-full min-w-full flex items-center justify-center">
             {hasSlides && activeScreenshot ? (
               <div
-                className="shadow-2xl rounded-lg overflow-hidden transition-transform duration-200 map-wrapper shrink-0"
+                className="shadow-2xl rounded-lg overflow-hidden shrink-0"
                 style={{ width: 1080 * zoomScale, height: 1920 * zoomScale }}
               >
-                <div style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top left', width: 1080, height: 1920 }}>
-                  <MockupTemplate screenshot={activeScreenshot} settings={activeSettings} draggingTarget={draggingTarget} onStartDrag={dragMode ? handleStartDrag : undefined} />
+                <div
+                  style={{
+                    transform: `scale(${zoomScale})`,
+                    transformOrigin: 'top left',
+                    width: 1080,
+                    height: 1920,
+                  }}
+                >
+                  <MockupTemplate
+                    screenshot={activeScreenshot}
+                    settings={activeSettings}
+                    draggingTarget={draggingTarget}
+                    onStartDrag={dragMode ? handleStartDrag : undefined}
+                  />
                 </div>
               </div>
             ) : (
               <div className="text-center text-gray-400 flex flex-col items-center max-w-md pointer-events-none">
-                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-6"><ImageIcon size={48} className="text-gray-400" /></div>
+                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-6">
+                  <ImageIcon size={48} className="text-gray-400" />
+                </div>
                 <h2 className="text-2xl font-bold text-gray-700 mb-2">Create Professional Mockups</h2>
-                <p className="text-gray-500 mb-4">Upload screenshots, choose a reusable preset, then tilt and style the phone without touching code.</p>
-                <p className="text-sm text-gray-400 mb-8">Drag & drop works anywhere on the canvas.</p>
-                <label className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold cursor-pointer pointer-events-auto hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl flex items-center gap-3">
+                <p className="text-gray-500 mb-2">
+                  Upload screenshots, choose a reusable preset, then tilt and style the phone.
+                </p>
+                <p className="text-sm text-gray-400 mb-8">Drag & drop images anywhere on the canvas.</p>
+                <label className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold cursor-pointer pointer-events-auto hover:bg-indigo-700 transition-colors shadow-lg flex items-center gap-3">
                   <Plus size={24} /> Upload Screenshots
                   <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
                 </label>
@@ -1333,106 +1556,204 @@ export default function App() {
           </div>
         </div>
 
+        {/* Filmstrip */}
         {hasSlides && (
           <div className="h-36 bg-white border-t border-gray-200 flex items-center px-6 gap-4 overflow-x-auto shrink-0 z-10">
             {screenshots.map((s, i) => (
-              <div key={s.id} onClick={() => setActiveIndex(i)} className={`relative h-24 w-16 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 transition-all group ${i === activeIndex ? 'border-indigo-600 shadow-md scale-105' : 'border-transparent opacity-60 hover:opacity-100'}`}>
-                <img src={s.url} className="w-full h-full object-cover" alt="Thumbnail" />
-                <button onClick={(e) => { e.stopPropagation(); removeScreenshot(s.id); }} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm" title="Remove screenshot">
+              <div
+                key={s.id}
+                onClick={() => setActiveIndex(i)}
+                className={`relative h-24 w-16 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 transition-all group ${
+                  i === activeIndex
+                    ? 'border-indigo-600 shadow-md scale-105'
+                    : 'border-transparent opacity-60 hover:opacity-100'
+                }`}
+              >
+                <img src={s.url} className="w-full h-full object-cover" alt={`Slide ${i + 1}`} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeScreenshot(s.id); }}
+                  className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                  title="Remove"
+                >
                   <Trash2 size={12} />
                 </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] font-bold text-center py-0.5">{i + 1}</div>
+                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] font-bold text-center py-0.5">
+                  {i + 1}
+                </div>
               </div>
             ))}
             <label className="h-24 w-16 flex-shrink-0 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-indigo-400 hover:text-indigo-500 transition-colors text-gray-400">
               <Plus size={24} className="mb-1" />
               <span className="text-[10px] font-medium">Add More</span>
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} title="Add More" />
+              <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
             </label>
           </div>
         )}
       </div>
 
-      {hasSlides && activeScreenshot && (
-        <div className="w-80 bg-white border-l border-gray-200 flex flex-col overflow-y-auto shrink-0">
+      {/* ── RIGHT PANEL ── always rendered so it's accessible even before upload */}
+      <div className="w-80 bg-white border-l border-gray-200 flex flex-col overflow-y-auto shrink-0">
+        {hasSlides && activeScreenshot ? (
           <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Slide Content</h2>
-                <p className="text-sm text-gray-500 mt-1">Using preset: {selectedPreset.name}</p>
+                <p className="text-sm text-gray-500 mt-1">Preset: {selectedPreset.name}</p>
               </div>
-              <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded">{activeIndex + 1} / {screenshots.length}</span>
+              <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                {activeIndex + 1} / {screenshots.length}
+              </span>
             </div>
 
-            <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">Quick tip</p>
-              <p className="text-sm text-indigo-900 mt-1">Edit the current slide freely, then save the polished look back into a preset from the left panel.</p>
+            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">Tip</p>
+              <p className="text-xs text-indigo-800 mt-1">
+                Editing here is per-slide. To make a change global, toggle <strong>Editing all slides</strong> in the left panel.
+              </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700">Title</label>
-              <textarea value={activeScreenshot.title} onChange={(e) => updateCurrentScreenshot({ title: e.target.value })} className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none transition-shadow" rows={3} placeholder="Enter title..." />
+              <textarea
+                value={activeScreenshot.title}
+                onChange={(e) => updateCurrentScreenshot({ title: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                rows={3}
+                placeholder="Enter title... use [accent]word[/accent] for color"
+              />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700">Subtitle</label>
-              <textarea value={activeScreenshot.subtitle} onChange={(e) => updateCurrentScreenshot({ subtitle: e.target.value })} className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none transition-shadow" rows={4} placeholder="Enter subtitle..." />
+              <textarea
+                value={activeScreenshot.subtitle}
+                onChange={(e) => updateCurrentScreenshot({ subtitle: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                rows={3}
+                placeholder="Enter subtitle..."
+              />
             </div>
 
-            <div className="pt-6 border-t border-gray-100 space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <ImageIcon size={16} className="text-indigo-500" /> Slide Actions
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="w-full py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 cursor-pointer transition-colors">
+            <div className="border-t border-gray-100 pt-4 space-y-3">
+              <label className="text-sm font-semibold text-gray-700">Slide Actions</label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 cursor-pointer transition-colors">
                   <ImageIcon size={14} /> Replace
                   <input type="file" accept="image/*" className="hidden" onChange={handleScreenshotReplace} />
                 </label>
                 <button
                   onClick={duplicateScreenshot}
-                  className="w-full py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 transition-colors"
+                  className="py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
                 >
                   <Copy size={14} /> Duplicate
                 </button>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-gray-100 space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><Move size={16} className="text-indigo-500" /> Drag & Position</label>
-              <label className="flex items-center cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                <div className="relative">
-                  <input type="checkbox" className="sr-only" checked={dragMode} onChange={(e) => setDragMode(e.target.checked)} />
-                  <div className={`block w-10 h-6 rounded-full transition-colors ${dragMode ? 'bg-indigo-600' : 'bg-gray-300'}`}></div>
-                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${dragMode ? 'translate-x-4' : ''}`}></div>
-                </div>
-                <span className="ml-3 text-sm font-medium text-gray-700">{dragMode ? 'Drag mode enabled' : 'Enable drag mode'}</span>
-              </label>
+            <div className="border-t border-gray-100 pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Move size={16} className="text-indigo-500" /> Drag & Position
+                </label>
+                <button
+                  onClick={() => setDragMode((v) => !v)}
+                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${
+                    dragMode ? 'bg-indigo-600' : 'bg-gray-300'
+                  }`}
+                  title={dragMode ? 'Disable drag mode' : 'Enable drag mode'}
+                >
+                  <span
+                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${
+                      dragMode ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">
+                {dragMode
+                  ? 'Click & drag text or device on canvas to reposition.'
+                  : 'Enable drag mode to move elements on canvas.'}
+              </p>
 
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <button onClick={() => nudgeCurrent('text', 'x', -10)} className="px-2 py-2 rounded border border-gray-200 hover:bg-gray-50">Text Left</button>
-                <button onClick={() => nudgeCurrent('text', 'x', 10)} className="px-2 py-2 rounded border border-gray-200 hover:bg-gray-50">Text Right</button>
-                <button onClick={() => nudgeCurrent('device', 'y', -10)} className="px-2 py-2 rounded border border-gray-200 hover:bg-gray-50">Device Up</button>
-                <button onClick={() => nudgeCurrent('device', 'y', 10)} className="px-2 py-2 rounded border border-gray-200 hover:bg-gray-50">Device Down</button>
+              {/* FIX: complete nudge grid — all 4 directions for both text and device */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Text</p>
+                <div className="grid grid-cols-4 gap-1.5 text-xs">
+                  <button onClick={() => nudgeCurrent('text', 'x', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">← Left</button>
+                  <button onClick={() => nudgeCurrent('text', 'x', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Right →</button>
+                  <button onClick={() => nudgeCurrent('text', 'y', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">↑ Up</button>
+                  <button onClick={() => nudgeCurrent('text', 'y', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Down ↓</button>
+                </div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Device</p>
+                <div className="grid grid-cols-4 gap-1.5 text-xs">
+                  <button onClick={() => nudgeCurrent('device', 'x', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">← Left</button>
+                  <button onClick={() => nudgeCurrent('device', 'x', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Right →</button>
+                  <button onClick={() => nudgeCurrent('device', 'y', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">↑ Up</button>
+                  <button onClick={() => nudgeCurrent('device', 'y', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Down ↓</button>
+                </div>
               </div>
 
-              <button onClick={resetCurrentPosition} className="w-full py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2">
+              <button
+                onClick={resetCurrentPosition}
+                className="w-full py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
+              >
                 <LocateFixed size={14} /> Reset Position
               </button>
             </div>
 
-            <div className="pt-6 border-t border-gray-100 flex justify-between">
-              <button onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))} disabled={activeIndex === 0} className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" title="Previous Slide"><ChevronLeft size={20} /></button>
-              <button onClick={() => setActiveIndex(Math.min(screenshots.length - 1, activeIndex + 1))} disabled={activeIndex === screenshots.length - 1} className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" title="Next Slide"><ChevronRight size={20} /></button>
+            <div className="border-t border-gray-100 pt-4 flex justify-between">
+              <button
+                onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
+                disabled={activeIndex === 0}
+                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Previous Slide"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span className="text-sm text-gray-500 self-center">
+                Slide {activeIndex + 1} of {screenshots.length}
+              </span>
+              <button
+                onClick={() => setActiveIndex(Math.min(screenshots.length - 1, activeIndex + 1))}
+                disabled={activeIndex === screenshots.length - 1}
+                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Next Slide"
+              >
+                <ChevronRight size={20} />
+              </button>
             </div>
           </div>
-        </div>
-      )}
-
-      <div className="fixed top-0 left-0 pointer-events-none" style={{ zIndex: -10, opacity: 0.001 }}>
-        {screenshots.map((s) => (
-          <div key={`export-${s.id}`}>
-            <MockupTemplate id={`export-${s.id}`} screenshot={s} settings={{ ...settings, ...s.settingsOverrides }} />
+        ) : (
+          // FIX: right panel always shown — display helpful state when no slides
+          <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+              <Layers size={28} className="text-gray-400" />
+            </div>
+            <p className="text-sm font-semibold text-gray-600">No slides yet</p>
+            <p className="text-xs text-gray-400">
+              Upload screenshots from the canvas or drop images anywhere to get started.
+            </p>
+            <label className="mt-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-indigo-700 transition-colors flex items-center gap-2">
+              <Plus size={16} /> Upload
+              <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
+            </label>
           </div>
+        )}
+      </div>
+
+      {/* Hidden export layer — FIX: use visibility:hidden + z-index 0 so toPng can read layout */}
+      <div
+        className="fixed top-0 left-0 pointer-events-none"
+        style={{ zIndex: 0, visibility: 'hidden' }}
+        aria-hidden="true"
+      >
+        {screenshots.map((s) => (
+          <MockupTemplate
+            key={`export-${s.id}`}
+            id={`export-${s.id}`}
+            screenshot={s}
+            settings={{ ...settings, ...s.settingsOverrides }}
+          />
         ))}
       </div>
     </div>
