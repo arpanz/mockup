@@ -1,13 +1,13 @@
 {
   "name": "Gravity – Weight Tracker",
-  "description": "App Store launch preset for Gravity. Dark, calm, minimal aesthetic matching the app's slate-blue identity. 7 slides covering core value props.",
+  "description": "App Store launch preset for Gravity. Backgrounds always contrast the screenshot theme — dark ss on light bg, light ss on dark bg.",
   "defaultTitle": "Your weight is a [accent]trend[/accent], not a number",
   "defaultSubtitle": "Smart weight tracking that cuts through the noise",
   "settings": {
-    "background": "linear-gradient(160deg, #0F172A 0%, #1E293B 60%, #162032 100%)",
-    "titleColor": "#F1F5F9",
-    "accentColor": "#76A7F7",
-    "subtitleColor": "#94A3B8",
+    "background": "linear-gradient(160deg, #F8FAFC 0%, #EEF2F7 100%)",
+    "titleColor": "#0F172A",
+    "accentColor": "#2563EB",
+    "subtitleColor": "#475569",
     "layout": "text-top",
     "phonePositionMode": "half-down",
     "textAlign": "left",
@@ -34,12 +34,10 @@
       "title": "Your weight is a [accent]trend[/accent], not a number",
       "subtitle": "See through daily noise. Track what actually matters.",
       "settingsOverrides": {
-        "layout": "text-top",
-        "phonePositionMode": "half-down",
-        "deviceRotation": 0,
-        "deviceTiltX": 0,
-        "deviceTiltY": 0,
-        "deviceScale": 78
+        "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
+        "titleColor": "#0F172A",
+        "accentColor": "#2563EB",
+        "subtitleColor": "#475569"
       }
     },
     {
@@ -47,12 +45,10 @@
       "title": "[accent]Smart summaries[/accent] every week",
       "subtitle": "Plain-language insights so you always know where you stand.",
       "settingsOverrides": {
-        "layout": "text-top",
-        "phonePositionMode": "half-down",
-        "deviceRotation": 0,
-        "deviceTiltX": 0,
-        "deviceTiltY": 0,
-        "deviceScale": 78
+        "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
+        "titleColor": "#0F172A",
+        "accentColor": "#2563EB",
+        "subtitleColor": "#475569"
       }
     },
     {
@@ -60,13 +56,10 @@
       "title": "Log in [accent]seconds[/accent], with context",
       "subtitle": "Weight + sleep, meals & activity tags in one quick step.",
       "settingsOverrides": {
-        "layout": "text-top",
-        "phonePositionMode": "half-down",
-        "background": "linear-gradient(160deg, #0F172A 0%, #1A2640 60%, #111827 100%)",
-        "deviceRotation": 0,
-        "deviceTiltX": 0,
-        "deviceTiltY": 0,
-        "deviceScale": 78
+        "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
+        "titleColor": "#0F172A",
+        "accentColor": "#2563EB",
+        "subtitleColor": "#475569"
       }
     },
     {
@@ -74,16 +67,10 @@
       "title": "See which [accent]habits[/accent] move your weight",
       "subtitle": "Gravity detects correlations you'd never spot manually.",
       "settingsOverrides": {
-        "layout": "text-top",
-        "phonePositionMode": "half-down",
-        "background": "linear-gradient(160deg, #F8FAFC 0%, #EEF2F7 100%)",
-        "titleColor": "#0F172A",
-        "accentColor": "#2563EB",
-        "subtitleColor": "#475569",
-        "deviceRotation": 0,
-        "deviceTiltX": 0,
-        "deviceTiltY": 0,
-        "deviceScale": 78
+        "background": "linear-gradient(160deg, #0F172A 0%, #1E293B 60%, #162032 100%)",
+        "titleColor": "#F1F5F9",
+        "accentColor": "#76A7F7",
+        "subtitleColor": "#94A3B8"
       }
     },
     {
@@ -91,16 +78,10 @@
       "title": "Your full history, [accent]beautifully[/accent] logged",
       "subtitle": "Every entry. Tagged, timestamped, and swipe-to-edit.",
       "settingsOverrides": {
-        "layout": "text-top",
-        "phonePositionMode": "half-down",
-        "background": "linear-gradient(160deg, #0F172A 0%, #1E293B 60%, #162032 100%)",
-        "titleColor": "#F1F5F9",
-        "accentColor": "#76A7F7",
-        "subtitleColor": "#94A3B8",
-        "deviceRotation": 0,
-        "deviceTiltX": 0,
-        "deviceTiltY": 0,
-        "deviceScale": 78
+        "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
+        "titleColor": "#0F172A",
+        "accentColor": "#2563EB",
+        "subtitleColor": "#475569"
       }
     },
     {
@@ -108,16 +89,10 @@
       "title": "Deep data. [accent]Powerful[/accent] insights.",
       "subtitle": "Time Machine, consistency heatmap & BMI — all in one place.",
       "settingsOverrides": {
-        "layout": "text-top",
-        "phonePositionMode": "half-down",
-        "background": "linear-gradient(160deg, #F8FAFC 0%, #EEF2F7 100%)",
-        "titleColor": "#0F172A",
-        "accentColor": "#2563EB",
-        "subtitleColor": "#475569",
-        "deviceRotation": 0,
-        "deviceTiltX": 0,
-        "deviceTiltY": 0,
-        "deviceScale": 78
+        "background": "linear-gradient(160deg, #0F172A 0%, #1E293B 60%, #162032 100%)",
+        "titleColor": "#F1F5F9",
+        "accentColor": "#76A7F7",
+        "subtitleColor": "#94A3B8"
       }
     },
     {
@@ -125,16 +100,10 @@
       "title": "Where is your weight [accent]heading?[/accent]",
       "subtitle": "Forecast your goal date. Stay on track, not obsessed.",
       "settingsOverrides": {
-        "layout": "text-top",
-        "phonePositionMode": "half-down",
-        "background": "linear-gradient(160deg, #0F172A 0%, #1E293B 60%, #162032 100%)",
-        "titleColor": "#F1F5F9",
-        "accentColor": "#76A7F7",
-        "subtitleColor": "#94A3B8",
-        "deviceRotation": 0,
-        "deviceTiltX": 0,
-        "deviceTiltY": 0,
-        "deviceScale": 78
+        "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
+        "titleColor": "#0F172A",
+        "accentColor": "#2563EB",
+        "subtitleColor": "#475569"
       }
     }
   ]
