@@ -1,6 +1,6 @@
 {
   "name": "Gravity – Weight Tracker",
-  "description": "App Store launch preset for Gravity. Dark ss on light bg, light ss on dark bg. Titles inspired by existing Play Store listing.",
+  "description": "Strict alternating Light/Dark rhythm. Dark ss on light bg, light ss on dark bg.",
   "defaultTitle": "Track [accent]trends[/accent]\nNot fluctuations",
   "defaultSubtitle": "Smart weight tracking that focuses on what matters",
   "settings": {
@@ -46,10 +46,10 @@
       "title": "Log in [accent]Seconds[/accent]",
       "subtitle": "Weight, sleep, meals & activity — captured in one quick tap.",
       "settingsOverrides": {
-        "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
-        "titleColor": "#0F172A",
-        "accentColor": "#2563EB",
-        "subtitleColor": "#475569",
+        "background": "linear-gradient(160deg, #0F172A 0%, #1E293B 60%, #162032 100%)",
+        "titleColor": "#F1F5F9",
+        "accentColor": "#76A7F7",
+        "subtitleColor": "#94A3B8",
         "textAlign": "center"
       }
     },
