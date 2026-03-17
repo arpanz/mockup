@@ -1,0 +1,113 @@
+{
+    "name": "Invoice Pro – Clean Business",
+    "description": "App Store launch preset for an invoice app. Clean, professional look with light gradients and device frames.",
+    "defaultTitle": "Track all your [accent]invoices[/accent] in one place",
+    "defaultSubtitle": "Outstanding • Paid • Overdue",
+    "settings": {
+        "background": "linear-gradient(135deg, #F5F8FF 0%, #EAF1FF 100%)",
+        "titleColor": "#111827",
+        "accentColor": "#2F6BFF",
+        "subtitleColor": "#5B6472",
+        "layout": "text-top",
+        "phonePositionMode": "centered",
+        "textAlign": "center",
+        "deviceAlign": "center",
+        "deviceFrame": true,
+        "imageFit": "cover",
+        "titleFontFamily": "'Plus Jakarta Sans', sans-serif",
+        "subtitleFontFamily": "'Plus Jakarta Sans', sans-serif",
+        "titleFontSize": 120,
+        "subtitleFontSize": 45,
+        "titleFontWeight": 800,
+        "subtitleFontWeight": 500,
+        "textSpacing": 26,
+        "deviceScale": 68,
+        "deviceBorder": 10,
+        "deviceRotation": 0,
+        "deviceTiltX": 0,
+        "deviceTiltY": 0,
+        "deviceShadow": 50
+    },
+    "slides": [
+        {
+            "index": 0,
+            "title": "Track all your [accent]invoices[/accent] in one place",
+            "subtitle": "Outstanding • Paid • Overdue",
+            "settingsOverrides": {
+                "deviceRotation": 0,
+                "deviceTiltX": 0,
+                "deviceTiltY": 0
+            }
+        },
+        {
+            "index": 1,
+            "title": "Create invoices in [accent]seconds[/accent]",
+            "subtitle": "Add clients, due dates & payment terms",
+            "settingsOverrides": {
+                "deviceRotation": 0,
+                "deviceTiltX": 0,
+                "deviceTiltY": 0
+            }
+        },
+        {
+            "index": 2,
+            "title": "Automatic tax & [accent]total calculation[/accent]",
+            "subtitle": "GST • Discounts • Subtotals handled instantly",
+            "settingsOverrides": {
+                "deviceRotation": 0,
+                "deviceTiltX": 0,
+                "deviceTiltY": 0
+            }
+        },
+        {
+            "index": 3,
+            "title": "Generate professional [accent]PDF invoices[/accent]",
+            "subtitle": "Share or print instantly",
+            "settingsOverrides": {
+                "deviceRotation": 0,
+                "deviceTiltX": 0,
+                "deviceTiltY": 0
+            }
+        },
+        {
+            "index": 4,
+            "title": "Track [accent]payments[/accent] easily",
+            "subtitle": "Paid • Unpaid • Overdue status",
+            "settingsOverrides": {
+                "deviceRotation": 0,
+                "deviceTiltX": 0,
+                "deviceTiltY": 0
+            }
+        },
+        {
+            "index": 5,
+            "title": "Manage all your [accent]clients[/accent]",
+            "subtitle": "Save contacts for faster invoicing",
+            "settingsOverrides": {
+                "deviceRotation": 0,
+                "deviceTiltX": 0,
+                "deviceTiltY": 0
+            }
+        },
+        {
+            "index": 6,
+            "title": "Add your [accent]business details[/accent]",
+            "subtitle": "Logo • Address • Bank details",
+            "settingsOverrides": {
+                "deviceRotation": 0,
+                "deviceTiltX": 0,
+                "deviceTiltY": 0
+            }
+        },
+        {
+            "index": 7,
+            "title": "Supports [accent]multiple currencies[/accent]",
+            "subtitle": "GST • VAT • International invoices",
+            "settingsOverrides": {
+                "deviceRotation": 0,
+                "deviceTiltX": 0,
+                "deviceTiltY": 0
+            }
+        }
+    ]
+}

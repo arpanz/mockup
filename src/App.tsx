@@ -349,9 +349,8 @@ const MockupTemplate = ({
       ${isNone ? 'rounded-[56px]' : ''}
     `;
 
-    const imgClasses = `w-full h-full object-top ${
-      settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'
-    }`;
+    const imgClasses = `w-full h-full object-top ${settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'
+      }`;
 
     if (!settings.deviceFrame) {
       return (
@@ -401,9 +400,8 @@ const MockupTemplate = ({
           </div>
           <DeviceWrapper
             bleed={settings.phonePositionMode === 'centered' ? 'none' : 'bottom'}
-            className={`flex-1 w-full flex ${getDeviceAlignClass()} ${
-              settings.phonePositionMode === 'centered' ? 'items-start pt-8' : 'items-start pt-16'
-            }`}
+            className={`flex-1 w-full flex ${getDeviceAlignClass()} ${settings.phonePositionMode === 'centered' ? 'items-start pt-8' : 'items-start pt-16'
+              }`}
           />
         </>
       )}
@@ -412,9 +410,8 @@ const MockupTemplate = ({
         <>
           <DeviceWrapper
             bleed={settings.phonePositionMode === 'centered' ? 'none' : 'top'}
-            className={`flex-1 w-full flex ${getDeviceAlignClass()} items-end ${
-              settings.phonePositionMode === 'centered' ? 'pb-8' : 'pb-16'
-            }`}
+            className={`flex-1 w-full flex ${getDeviceAlignClass()} items-end ${settings.phonePositionMode === 'centered' ? 'pb-8' : 'pb-16'
+              }`}
           />
           <div className="flex-none pt-12 pb-24 z-10 flex flex-col items-center justify-center w-full">
             <TextContent />
@@ -434,20 +431,18 @@ const MockupTemplate = ({
       {dragEnabled && (
         <div className="absolute top-6 right-6 flex gap-2 z-30 pointer-events-none">
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
-              draggingTarget === 'text'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white/90 text-gray-700 border-gray-200'
-            }`}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'text'
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-white/90 text-gray-700 border-gray-200'
+              }`}
           >
             Text
           </span>
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
-              draggingTarget === 'device'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white/90 text-gray-700 border-gray-200'
-            }`}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'device'
+              ? 'bg-indigo-600 text-white border-indigo-600'
+              : 'bg-white/90 text-gray-700 border-gray-200'
+              }`}
           >
             Device
           </span>
@@ -565,13 +560,7 @@ export default function App() {
     setZoomScale(fitScale);
   }, [fitScale]);
 
-  useEffect(() => {
-    return () => {
-      screenshots.forEach((s) => {
-        if (s.url.startsWith('blob:')) URL.revokeObjectURL(s.url);
-      });
-    };
-  }, [screenshots]);
+  // Removed faulty useEffect that was revoking blob URLs on every screenshots change
 
   const updateSetting = (updates: Partial<Settings>) => {
     if (applyToAll) {
@@ -693,6 +682,27 @@ export default function App() {
         setAppPresets((prev) => [...prev, ...converted]);
         // Auto-select the first imported preset
         setSelectedPresetId(converted[0].id);
+
+        // Also apply it to all current screenshots immediately if they exist
+        if (hasSlides) {
+          const newPreset = converted[0];
+          setSettings((prev) => ({ ...prev, ...newPreset.settings }));
+          setScreenshots((prev) =>
+            prev.map((slide, i) => {
+              const slideData = newPreset.slides?.find((s) => s.index === i) ??
+                newPreset.slides?.[i];
+              return {
+                ...slide,
+                title: slideData?.title ?? newPreset.title ?? slide.title,
+                subtitle: slideData?.subtitle ?? newPreset.subtitle ?? slide.subtitle,
+                // Keep the drag offsets so user doesn't lose their positioning
+                settingsOverrides: slideData?.settingsOverrides
+                  ? { ...newPreset.settings, ...slideData.settingsOverrides }
+                  : undefined,
+              };
+            })
+          );
+        }
       } catch {
         setJsonImportError('Could not parse JSON file. Please check for syntax errors.');
       }
@@ -978,9 +988,8 @@ export default function App() {
 
           {/* Apply-to-all toggle */}
           <div
-            className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ${
-              applyToAll ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
-            }`}
+            className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ${applyToAll ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
+              }`}
           >
             <div>
               <p className={`text-sm font-semibold ${applyToAll ? 'text-indigo-800' : 'text-amber-800'}`}>
@@ -992,14 +1001,12 @@ export default function App() {
             </div>
             <button
               onClick={() => setApplyToAll((v) => !v)}
-              className={`relative inline-flex w-11 h-6 rounded-full transition-colors shrink-0 ${
-                applyToAll ? 'bg-indigo-600' : 'bg-amber-400'
-              }`}
+              className={`relative inline-flex w-11 h-6 rounded-full transition-colors shrink-0 ${applyToAll ? 'bg-indigo-600' : 'bg-amber-400'
+                }`}
             >
               <span
-                className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${
-                  applyToAll ? 'translate-x-5' : 'translate-x-0'
-                }`}
+                className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${applyToAll ? 'translate-x-5' : 'translate-x-0'
+                  }`}
               />
             </button>
           </div>
@@ -1150,11 +1157,10 @@ export default function App() {
                   <button
                     key={i}
                     onClick={() => updateSetting({ background: bg })}
-                    className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${
-                      activeSettings.background === bg
-                        ? 'border-indigo-600 scale-110 shadow-md'
-                        : 'border-transparent shadow-sm'
-                    }`}
+                    className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${activeSettings.background === bg
+                      ? 'border-indigo-600 scale-110 shadow-md'
+                      : 'border-transparent shadow-sm'
+                      }`}
                     style={{ background: bg }}
                     title={bg}
                   />
@@ -1192,11 +1198,10 @@ export default function App() {
                   <button
                     key={l}
                     onClick={() => updateSetting({ layout: l })}
-                    className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${
-                      activeSettings.layout === l
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
+                    className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.layout === l
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
                   >
                     {l === 'text-top' ? 'Text Top' : l === 'text-bottom' ? 'Text Bottom' : 'Centered'}
                   </button>
@@ -1215,11 +1220,10 @@ export default function App() {
                       if (activeScreenshot)
                         updateCurrentScreenshot({ textOffset: { x: 0, y: activeScreenshot.textOffset.y } });
                     }}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
-                      activeSettings.textAlign === align
-                        ? 'bg-white shadow text-indigo-700'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.textAlign === align
+                      ? 'bg-white shadow text-indigo-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                      }`}
                   >
                     {align}
                   </button>
@@ -1236,11 +1240,10 @@ export default function App() {
                   <button
                     key={mode}
                     onClick={() => updateSetting({ phonePositionMode: mode })}
-                    className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${
-                      activeSettings.phonePositionMode === mode
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
+                    className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${activeSettings.phonePositionMode === mode
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
                   >
                     {mode === 'centered' ? 'Centered' : 'Half Down'}
                   </button>
@@ -1257,11 +1260,10 @@ export default function App() {
                         if (activeScreenshot)
                           updateCurrentScreenshot({ deviceOffset: { x: 0, y: activeScreenshot.deviceOffset.y } });
                       }}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
-                        activeSettings.deviceAlign === align
-                          ? 'bg-white shadow text-indigo-700'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.deviceAlign === align
+                        ? 'bg-white shadow text-indigo-700'
+                        : 'text-gray-600 hover:text-gray-900'
+                        }`}
                     >
                       {align}
                     </button>
@@ -1277,11 +1279,10 @@ export default function App() {
                   <button
                     key={fit}
                     onClick={() => updateSetting({ imageFit: fit })}
-                    className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${
-                      activeSettings.imageFit === fit
-                        ? 'bg-white shadow text-indigo-700'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                    className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${activeSettings.imageFit === fit
+                      ? 'bg-white shadow text-indigo-700'
+                      : 'text-gray-600 hover:text-gray-900'
+                      }`}
                   >
                     {fit}
                   </button>
@@ -1311,14 +1312,12 @@ export default function App() {
                     onChange={(e) => updateSetting({ deviceFrame: e.target.checked })}
                   />
                   <div
-                    className={`block w-10 h-6 rounded-full transition-colors ${
-                      activeSettings.deviceFrame ? 'bg-indigo-600' : 'bg-gray-300'
-                    }`}
+                    className={`block w-10 h-6 rounded-full transition-colors ${activeSettings.deviceFrame ? 'bg-indigo-600' : 'bg-gray-300'
+                      }`}
                   />
                   <div
-                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
-                      activeSettings.deviceFrame ? 'translate-x-4' : ''
-                    }`}
+                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${activeSettings.deviceFrame ? 'translate-x-4' : ''
+                      }`}
                   />
                 </div>
               </label>
@@ -1364,11 +1363,10 @@ export default function App() {
                   <button
                     key={angle}
                     onClick={() => updateSetting({ deviceRotation: angle })}
-                    className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
-                      activeSettings.deviceRotation === angle
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
+                    className={`py-2 rounded-xl text-xs font-medium border transition-colors ${activeSettings.deviceRotation === angle
+                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
                   >
                     {angle}°
                   </button>
@@ -1570,11 +1568,10 @@ export default function App() {
               <button
                 onClick={exportCurrent}
                 disabled={!hasSlides || isExporting}
-                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
-                  !hasSlides
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
-                }`}
+                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
+                  }`}
               >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
                 Export Current
@@ -1582,11 +1579,10 @@ export default function App() {
               <button
                 onClick={exportAll}
                 disabled={!hasSlides || isExporting}
-                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
-                  !hasSlides
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
-                }`}
+                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
+                  }`}
               >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                 Export All (PNGs)
@@ -1594,11 +1590,10 @@ export default function App() {
               <button
                 onClick={exportZip}
                 disabled={!hasSlides || isExporting}
-                className={`px-4 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${
-                  !hasSlides
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md active:scale-95'
-                }`}
+                className={`px-4 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md active:scale-95'
+                  }`}
               >
                 {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Archive size={16} />}
                 Export ZIP
@@ -1608,9 +1603,8 @@ export default function App() {
         </div>
 
         <div
-          className={`flex-1 overflow-auto relative p-8 transition-colors ${
-            isFileDragging ? 'bg-indigo-50' : 'bg-gray-100'
-          }`}
+          className={`flex-1 overflow-auto relative p-8 transition-colors ${isFileDragging ? 'bg-indigo-50' : 'bg-gray-100'
+            }`}
           ref={containerRef}
           onDragOver={(e) => { e.preventDefault(); setIsFileDragging(true); }}
           onDragLeave={() => setIsFileDragging(false)}
@@ -1670,11 +1664,10 @@ export default function App() {
               <div
                 key={s.id}
                 onClick={() => setActiveIndex(i)}
-                className={`relative h-24 w-16 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 transition-all group ${
-                  i === activeIndex
-                    ? 'border-indigo-600 shadow-md scale-105'
-                    : 'border-transparent opacity-60 hover:opacity-100'
-                }`}
+                className={`relative h-24 w-16 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 transition-all group ${i === activeIndex
+                  ? 'border-indigo-600 shadow-md scale-105'
+                  : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
               >
                 <img src={s.url} className="w-full h-full object-cover" alt={`Slide ${i + 1}`} />
                 <button
@@ -1764,15 +1757,13 @@ export default function App() {
                 </label>
                 <button
                   onClick={() => setDragMode((v) => !v)}
-                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${
-                    dragMode ? 'bg-indigo-600' : 'bg-gray-300'
-                  }`}
+                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${dragMode ? 'bg-indigo-600' : 'bg-gray-300'
+                    }`}
                   title={dragMode ? 'Disable drag mode' : 'Enable drag mode'}
                 >
                   <span
-                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${
-                      dragMode ? 'translate-x-4' : 'translate-x-0'
-                    }`}
+                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${dragMode ? 'translate-x-4' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
@@ -1848,8 +1839,8 @@ export default function App() {
 
       {/* Hidden export layer */}
       <div
-        className="fixed top-0 left-0 pointer-events-none"
-        style={{ zIndex: 0, visibility: 'hidden' }}
+        className="fixed top-0 pointer-events-none"
+        style={{ left: '-9999px', zIndex: 0 }}
         aria-hidden="true"
       >
         {screenshots.map((s) => (
