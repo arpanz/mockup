@@ -1,16 +1,16 @@
 {
   "name": "Gravity – Weight Tracker",
-  "description": "App Store launch preset for Gravity. Backgrounds always contrast the screenshot theme — dark ss on light bg, light ss on dark bg.",
-  "defaultTitle": "Your weight is a [accent]trend[/accent], not a number",
-  "defaultSubtitle": "Smart weight tracking that cuts through the noise",
+  "description": "App Store launch preset for Gravity. Dark ss on light bg, light ss on dark bg. Titles inspired by existing Play Store listing.",
+  "defaultTitle": "Track [accent]trends[/accent]\nNot fluctuations",
+  "defaultSubtitle": "Smart weight tracking that focuses on what matters",
   "settings": {
-    "background": "linear-gradient(160deg, #F8FAFC 0%, #EEF2F7 100%)",
+    "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
     "titleColor": "#0F172A",
     "accentColor": "#2563EB",
     "subtitleColor": "#475569",
     "layout": "text-top",
     "phonePositionMode": "half-down",
-    "textAlign": "left",
+    "textAlign": "center",
     "deviceAlign": "center",
     "deviceFrame": true,
     "imageFit": "cover",
@@ -31,79 +31,86 @@
   "slides": [
     {
       "index": 0,
-      "title": "Your weight is a [accent]trend[/accent], not a number",
-      "subtitle": "See through daily noise. Track what actually matters.",
+      "title": "Track [accent]trends[/accent]\nNot fluctuations",
+      "subtitle": "Daily weight swings are noise. Gravity shows you the real signal.",
       "settingsOverrides": {
         "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
         "titleColor": "#0F172A",
         "accentColor": "#2563EB",
-        "subtitleColor": "#475569"
+        "subtitleColor": "#475569",
+        "textAlign": "center"
       }
     },
     {
       "index": 1,
-      "title": "[accent]Smart summaries[/accent] every week",
-      "subtitle": "Plain-language insights so you always know where you stand.",
+      "title": "Log in [accent]Seconds[/accent]",
+      "subtitle": "Weight, sleep, meals & activity — captured in one quick tap.",
       "settingsOverrides": {
         "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
         "titleColor": "#0F172A",
         "accentColor": "#2563EB",
-        "subtitleColor": "#475569"
+        "subtitleColor": "#475569",
+        "textAlign": "center"
       }
     },
     {
       "index": 2,
-      "title": "Log in [accent]seconds[/accent], with context",
-      "subtitle": "Weight + sleep, meals & activity tags in one quick step.",
+      "title": "See [accent]Progress[/accent]\nOver Time",
+      "subtitle": "A smooth moving average cuts through the noise every time.",
       "settingsOverrides": {
         "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
         "titleColor": "#0F172A",
         "accentColor": "#2563EB",
-        "subtitleColor": "#475569"
+        "subtitleColor": "#475569",
+        "textAlign": "center"
       }
     },
     {
       "index": 3,
-      "title": "See which [accent]habits[/accent] move your weight",
-      "subtitle": "Gravity detects correlations you'd never spot manually.",
+      "title": "Find [accent]Patterns[/accent]\nThat Matter",
+      "subtitle": "Discover which habits actually move your weight. No guessing.",
       "settingsOverrides": {
         "background": "linear-gradient(160deg, #0F172A 0%, #1E293B 60%, #162032 100%)",
         "titleColor": "#F1F5F9",
         "accentColor": "#76A7F7",
-        "subtitleColor": "#94A3B8"
+        "subtitleColor": "#94A3B8",
+        "textAlign": "center"
       }
     },
     {
       "index": 4,
-      "title": "Your full history, [accent]beautifully[/accent] logged",
-      "subtitle": "Every entry. Tagged, timestamped, and swipe-to-edit.",
+      "title": "Your full [accent]history[/accent]\nat a glance",
+      "subtitle": "Every log. Tagged, timestamped, and swipe-to-edit.",
       "settingsOverrides": {
         "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
         "titleColor": "#0F172A",
         "accentColor": "#2563EB",
-        "subtitleColor": "#475569"
+        "subtitleColor": "#475569",
+        "textAlign": "center"
       }
     },
     {
       "index": 5,
-      "title": "Deep data. [accent]Powerful[/accent] insights.",
-      "subtitle": "Time Machine, consistency heatmap & BMI — all in one place.",
+      "title": "Deep [accent]Insights[/accent]\nProven by Data",
+      "subtitle": "Time Machine, heatmap & BMI — all unlocked with Pro.",
       "settingsOverrides": {
         "background": "linear-gradient(160deg, #0F172A 0%, #1E293B 60%, #162032 100%)",
         "titleColor": "#F1F5F9",
         "accentColor": "#76A7F7",
-        "subtitleColor": "#94A3B8"
+        "subtitleColor": "#94A3B8",
+        "textAlign": "center"
       }
     },
     {
       "index": 6,
-      "title": "Where is your weight [accent]heading?[/accent]",
-      "subtitle": "Forecast your goal date. Stay on track, not obsessed.",
+      "title": "Know when you'll [accent]reach your goal[/accent]",
+      "subtitle": "Gravity forecasts your goal date based on your real trend.",
       "settingsOverrides": {
         "background": "linear-gradient(160deg, #F0F4FF 0%, #E8EFFE 100%)",
         "titleColor": "#0F172A",
         "accentColor": "#2563EB",
-        "subtitleColor": "#475569"
+        "subtitleColor": "#475569",
+        "textAlign": "center"
       }
     }
   ]
