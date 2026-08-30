@@ -21,13 +21,44 @@ import {
   FileDown,
   Layers,
   Upload,
+  GripVertical,
+  Check,
+  Undo2,
+  Redo2,
+  Palette,
+  MonitorSmartphone,
+  Grid3X3,
+  Settings2,
+  Save,
+  MousePointer2,
+  Sparkles,
+  X,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  LockKeyholeOpen,
+  PanelLeft,
+  PanelRight,
+  Maximize2,
+  Minimize2,
+  Languages,
+  Library,
+  History,
+  ShieldCheck,
 } from 'lucide-react';
 import type { AppPresetFile, PresetSlide } from './presets/PresetSchema';
 
 type Point = { x: number; y: number };
+type DeviceFrameStyle = 'midnight' | 'graphite' | 'silver' | 'gold' | 'minimal';
+type ExportFormat = 'png' | 'jpeg' | 'webp';
 
 type Settings = {
+  canvasWidth: number;
+  canvasHeight: number;
   background: string;
+  backgroundGradientStart: string;
+  backgroundGradientEnd: string;
+  backgroundGradientAngle: number;
   titleColor: string;
   accentColor: string;
   subtitleColor: string;
@@ -36,13 +67,32 @@ type Settings = {
   textAlign: 'left' | 'center' | 'right';
   deviceAlign: 'left' | 'center' | 'right';
   deviceFrame: boolean;
+  deviceFrameStyle: DeviceFrameStyle;
+  deviceType: 'iphone' | 'android' | 'tablet' | 'laptop' | 'browser';
+  deviceOrientation: 'portrait' | 'landscape';
+  deviceFlipX: boolean;
+  deviceFlipY: boolean;
+  deviceFrameColor: string;
+  deviceFrameEdgeColor: string;
+  deviceCornerRadius: number;
   imageFit: 'cover' | 'contain';
+  screenshotScale: number;
+  screenshotOffsetX: number;
+  screenshotOffsetY: number;
+  screenshotRotation: number;
+  screenshotBrightness: number;
+  screenshotContrast: number;
+  screenshotSaturation: number;
   titleFontFamily: string;
   subtitleFontFamily: string;
   titleFontSize: number;
   subtitleFontSize: number;
   titleFontWeight: number;
   subtitleFontWeight: number;
+  titleLineHeight: number;
+  subtitleLineHeight: number;
+  titleLetterSpacing: number;
+  subtitleLetterSpacing: number;
   textSpacing: number;
   deviceScale: number;
   deviceBorder: number;
@@ -59,7 +109,40 @@ type Screenshot = {
   subtitle: string;
   textOffset: Point;
   deviceOffset: Point;
+  textVisible?: boolean;
+  deviceVisible?: boolean;
+  textLocked?: boolean;
+  deviceLocked?: boolean;
   settingsOverrides?: Partial<Settings>;
+  translations?: Record<string, { title: string; subtitle: string }>;
+};
+
+type EditorSnapshot = {
+  settings: Settings;
+  screenshots: Screenshot[];
+  activeIndex: number;
+};
+
+type BrandKit = {
+  name: string;
+  primary: string;
+  secondary: string;
+  fontFamily: string;
+};
+
+type ProjectVersion = {
+  id: string;
+  name: string;
+  createdAt: number;
+  snapshot: EditorSnapshot;
+};
+
+type LocalProject = EditorSnapshot & {
+  name: string;
+  updatedAt: number;
+  brandKit?: BrandKit;
+  activeLocale?: string;
+  versions?: ProjectVersion[];
 };
 
 type AppPreset = {
@@ -73,6 +156,15 @@ type AppPreset = {
 };
 
 type SectionKey = 'presets' | 'layout' | 'device' | 'typography';
+
+const CANVAS_PRESETS = [
+  { id: 'app-store-67', label: 'App Store 6.7″', width: 1290, height: 2796 },
+  { id: 'app-store-65', label: 'App Store 6.5″', width: 1242, height: 2688 },
+  { id: 'play-store', label: 'Google Play', width: 1080, height: 1920 },
+  { id: 'social-portrait', label: 'Social portrait', width: 1080, height: 1350 },
+  { id: 'square', label: 'Square', width: 1080, height: 1080 },
+  { id: 'landscape', label: 'Web hero', width: 1600, height: 900 },
+] as const;
 
 const BACKGROUNDS = [
   '#d8d8dc',
@@ -100,8 +192,34 @@ const FONT_OPTIONS = [
   { label: 'Outfit', value: "'Outfit', sans-serif" },
 ];
 
+const DEVICE_FRAMES: Array<{
+  id: DeviceFrameStyle;
+  name: string;
+  shell: string;
+  edge: string;
+  island: string;
+}> = [
+  { id: 'midnight', name: 'Midnight', shell: '#09090B', edge: '#27272A', island: '#020203' },
+  { id: 'graphite', name: 'Graphite', shell: '#303238', edge: '#71717A', island: '#111216' },
+  { id: 'silver', name: 'Silver', shell: '#D7D9DD', edge: '#F4F4F5', island: '#151518' },
+  { id: 'gold', name: 'Champagne', shell: '#C7AF86', edge: '#F1E4C9', island: '#17130E' },
+  { id: 'minimal', name: 'Minimal', shell: '#FFFFFF', edge: '#E4E4E7', island: '#18181B' },
+];
+
+const DEVICE_POSES: Array<{ name: string; settings: Partial<Settings> }> = [
+  { name: 'Straight', settings: { deviceRotation: 0, deviceTiltX: 0, deviceTiltY: 0, deviceShadow: 32 } },
+  { name: 'Soft left', settings: { deviceRotation: -6, deviceTiltX: 2, deviceTiltY: -7, deviceShadow: 46 } },
+  { name: 'Soft right', settings: { deviceRotation: 6, deviceTiltX: 2, deviceTiltY: 7, deviceShadow: 46 } },
+  { name: 'Editorial', settings: { deviceRotation: -12, deviceTiltX: 5, deviceTiltY: -10, deviceShadow: 58 } },
+];
+
 const DEFAULT_SETTINGS: Settings = {
+  canvasWidth: 1080,
+  canvasHeight: 1920,
   background: 'linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%)',
+  backgroundGradientStart: '#F8FAFC',
+  backgroundGradientEnd: '#EEF2F7',
+  backgroundGradientAngle: 180,
   titleColor: '#0F172A',
   accentColor: '#2563EB',
   subtitleColor: '#334155',
@@ -110,13 +228,32 @@ const DEFAULT_SETTINGS: Settings = {
   textAlign: 'center',
   deviceAlign: 'center',
   deviceFrame: true,
+  deviceFrameStyle: 'midnight',
+  deviceType: 'iphone',
+  deviceOrientation: 'portrait',
+  deviceFlipX: false,
+  deviceFlipY: false,
+  deviceFrameColor: '#09090B',
+  deviceFrameEdgeColor: '#27272A',
+  deviceCornerRadius: 58,
   imageFit: 'cover',
+  screenshotScale: 100,
+  screenshotOffsetX: 0,
+  screenshotOffsetY: 0,
+  screenshotRotation: 0,
+  screenshotBrightness: 100,
+  screenshotContrast: 100,
+  screenshotSaturation: 100,
   titleFontFamily: "'Inter', sans-serif",
   subtitleFontFamily: "'Inter', sans-serif",
   titleFontSize: 96,
   subtitleFontSize: 43,
   titleFontWeight: 700,
   subtitleFontWeight: 500,
+  titleLineHeight: 1.08,
+  subtitleLineHeight: 1.4,
+  titleLetterSpacing: -1,
+  subtitleLetterSpacing: 0,
   textSpacing: 26,
   deviceScale: 80,
   deviceBorder: 10,
@@ -138,8 +275,9 @@ const DEFAULT_PRESETS: AppPreset[] = [
       titleColor: '#0F172A',
       subtitleColor: '#334155',
       accentColor: '#2563EB',
-      deviceRotation: -4,
-      deviceTiltY: -6,
+      deviceRotation: 0,
+      deviceTiltX: 0,
+      deviceTiltY: 0,
       deviceShadow: 42,
     },
   },
@@ -156,9 +294,9 @@ const DEFAULT_PRESETS: AppPreset[] = [
       accentColor: '#60A5FA',
       titleFontFamily: "'Space Grotesk', sans-serif",
       subtitleFontFamily: "'Inter', sans-serif",
-      deviceRotation: 10,
-      deviceTiltX: 3,
-      deviceTiltY: 8,
+      deviceRotation: 0,
+      deviceTiltX: 0,
+      deviceTiltY: 0,
       deviceShadow: 48,
     },
   },
@@ -175,9 +313,9 @@ const DEFAULT_PRESETS: AppPreset[] = [
       accentColor: '#FDE68A',
       titleFontFamily: "'Outfit', sans-serif",
       subtitleFontFamily: "'DM Sans', sans-serif",
-      deviceRotation: -14,
-      deviceTiltX: 4,
-      deviceTiltY: -10,
+      deviceRotation: 0,
+      deviceTiltX: 0,
+      deviceTiltY: 0,
       deviceShadow: 56,
     },
   },
@@ -185,8 +323,146 @@ const DEFAULT_PRESETS: AppPreset[] = [
 
 const PRESET_STORAGE_KEY = 'mockup-app-presets-v1';
 const PRESET_SELECTION_KEY = 'mockup-selected-preset-v1';
+const PROJECT_DB_NAME = 'frameflow-projects-v1';
+const PROJECT_STORE_NAME = 'projects';
+const ACTIVE_PROJECT_ID = 'active-project';
+const PRESET_TRANSFORM_MIGRATION_KEY = 'mockup-zero-transform-defaults-v1';
+const BUILT_IN_PRESET_IDS = new Set(DEFAULT_PRESETS.map((preset) => preset.id));
+const ZERO_DEVICE_TRANSFORMS = {
+  deviceRotation: 0,
+  deviceTiltX: 0,
+  deviceTiltY: 0,
+} satisfies Partial<Settings>;
 
 const makeId = () => Math.random().toString(36).slice(2, 11);
+
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result));
+  reader.onerror = () => reject(reader.error ?? new Error('Unable to read file'));
+  reader.readAsDataURL(file);
+});
+
+const convertImageDataUrl = (
+  dataUrl: string,
+  format: Exclude<ExportFormat, 'png'>,
+  quality: number
+) => new Promise<string>((resolve, reject) => {
+  const image = new Image();
+  image.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      reject(new Error('Unable to create export canvas'));
+      return;
+    }
+    if (format === 'jpeg') {
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    context.drawImage(image, 0, 0);
+    resolve(canvas.toDataURL(`image/${format}`, quality));
+  };
+  image.onerror = () => reject(new Error('Unable to convert export image'));
+  image.src = dataUrl;
+});
+
+const sanitizeFilename = (value: string) => value
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9._-]+/g, '-')
+  .replace(/-+/g, '-')
+  .replace(/^-|-$/g, '') || 'frameflow-export';
+
+const openProjectDatabase = () => new Promise<IDBDatabase>((resolve, reject) => {
+  const request = window.indexedDB.open(PROJECT_DB_NAME, 1);
+  request.onupgradeneeded = () => {
+    const database = request.result;
+    if (!database.objectStoreNames.contains(PROJECT_STORE_NAME)) {
+      database.createObjectStore(PROJECT_STORE_NAME);
+    }
+  };
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error ?? new Error('Unable to open local project storage'));
+});
+
+const saveLocalProject = async (project: LocalProject) => {
+  const database = await openProjectDatabase();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(PROJECT_STORE_NAME, 'readwrite');
+    transaction.objectStore(PROJECT_STORE_NAME).put(project, ACTIVE_PROJECT_ID);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error('Unable to save project'));
+  });
+  database.close();
+};
+
+const loadLocalProject = async () => {
+  const database = await openProjectDatabase();
+  const project = await new Promise<LocalProject | undefined>((resolve, reject) => {
+    const transaction = database.transaction(PROJECT_STORE_NAME, 'readonly');
+    const request = transaction.objectStore(PROJECT_STORE_NAME).get(ACTIVE_PROJECT_ID);
+    request.onsuccess = () => resolve(request.result as LocalProject | undefined);
+    request.onerror = () => reject(request.error ?? new Error('Unable to load project'));
+  });
+  database.close();
+  return project;
+};
+
+const createDemoScreen = (variant: number) => {
+  const palettes = [
+    { background: '#F8FAFC', card: '#FFFFFF', accent: '#4F46E5', soft: '#E0E7FF', title: 'Overview' },
+    { background: '#0F172A', card: '#1E293B', accent: '#38BDF8', soft: '#164E63', title: 'Insights' },
+    { background: '#FFF7ED', card: '#FFFFFF', accent: '#F97316', soft: '#FFEDD5', title: 'Activity' },
+  ];
+  const palette = palettes[variant % palettes.length];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="430" height="932" viewBox="0 0 430 932">
+    <rect width="430" height="932" fill="${palette.background}"/>
+    <text x="28" y="62" fill="${palette.title === 'Insights' ? '#F8FAFC' : '#0F172A'}" font-family="Inter,Arial" font-size="26" font-weight="700">${palette.title}</text>
+    <circle cx="382" cy="48" r="20" fill="${palette.soft}"/>
+    <rect x="24" y="94" width="382" height="168" rx="26" fill="${palette.accent}"/>
+    <text x="48" y="135" fill="white" opacity=".78" font-family="Inter,Arial" font-size="13" font-weight="600">THIS MONTH</text>
+    <text x="48" y="194" fill="white" font-family="Inter,Arial" font-size="44" font-weight="750">$24,890</text>
+    <path d="M48 230 C92 190 124 238 164 202 S238 184 276 212 S338 164 382 177" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" opacity=".75"/>
+    <text x="28" y="314" fill="${palette.title === 'Insights' ? '#CBD5E1' : '#334155'}" font-family="Inter,Arial" font-size="17" font-weight="700">Your workspace</text>
+    <rect x="24" y="340" width="180" height="154" rx="22" fill="${palette.card}"/>
+    <rect x="226" y="340" width="180" height="154" rx="22" fill="${palette.card}"/>
+    <circle cx="62" cy="380" r="18" fill="${palette.soft}"/><rect x="48" y="421" width="112" height="12" rx="6" fill="${palette.soft}"/><rect x="48" y="447" width="76" height="10" rx="5" fill="${palette.accent}" opacity=".55"/>
+    <circle cx="264" cy="380" r="18" fill="${palette.soft}"/><rect x="250" y="421" width="112" height="12" rx="6" fill="${palette.soft}"/><rect x="250" y="447" width="88" height="10" rx="5" fill="${palette.accent}" opacity=".55"/>
+    <rect x="24" y="520" width="382" height="244" rx="26" fill="${palette.card}"/>
+    <text x="48" y="562" fill="${palette.title === 'Insights' ? '#F8FAFC' : '#334155'}" font-family="Inter,Arial" font-size="16" font-weight="700">Recent performance</text>
+    <rect x="48" y="600" width="334" height="12" rx="6" fill="${palette.soft}"/><rect x="48" y="600" width="252" height="12" rx="6" fill="${palette.accent}"/>
+    <rect x="48" y="642" width="334" height="12" rx="6" fill="${palette.soft}"/><rect x="48" y="642" width="196" height="12" rx="6" fill="${palette.accent}" opacity=".75"/>
+    <rect x="48" y="684" width="334" height="12" rx="6" fill="${palette.soft}"/><rect x="48" y="684" width="292" height="12" rx="6" fill="${palette.accent}" opacity=".55"/>
+    <rect x="24" y="804" width="382" height="82" rx="24" fill="${palette.card}"/>
+    <circle cx="76" cy="845" r="14" fill="${palette.accent}"/><circle cx="170" cy="845" r="10" fill="${palette.soft}"/><circle cx="264" cy="845" r="10" fill="${palette.soft}"/><circle cx="358" cy="845" r="10" fill="${palette.soft}"/>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+};
+
+const cloneEditorSnapshot = (
+  settings: Settings,
+  screenshots: Screenshot[],
+  activeIndex: number
+): EditorSnapshot => ({
+  settings: { ...settings },
+  screenshots: screenshots.map((slide) => ({
+    ...slide,
+    textOffset: { ...slide.textOffset },
+    deviceOffset: { ...slide.deviceOffset },
+    settingsOverrides: slide.settingsOverrides ? { ...slide.settingsOverrides } : undefined,
+    translations: slide.translations
+      ? Object.fromEntries(Object.entries(slide.translations).map(([locale, copy]) => [locale, { ...copy }]))
+      : undefined,
+  })),
+  activeIndex,
+});
+
+const snapshotsMatch = (a: EditorSnapshot, b: EditorSnapshot) =>
+  JSON.stringify({ settings: a.settings, screenshots: a.screenshots }) ===
+  JSON.stringify({ settings: b.settings, screenshots: b.screenshots });
 
 /** Convert a parsed AppPresetFile JSON into an AppPreset usable by the app */
 function jsonFileToPreset(file: AppPresetFile): AppPreset {
@@ -213,31 +489,40 @@ function validatePresetFile(obj: unknown): obj is AppPresetFile {
 }
 
 const PanelSection = ({
+  id,
   title,
   description,
   open,
   onToggle,
   children,
 }: {
+  id?: string;
   title: string;
   description: string;
   open: boolean;
   onToggle: () => void;
   children: React.ReactNode;
 }) => (
-  <section className="border border-gray-200 rounded-2xl bg-white shadow-sm overflow-hidden">
+  <section
+    id={id}
+    className={`scroll-mt-4 overflow-hidden rounded-2xl border bg-white transition-all ${open
+      ? 'border-slate-200 shadow-[0_8px_30px_rgba(15,23,42,0.06)]'
+      : 'border-slate-200/80 shadow-sm'
+      }`}
+  >
     <button
       type="button"
       onClick={onToggle}
-      className="w-full px-4 py-4 flex items-start justify-between text-left hover:bg-gray-50 transition-colors"
+      aria-expanded={open}
+      className="flex w-full items-start justify-between px-4 py-4 text-left transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500"
     >
       <div>
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        <p className="text-xs text-gray-500 mt-1">{description}</p>
+        <h3 className="text-sm font-bold tracking-tight text-slate-900">{title}</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500">{description}</p>
       </div>
-      <ChevronRight size={18} className={`mt-0.5 text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`} />
+      <ChevronRight size={18} className={`mt-0.5 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-90' : ''}`} />
     </button>
-    {open && <div className="px-4 pb-4 space-y-5">{children}</div>}
+    {open && <div className="space-y-5 border-t border-slate-100 px-4 pb-5 pt-4">{children}</div>}
   </section>
 );
 
@@ -246,17 +531,28 @@ const MockupTemplate = ({
   settings,
   id,
   draggingTarget,
+  selectedLayer,
   onStartDrag,
+  onSelectLayer,
+  showGuides = false,
 }: {
   key?: React.Key;
   screenshot: Screenshot;
   settings: Settings;
   id?: string;
   draggingTarget?: 'text' | 'device' | null;
+  selectedLayer?: 'text' | 'device' | null;
   onStartDrag?: (target: 'text' | 'device', e: React.PointerEvent) => void;
+  onSelectLayer?: (target: 'text' | 'device') => void;
+  showGuides?: boolean;
 }) => {
   const { layout } = settings;
   const dragEnabled = Boolean(onStartDrag);
+  const interactive = Boolean(onSelectLayer);
+  const textVisible = screenshot.textVisible !== false;
+  const deviceVisible = screenshot.deviceVisible !== false;
+  const textLocked = screenshot.textLocked === true;
+  const deviceLocked = screenshot.deviceLocked === true;
   const titleParts = screenshot.title.split(/(\[accent\][\s\S]*?\[\/accent\])/g).filter(Boolean);
   const baseDeviceOffsetY =
     settings.phonePositionMode === 'half-down'
@@ -290,22 +586,38 @@ const MockupTemplate = ({
     }
   };
 
-  const dragClass = dragEnabled ? 'cursor-move touch-none select-none' : '';
+  const interactiveClass = (locked: boolean) =>
+    interactive
+      ? locked
+        ? 'cursor-default select-none'
+        : dragEnabled
+          ? 'cursor-move touch-none select-none'
+          : 'cursor-pointer select-none'
+      : '';
 
-  const TextContent = () => (
+  const TextContent = () => {
+    if (!textVisible) return null;
+    return (
     <div
-      className={`w-full flex flex-col px-16 ${getTextAlignClass()} ${dragClass}`}
-      style={{ transform: `translate(${screenshot.textOffset.x}px, ${screenshot.textOffset.y}px)` }}
-      onPointerDown={dragEnabled ? (e) => onStartDrag?.('text', e) : undefined}
+      className={`w-full flex flex-col px-16 ${getTextAlignClass()} ${interactiveClass(textLocked)}`}
+      style={{
+        transform: `translate(${screenshot.textOffset.x}px, ${screenshot.textOffset.y}px)`,
+        outline: interactive && selectedLayer === 'text' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
+        outlineOffset: interactive && selectedLayer === 'text' ? '10px' : undefined,
+      }}
+      onPointerDown={interactive ? (e) => {
+        onSelectLayer?.('text');
+        if (dragEnabled && !textLocked) onStartDrag?.('text', e);
+      } : undefined}
     >
       <h1
         style={{
           color: settings.titleColor,
           fontSize: `${settings.titleFontSize}px`,
           fontWeight: settings.titleFontWeight,
-          lineHeight: 1.08,
+          lineHeight: settings.titleLineHeight,
           fontFamily: settings.titleFontFamily,
-          letterSpacing: '-0.01em',
+          letterSpacing: `${settings.titleLetterSpacing}px`,
         }}
         className="whitespace-pre-wrap break-words"
       >
@@ -327,7 +639,8 @@ const MockupTemplate = ({
             fontWeight: settings.subtitleFontWeight,
             opacity: 0.9,
             fontFamily: settings.subtitleFontFamily,
-            lineHeight: 1.4,
+            lineHeight: settings.subtitleLineHeight,
+            letterSpacing: `${settings.subtitleLetterSpacing}px`,
             marginTop: `${settings.textSpacing}px`,
           }}
           className="whitespace-pre-wrap break-words"
@@ -336,28 +649,69 @@ const MockupTemplate = ({
         </p>
       )}
     </div>
-  );
+    );
+  };
 
   const DeviceFrame = ({ bleed }: { bleed: 'top' | 'bottom' | 'none' }) => {
     const isBleedBottom = bleed === 'bottom';
     const isBleedTop = bleed === 'top';
     const isNone = bleed === 'none';
-
-    const frameClasses = `relative bg-white overflow-hidden flex-shrink-0 aspect-[9/19.5]
-      ${isBleedBottom ? 'rounded-t-[56px]' : ''}
-      ${isBleedTop ? 'rounded-b-[56px]' : ''}
-      ${isNone ? 'rounded-[56px]' : ''}
-    `;
-
-    const imgClasses = `w-full h-full object-top ${settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'
-      }`;
+    const frame = DEVICE_FRAMES.find((option) => option.id === settings.deviceFrameStyle) ?? DEVICE_FRAMES[0];
+    const outerRadius = Math.max(0, settings.deviceCornerRadius);
+    const innerRadius = Math.max(0, outerRadius - settings.deviceBorder);
+    const radiusForBleed = (radius: number) =>
+      isBleedBottom
+        ? `${radius}px ${radius}px 0 0`
+        : isBleedTop
+          ? `0 0 ${radius}px ${radius}px`
+          : `${radius}px`;
+    const frameColor = settings.deviceFrameColor || frame.shell;
+    const edgeColor = settings.deviceFrameEdgeColor || frame.edge;
+    const imgClasses = `block h-full w-full object-top ${settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'}`;
+    const isLandscapeDevice = settings.deviceOrientation === 'landscape';
+    const portraitRatios: Record<Settings['deviceType'], number> = {
+      iphone: 9 / 19.5,
+      android: 9 / 20,
+      tablet: 3 / 4,
+      laptop: 16 / 10,
+      browser: 16 / 10,
+    };
+    const baseAspectRatio = portraitRatios[settings.deviceType];
+    const deviceAspectRatio = settings.deviceType === 'laptop' || settings.deviceType === 'browser'
+      ? baseAspectRatio
+      : isLandscapeDevice
+        ? 1 / baseAspectRatio
+        : baseAspectRatio;
+    const baseWidth = settings.canvasWidth * (settings.deviceScale / 100);
+    const isWideCanvas = settings.canvasWidth / settings.canvasHeight >= 0.85;
+    const wideCanvasCap = (settings.canvasHeight * (layout === 'centered' ? 0.68 : 0.62)) * deviceAspectRatio;
+    const landscapeCap = Math.min(settings.canvasWidth * 0.9, settings.canvasHeight * 0.62 * deviceAspectRatio);
+    const deviceWidth = isLandscapeDevice
+      ? Math.min(baseWidth, landscapeCap)
+      : isWideCanvas
+        ? Math.min(baseWidth, wideCanvasCap)
+        : baseWidth;
+    const screenshotStyle: React.CSSProperties = {
+      transform: `translate(${settings.screenshotOffsetX}px, ${settings.screenshotOffsetY}px) scale(${settings.screenshotScale / 100}) rotate(${settings.screenshotRotation}deg)`,
+      filter: `brightness(${settings.screenshotBrightness}%) contrast(${settings.screenshotContrast}%) saturate(${settings.screenshotSaturation}%)`,
+      transformOrigin: 'center',
+    };
 
     if (!settings.deviceFrame) {
       return (
         <img
           src={screenshot.url}
-          className={`${frameClasses} ${imgClasses}`}
-          style={{ width: `${settings.deviceScale}%`, ...shadowStyle }}
+          className={`relative flex-shrink-0 overflow-hidden ${imgClasses}`}
+          style={{
+            width: `${deviceWidth}px`,
+            aspectRatio: `${deviceAspectRatio}`,
+            borderRadius: radiusForBleed(outerRadius),
+            ...shadowStyle,
+            outline: interactive && selectedLayer === 'device' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
+            outlineOffset: interactive && selectedLayer === 'device' ? '10px' : undefined,
+            transform: `${screenshotStyle.transform} scaleX(${settings.deviceFlipX ? -1 : 1}) scaleY(${settings.deviceFlipY ? -1 : 1})`,
+            filter: screenshotStyle.filter,
+          }}
           alt="App Screenshot"
         />
       );
@@ -365,34 +719,75 @@ const MockupTemplate = ({
 
     return (
       <div
-        className={`${frameClasses} border-[#161617]`}
+        className="relative flex-shrink-0"
         style={{
-          width: `${settings.deviceScale}%`,
-          borderWidth: `${settings.deviceBorder}px`,
-          ...shadowStyle,
+          width: `${deviceWidth}px`,
+          aspectRatio: `${deviceAspectRatio}`,
+          padding: `${settings.deviceBorder}px`,
+          borderRadius: radiusForBleed(outerRadius),
+          background: `linear-gradient(145deg, ${edgeColor}, ${frameColor} 42%, ${edgeColor} 100%)`,
+          boxShadow: `${shadowStyle.boxShadow}, inset 0 0 0 1px rgba(255,255,255,0.24)`,
+          outline: interactive && selectedLayer === 'device' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
+          outlineOffset: interactive && selectedLayer === 'device' ? '10px' : undefined,
         }}
       >
-        <img src={screenshot.url} className={imgClasses} alt="App Screenshot" />
+        <div
+          className="relative w-full h-full overflow-hidden bg-white"
+          style={{ borderRadius: radiusForBleed(innerRadius) }}
+        >
+          <img src={screenshot.url} className={imgClasses} style={screenshotStyle} alt="App Screenshot" />
+          {!isBleedTop && settings.deviceFrameStyle !== 'minimal' && settings.deviceType === 'iphone' && (
+            <span className="absolute left-1/2 top-3.5 h-6 w-[25%] -translate-x-1/2 rounded-full shadow-sm" style={{ backgroundColor: frame.island }} />
+          )}
+          {!isBleedTop && settings.deviceFrameStyle !== 'minimal' && settings.deviceType === 'android' && (
+            <span className="absolute left-1/2 top-3 h-4 w-4 -translate-x-1/2 rounded-full shadow-sm" style={{ backgroundColor: frame.island }} />
+          )}
+          {settings.deviceType === 'browser' && (
+            <div className="absolute left-0 right-0 top-0 flex h-11 items-center gap-2 border-b border-slate-200 bg-slate-100 px-4">
+              <span className="h-3 w-3 rounded-full bg-red-400" />
+              <span className="h-3 w-3 rounded-full bg-amber-400" />
+              <span className="h-3 w-3 rounded-full bg-emerald-400" />
+              <span className="ml-2 h-6 flex-1 rounded-md bg-white/90" />
+            </div>
+          )}
+        </div>
+        {isNone && settings.deviceFrameStyle !== 'minimal' && (settings.deviceType === 'iphone' || settings.deviceType === 'android') && (
+          <>
+            <span className="absolute -left-[3px] top-[18%] h-20 w-[3px] rounded-l-full" style={{ backgroundColor: frameColor }} />
+            <span className="absolute -left-[3px] top-[28%] h-28 w-[3px] rounded-l-full" style={{ backgroundColor: frameColor }} />
+            <span className="absolute -right-[3px] top-[24%] h-36 w-[3px] rounded-r-full" style={{ backgroundColor: frameColor }} />
+          </>
+        )}
       </div>
     );
   };
 
-  const DeviceWrapper = ({ bleed, className }: { bleed: 'top' | 'bottom' | 'none'; className: string }) => (
+  const DeviceWrapper = ({ bleed, className }: { bleed: 'top' | 'bottom' | 'none'; className: string }) => {
+    if (!deviceVisible) return null;
+    return (
     <div
-      className={`${className} ${dragClass}`}
+      className={`${className} ${interactiveClass(deviceLocked)}`}
       style={{
         transform: `perspective(1600px) translate(${screenshot.deviceOffset.x}px, ${screenshot.deviceOffset.y + baseDeviceOffsetY}px) rotateX(${settings.deviceTiltX}deg) rotateY(${settings.deviceTiltY}deg) rotateZ(${settings.deviceRotation}deg)`,
         transformStyle: 'preserve-3d',
         willChange: 'transform',
       }}
-      onPointerDown={dragEnabled ? (e) => onStartDrag?.('device', e) : undefined}
+      onPointerDown={interactive ? (e) => {
+        onSelectLayer?.('device');
+        if (dragEnabled && !deviceLocked) onStartDrag?.('device', e);
+      } : undefined}
     >
       <DeviceFrame bleed={bleed} />
     </div>
-  );
+    );
+  };
 
   return (
-    <div id={id} className="relative flex flex-col overflow-hidden" style={{ width: 1080, height: 1920, background: settings.background }}>
+    <div
+      id={id}
+      className="relative flex flex-col overflow-hidden"
+      style={{ width: settings.canvasWidth, height: settings.canvasHeight, background: settings.background }}
+    >
       {layout === 'text-top' && (
         <>
           <div className="flex-none pt-24 pb-12 z-10 flex flex-col items-center justify-center w-full">
@@ -428,24 +823,36 @@ const MockupTemplate = ({
         </>
       )}
 
-      {dragEnabled && (
+      {showGuides && (
+        <div className="pointer-events-none absolute inset-0 z-20">
+          <div className="absolute inset-[5%] rounded-sm border-2 border-dashed border-fuchsia-500/70" />
+          <div className="absolute left-1/2 top-0 h-full w-px bg-cyan-500/60" />
+          <div className="absolute left-0 top-1/2 h-px w-full bg-cyan-500/60" />
+        </div>
+      )}
+
+      {interactive && (
         <div className="absolute top-6 right-6 flex gap-2 z-30 pointer-events-none">
-          <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'text'
-              ? 'bg-indigo-600 text-white border-indigo-600'
-              : 'bg-white/90 text-gray-700 border-gray-200'
-              }`}
-          >
-            Text
-          </span>
-          <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'device'
-              ? 'bg-indigo-600 text-white border-indigo-600'
-              : 'bg-white/90 text-gray-700 border-gray-200'
-              }`}
-          >
-            Device
-          </span>
+          {textVisible && (
+            <span
+              className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'text' || selectedLayer === 'text'
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-white/90 text-gray-700 border-gray-200'
+                }`}
+            >
+              Text{textLocked ? ' · Locked' : ''}
+            </span>
+          )}
+          {deviceVisible && (
+            <span
+              className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'device' || selectedLayer === 'device'
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-white/90 text-gray-700 border-gray-200'
+                }`}
+            >
+              Device{deviceLocked ? ' · Locked' : ''}
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -455,13 +862,30 @@ const MockupTemplate = ({
 export default function App() {
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [selectedSlideIds, setSelectedSlideIds] = useState<string[]>([]);
+  const [projectName, setProjectName] = useState('Untitled project');
+  const [brandKit, setBrandKit] = useState<BrandKit>({
+    name: 'My brand',
+    primary: '#2563EB',
+    secondary: '#0F172A',
+    fontFamily: "'Inter', sans-serif",
+  });
+  const [activeLocale, setActiveLocale] = useState('en-US');
+  const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [applyToAll, setApplyToAll] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [dragMode, setDragMode] = useState(true);
   const [draggingTarget, setDraggingTarget] = useState<'text' | 'device' | null>(null);
+  const [draggedSlideId, setDraggedSlideId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [isFileDragging, setIsFileDragging] = useState(false);
   const [jsonImportError, setJsonImportError] = useState<string | null>(null);
+  const [history, setHistory] = useState<{ past: EditorSnapshot[]; future: EditorSnapshot[] }>({
+    past: [],
+    future: [],
+  });
+  const [hasPendingHistory, setHasPendingHistory] = useState(false);
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     presets: true,
     layout: true,
@@ -474,7 +898,18 @@ export default function App() {
       const raw = window.localStorage.getItem(PRESET_STORAGE_KEY);
       if (!raw) return DEFAULT_PRESETS;
       const parsed = JSON.parse(raw) as AppPreset[];
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_PRESETS;
+      if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_PRESETS;
+
+      if (!window.localStorage.getItem(PRESET_TRANSFORM_MIGRATION_KEY)) {
+        window.localStorage.setItem(PRESET_TRANSFORM_MIGRATION_KEY, 'complete');
+        return parsed.map((preset) =>
+          BUILT_IN_PRESET_IDS.has(preset.id)
+            ? { ...preset, settings: { ...preset.settings, ...ZERO_DEVICE_TRANSFORMS } }
+            : preset
+        );
+      }
+
+      return parsed;
     } catch {
       return DEFAULT_PRESETS;
     }
@@ -490,8 +925,28 @@ export default function App() {
   });
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const historyCurrentRef = useRef<EditorSnapshot | null>(null);
+  const historyTimerRef = useRef<number | null>(null);
+  const isRestoringHistoryRef = useRef(false);
+  const skipPresetAutosaveRef = useRef(false);
+  const projectHydratedRef = useRef(false);
+  const projectSaveTimerRef = useRef<number | null>(null);
   const [fitScale, setFitScale] = useState(0.2);
   const [zoomScale, setZoomScale] = useState(0.2);
+  const [exportScale, setExportScale] = useState<1 | 2 | 3>(1);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('png');
+  const [exportQuality, setExportQuality] = useState(0.92);
+  const [transparentExport, setTransparentExport] = useState(false);
+  const [filenamePattern, setFilenamePattern] = useState('{project}-{locale}-{index}-{width}x{height}');
+  const [showGuides, setShowGuides] = useState(false);
+  const [activeTool, setActiveTool] = useState<SectionKey>('presets');
+  const [inspectorTab, setInspectorTab] = useState<'content' | 'position' | 'export'>('content');
+  const [selectedLayer, setSelectedLayer] = useState<'text' | 'device' | null>('device');
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [focusMode, setFocusMode] = useState(false);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [toast, setToast] = useState<{ id: number; message: string; tone: 'success' | 'error' } | null>(null);
   const dragStateRef = useRef<{
     pointerId: number;
     startX: number;
@@ -502,16 +957,107 @@ export default function App() {
   } | null>(null);
 
   const activeScreenshot = screenshots[activeIndex];
+  const localizedActiveScreenshot = activeScreenshot && activeLocale !== 'en-US'
+    ? {
+        ...activeScreenshot,
+        ...(activeScreenshot.translations?.[activeLocale] ?? {
+          title: activeScreenshot.title,
+          subtitle: activeScreenshot.subtitle,
+        }),
+      }
+    : activeScreenshot;
   const hasSlides = screenshots.length > 0;
+  const mediaLibrary = Array.from(
+    new Map<string, Screenshot>(screenshots.map((slide) => [slide.url, slide] as const)).values()
+  );
   const selectedPreset =
     appPresets.find((p) => p.id === selectedPresetId) || appPresets[0] || DEFAULT_PRESETS[0];
   const activeSettings = activeScreenshot
     ? { ...settings, ...activeScreenshot.settingsOverrides }
     : settings;
+  const showLeftPanel = leftPanelOpen && !focusMode;
+  const showRightPanel = rightPanelOpen && !focusMode;
+  const activeCanvasPreset = CANVAS_PRESETS.find((preset) =>
+    preset.width === activeSettings.canvasWidth && preset.height === activeSettings.canvasHeight
+  );
+  const exportChecks = activeScreenshot ? [
+    { ok: activeScreenshot.title.trim().length > 0, label: 'Headline is present' },
+    { ok: activeScreenshot.subtitle.trim().length > 0, label: 'Subtitle is present' },
+    { ok: Boolean(activeCanvasPreset), label: activeCanvasPreset ? `${activeCanvasPreset.label} dimensions` : 'Uses custom dimensions' },
+    { ok: activeSettings.canvasWidth >= 1080 || activeSettings.canvasHeight >= 1080, label: 'High-resolution canvas' },
+  ] : [];
+
+  const notify = useCallback((message: string, tone: 'success' | 'error' = 'success') => {
+    const id = Date.now();
+    setToast({ id, message, tone });
+    window.setTimeout(() => {
+      setToast((current) => current?.id === id ? null : current);
+    }, 3200);
+  }, []);
+
+  useEffect(() => {
+    if (window.innerWidth < 1100) {
+      setLeftPanelOpen(false);
+      setRightPanelOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadLocalProject()
+      .then((project) => {
+        if (cancelled || !project) return;
+        setProjectName(project.name || 'Untitled project');
+        setBrandKit(project.brandKit ?? {
+          name: 'My brand',
+          primary: project.settings?.accentColor ?? '#2563EB',
+          secondary: project.settings?.titleColor ?? '#0F172A',
+          fontFamily: project.settings?.titleFontFamily ?? "'Inter', sans-serif",
+        });
+        setActiveLocale(project.activeLocale ?? 'en-US');
+        setVersions(project.versions ?? []);
+        setSettings({ ...DEFAULT_SETTINGS, ...project.settings });
+        setScreenshots(project.screenshots ?? []);
+        setActiveIndex(Math.max(0, Math.min(project.activeIndex ?? 0, Math.max(0, (project.screenshots?.length ?? 1) - 1))));
+      })
+      .catch((error) => console.warn('Could not restore local project', error))
+      .finally(() => {
+        if (!cancelled) projectHydratedRef.current = true;
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!projectHydratedRef.current) return;
+    if (projectSaveTimerRef.current !== null) window.clearTimeout(projectSaveTimerRef.current);
+    projectSaveTimerRef.current = window.setTimeout(() => {
+      saveLocalProject({
+        name: projectName.trim() || 'Untitled project',
+        settings,
+        screenshots,
+        activeIndex,
+        updatedAt: Date.now(),
+        brandKit,
+        activeLocale,
+        versions,
+      }).catch((error) => {
+        console.warn('Could not autosave project', error);
+        notify('Local storage is full. Export a project backup.', 'error');
+      });
+      projectSaveTimerRef.current = null;
+    }, 500);
+    return () => {
+      if (projectSaveTimerRef.current !== null) {
+        window.clearTimeout(projectSaveTimerRef.current);
+        projectSaveTimerRef.current = null;
+      }
+    };
+  }, [activeIndex, activeLocale, brandKit, notify, projectName, screenshots, settings, versions]);
 
   useEffect(() => {
     const preset = appPresets.find((p) => p.id === selectedPresetId);
     if (!preset) return;
+    skipPresetAutosaveRef.current = true;
     setPresetDraft({
       name: preset.name,
       title: preset.title,
@@ -531,8 +1077,73 @@ export default function App() {
     window.localStorage.setItem(PRESET_SELECTION_KEY, selectedPresetId);
   }, [selectedPresetId]);
 
+  useEffect(() => {
+    if (skipPresetAutosaveRef.current) {
+      skipPresetAutosaveRef.current = false;
+      return;
+    }
+    setAppPresets((prev) =>
+      prev.map((preset) =>
+        preset.id === selectedPresetId
+          ? { ...preset, settings: { ...preset.settings, ...settings } }
+          : preset
+      )
+    );
+  }, [settings, selectedPresetId]);
+
+  useEffect(() => {
+    const next = cloneEditorSnapshot(settings, screenshots, activeIndex);
+    const previous = historyCurrentRef.current;
+
+    if (isRestoringHistoryRef.current) {
+      isRestoringHistoryRef.current = false;
+      historyCurrentRef.current = next;
+      setHasPendingHistory(false);
+      return;
+    }
+
+    if (!previous) {
+      historyCurrentRef.current = next;
+      return;
+    }
+
+    if (snapshotsMatch(previous, next)) {
+      historyCurrentRef.current = next;
+      return;
+    }
+
+    setHasPendingHistory(true);
+    setHistory((current) => current.future.length > 0 ? { ...current, future: [] } : current);
+    if (historyTimerRef.current !== null) window.clearTimeout(historyTimerRef.current);
+    historyTimerRef.current = window.setTimeout(() => {
+      setHistory((current) => ({
+        past: [...current.past, previous].slice(-50),
+        future: [],
+      }));
+      historyCurrentRef.current = next;
+      historyTimerRef.current = null;
+      setHasPendingHistory(false);
+    }, 250);
+
+    return () => {
+      if (historyTimerRef.current !== null) {
+        window.clearTimeout(historyTimerRef.current);
+        historyTimerRef.current = null;
+      }
+    };
+  }, [settings, screenshots, activeIndex]);
+
   const toggleSection = (key: SectionKey) => {
+    setActiveTool(key);
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const focusSection = (key: SectionKey) => {
+    setActiveTool(key);
+    setOpenSections((prev) => ({ ...prev, [key]: true }));
+    window.requestAnimationFrame(() => {
+      document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const updateFitScale = useCallback(() => {
@@ -540,10 +1151,10 @@ export default function App() {
     const { width, height } = containerRef.current.getBoundingClientRect();
     const availableWidth = Math.max(0, width - 64);
     const availableHeight = Math.max(0, height - 64);
-    const scaleX = availableWidth / 1080;
-    const scaleY = availableHeight / 1920;
+    const scaleX = availableWidth / activeSettings.canvasWidth;
+    const scaleY = availableHeight / activeSettings.canvasHeight;
     setFitScale(Math.min(scaleX, scaleY));
-  }, []);
+  }, [activeSettings.canvasHeight, activeSettings.canvasWidth]);
 
   useEffect(() => {
     updateFitScale();
@@ -563,6 +1174,13 @@ export default function App() {
   // Removed faulty useEffect that was revoking blob URLs on every screenshots change
 
   const updateSetting = (updates: Partial<Settings>) => {
+    setAppPresets((prev) =>
+      prev.map((preset) =>
+        preset.id === selectedPresetId
+          ? { ...preset, settings: { ...preset.settings, ...updates } }
+          : preset
+      )
+    );
     if (applyToAll) {
       setSettings((s) => ({ ...s, ...updates }));
       setScreenshots((prev) =>
@@ -712,6 +1330,53 @@ export default function App() {
   };
 
   // ── JSON EXPORT ──────────────────────────────────────────────────────────
+  const handleExportProject = () => {
+    const project: LocalProject = {
+      name: projectName.trim() || 'Untitled project',
+      settings,
+      screenshots,
+      activeIndex,
+      updatedAt: Date.now(),
+      brandKit,
+      activeLocale,
+      versions,
+    };
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'frameflow-project'}.frameflow.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify('Project file exported');
+  };
+
+  const handleProjectImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const project = JSON.parse(String(reader.result)) as Partial<LocalProject>;
+        if (!project.settings || !Array.isArray(project.screenshots)) throw new Error('Invalid project file');
+        setProjectName(project.name || file.name.replace(/\.frameflow\.json$|\.json$/i, ''));
+        setBrandKit(project.brandKit ?? brandKit);
+        setActiveLocale(project.activeLocale ?? 'en-US');
+        setVersions(project.versions ?? []);
+        setSettings({ ...DEFAULT_SETTINGS, ...project.settings });
+        setScreenshots(project.screenshots);
+        setActiveIndex(Math.max(0, Math.min(project.activeIndex ?? 0, Math.max(0, project.screenshots.length - 1))));
+        setSelectedSlideIds([]);
+        notify('Project imported');
+      } catch {
+        notify('That is not a valid Frameflow project', 'error');
+      }
+    };
+    reader.onerror = () => notify('Unable to read the project file', 'error');
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
   const handleExportPresetsJson = () => {
     const exportData: AppPresetFile[] = appPresets.map((p) => ({
       name: p.name,
@@ -736,54 +1401,96 @@ export default function App() {
     e.target.value = '';
   };
 
-  const handleScreenshotReplace = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScreenshotReplace = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0] || !activeScreenshot) return;
     const file = e.target.files[0];
-    const newUrl = URL.createObjectURL(file);
-    setScreenshots((prev) => {
-      const previousUrl = prev[activeIndex]?.url;
-      const next = prev.map((s, i) => (i === activeIndex ? { ...s, url: newUrl } : s));
-      if (previousUrl?.startsWith('blob:') && !next.some((s) => s.url === previousUrl)) {
-        URL.revokeObjectURL(previousUrl);
-      }
-      return next;
-    });
+    try {
+      const newUrl = await readFileAsDataUrl(file);
+      setScreenshots((prev) => prev.map((s, i) => (i === activeIndex ? { ...s, url: newUrl } : s)));
+      notify('Screenshot replaced');
+    } catch {
+      notify('Unable to read that image', 'error');
+    }
     e.target.value = '';
   };
 
-  const addImages = (files: File[]) => {
+  const addImages = async (files: File[]) => {
     if (files.length === 0) return;
     const preset = selectedPreset || DEFAULT_PRESETS[0];
-    setScreenshots((prev) => {
-      const newScreenshots: Screenshot[] = files.map((file, fileIdx) => {
-        const slideIndex = prev.length + fileIdx;
-        // Use per-slide copy from JSON if available
-        const slideData = preset.slides?.find((s) => s.index === slideIndex) ??
-          preset.slides?.[slideIndex];
-        return {
-          id: makeId(),
-          url: URL.createObjectURL(file),
-          title: slideData?.title ?? preset.title,
-          subtitle: slideData?.subtitle ?? preset.subtitle,
-          textOffset: { x: 0, y: 0 },
-          deviceOffset: { x: 0, y: 0 },
-          settingsOverrides: slideData?.settingsOverrides
-            ? { ...preset.settings, ...slideData.settingsOverrides }
-            : { ...preset.settings },
-        };
+    try {
+      const urls = await Promise.all(files.map(readFileAsDataUrl));
+      setScreenshots((prev) => {
+        const newScreenshots: Screenshot[] = urls.map((url, fileIdx) => {
+          const slideIndex = prev.length + fileIdx;
+          const slideData = preset.slides?.find((s) => s.index === slideIndex) ?? preset.slides?.[slideIndex];
+          return {
+            id: makeId(),
+            url,
+            title: slideData?.title ?? preset.title,
+            subtitle: slideData?.subtitle ?? preset.subtitle,
+            textOffset: { x: 0, y: 0 },
+            deviceOffset: { x: 0, y: 0 },
+            settingsOverrides: slideData?.settingsOverrides
+              ? { ...preset.settings, ...slideData.settingsOverrides }
+              : { ...preset.settings },
+          };
+        });
+        if (prev.length === 0) setActiveIndex(0);
+        return [...prev, ...newScreenshots];
       });
-      if (prev.length === 0) setActiveIndex(0);
-      return [...prev, ...newScreenshots];
-    });
+      notify(`${files.length} screenshot${files.length === 1 ? '' : 's'} added`);
+    } catch {
+      notify('One or more images could not be read', 'error');
+    }
+  };
+
+  const createDemoProject = () => {
+    const demoSlides: Screenshot[] = [
+      {
+        id: makeId(),
+        url: createDemoScreen(0),
+        title: 'Your work, [accent]beautifully[/accent] organized',
+        subtitle: 'Everything you need to move from idea to impact.',
+        textOffset: { x: 0, y: 0 },
+        deviceOffset: { x: 0, y: 0 },
+        settingsOverrides: { ...selectedPreset.settings },
+      },
+      {
+        id: makeId(),
+        url: createDemoScreen(1),
+        title: 'See the signal, [accent]not the noise[/accent]',
+        subtitle: 'Clear insights that help your team make better decisions.',
+        textOffset: { x: 0, y: 0 },
+        deviceOffset: { x: 0, y: 0 },
+        settingsOverrides: { ...selectedPreset.settings },
+      },
+      {
+        id: makeId(),
+        url: createDemoScreen(2),
+        title: 'Move faster with [accent]one workspace[/accent]',
+        subtitle: 'Plan, collaborate, and ship from anywhere.',
+        textOffset: { x: 0, y: 0 },
+        deviceOffset: { x: 0, y: 0 },
+        settingsOverrides: { ...selectedPreset.settings },
+      },
+    ];
+    setScreenshots(demoSlides);
+    setActiveIndex(0);
+  };
+
+  const clearProject = () => {
+    setScreenshots([]);
+    setActiveIndex(0);
+    setSelectedSlideIds([]);
+    setSelectedLayer(null);
+    setConfirmClearOpen(false);
+    notify('Project cleared');
   };
 
   const removeScreenshot = (id: string) => {
+    setSelectedSlideIds((current) => current.filter((slideId) => slideId !== id));
     setScreenshots((prev) => {
-      const removed = prev.find((s) => s.id === id);
       const filtered = prev.filter((s) => s.id !== id);
-      if (removed?.url.startsWith('blob:') && !filtered.some((s) => s.url === removed.url)) {
-        URL.revokeObjectURL(removed.url);
-      }
       if (activeIndex >= filtered.length) {
         setActiveIndex(Math.max(0, filtered.length - 1));
       }
@@ -807,6 +1514,104 @@ export default function App() {
       return newArr;
     });
     setActiveIndex(activeIndex + 1);
+  };
+
+  const toggleSlideSelection = (id: string) => {
+    setSelectedSlideIds((current) => current.includes(id)
+      ? current.filter((slideId) => slideId !== id)
+      : [...current, id]);
+  };
+
+  const applyStyleToSelectedSlides = () => {
+    if (selectedSlideIds.length === 0) return;
+    setScreenshots((current) => current.map((slide) => selectedSlideIds.includes(slide.id)
+      ? { ...slide, settingsOverrides: { ...activeSettings } }
+      : slide));
+    notify(`Style applied to ${selectedSlideIds.length} selected slide${selectedSlideIds.length === 1 ? '' : 's'}`);
+  };
+
+  const duplicateSelectedSlides = () => {
+    if (selectedSlideIds.length === 0) return;
+    const selected = screenshots.filter((slide) => selectedSlideIds.includes(slide.id));
+    const duplicates = selected.map((slide) => ({
+      ...slide,
+      id: makeId(),
+      textOffset: { ...slide.textOffset },
+      deviceOffset: { ...slide.deviceOffset },
+      settingsOverrides: slide.settingsOverrides ? { ...slide.settingsOverrides } : undefined,
+      translations: slide.translations ? { ...slide.translations } : undefined,
+    }));
+    setScreenshots((current) => [...current, ...duplicates]);
+    setSelectedSlideIds(duplicates.map((slide) => slide.id));
+    notify(`${duplicates.length} slide${duplicates.length === 1 ? '' : 's'} duplicated`);
+  };
+
+  const removeSelectedSlides = () => {
+    if (selectedSlideIds.length === 0) return;
+    setScreenshots((current) => current.filter((slide) => !selectedSlideIds.includes(slide.id)));
+    setSelectedSlideIds([]);
+    setActiveIndex(0);
+    notify('Selected slides removed');
+  };
+
+  const applyBrandKit = () => {
+    updateSetting({
+      accentColor: brandKit.primary,
+      titleColor: brandKit.secondary,
+      titleFontFamily: brandKit.fontFamily,
+      subtitleFontFamily: brandKit.fontFamily,
+    });
+    notify(`${brandKit.name || 'Brand'} styles applied`);
+  };
+
+  const updateCurrentCopy = (field: 'title' | 'subtitle', value: string) => {
+    if (!activeScreenshot) return;
+    if (activeLocale === 'en-US') {
+      updateCurrentScreenshot({ [field]: value });
+      return;
+    }
+    const currentCopy = activeScreenshot.translations?.[activeLocale] ?? {
+      title: activeScreenshot.title,
+      subtitle: activeScreenshot.subtitle,
+    };
+    updateCurrentScreenshot({
+      translations: {
+        ...activeScreenshot.translations,
+        [activeLocale]: { ...currentCopy, [field]: value },
+      },
+    });
+  };
+
+  const saveVersion = () => {
+    const version: ProjectVersion = {
+      id: makeId(),
+      name: `Version ${versions.length + 1}`,
+      createdAt: Date.now(),
+      snapshot: cloneEditorSnapshot(settings, screenshots, activeIndex),
+    };
+    setVersions((current) => [version, ...current].slice(0, 10));
+    notify('Project version saved');
+  };
+
+  const restoreVersion = (version: ProjectVersion) => {
+    restoreSnapshot(version.snapshot);
+    notify(`${version.name} restored`);
+  };
+
+  const moveScreenshot = (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    const activeId = screenshots[activeIndex]?.id;
+    setScreenshots((prev) => {
+      const fromIndex = prev.findIndex((slide) => slide.id === draggedId);
+      const toIndex = prev.findIndex((slide) => slide.id === targetId);
+      if (fromIndex < 0 || toIndex < 0) return prev;
+
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      if (activeId) setActiveIndex(next.findIndex((slide) => slide.id === activeId));
+      return next;
+    });
   };
 
   const updateCurrentScreenshot = (updates: Partial<Screenshot>) => {
@@ -899,48 +1704,197 @@ export default function App() {
     }));
   };
 
+  const restoreSnapshot = useCallback((snapshot: EditorSnapshot) => {
+    if (historyTimerRef.current !== null) {
+      window.clearTimeout(historyTimerRef.current);
+      historyTimerRef.current = null;
+    }
+    isRestoringHistoryRef.current = true;
+    historyCurrentRef.current = cloneEditorSnapshot(snapshot.settings, snapshot.screenshots, snapshot.activeIndex);
+    setSettings({ ...snapshot.settings });
+    setScreenshots(snapshot.screenshots.map((slide) => ({
+      ...slide,
+      textOffset: { ...slide.textOffset },
+      deviceOffset: { ...slide.deviceOffset },
+      settingsOverrides: slide.settingsOverrides ? { ...slide.settingsOverrides } : undefined,
+    })));
+    setActiveIndex(Math.max(0, Math.min(snapshot.activeIndex, snapshot.screenshots.length - 1)));
+    setHasPendingHistory(false);
+  }, []);
+
+  const undo = useCallback(() => {
+    const current = cloneEditorSnapshot(settings, screenshots, activeIndex);
+    const pendingTarget = historyCurrentRef.current;
+
+    if (hasPendingHistory && pendingTarget && !snapshotsMatch(pendingTarget, current)) {
+      setHistory((state) => ({
+        past: state.past,
+        future: [current, ...state.future].slice(0, 50),
+      }));
+      restoreSnapshot(pendingTarget);
+      return;
+    }
+
+    const target = history.past[history.past.length - 1];
+    if (!target) return;
+    setHistory((state) => ({
+      past: state.past.slice(0, -1),
+      future: [current, ...state.future].slice(0, 50),
+    }));
+    restoreSnapshot(target);
+  }, [activeIndex, hasPendingHistory, history.past, restoreSnapshot, screenshots, settings]);
+
+  const redo = useCallback(() => {
+    if (hasPendingHistory) return;
+    const target = history.future[0];
+    if (!target) return;
+    const current = cloneEditorSnapshot(settings, screenshots, activeIndex);
+    setHistory((state) => ({
+      past: [...state.past, current].slice(-50),
+      future: state.future.slice(1),
+    }));
+    restoreSnapshot(target);
+  }, [activeIndex, hasPendingHistory, history.future, restoreSnapshot, screenshots, settings]);
+
+  useEffect(() => {
+    const handleHistoryShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+      if (isTyping || !(event.metaKey || event.ctrlKey)) return;
+
+      if (event.key.toLowerCase() === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+      } else if ((event.key.toLowerCase() === 'z' && event.shiftKey) || event.key.toLowerCase() === 'y') {
+        event.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleHistoryShortcut);
+    return () => window.removeEventListener('keydown', handleHistoryShortcut);
+  }, [redo, undo]);
+
+  useEffect(() => {
+    const handleEditorShortcuts = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.tagName === 'SELECT' || target?.isContentEditable;
+      if (isTyping || !activeScreenshot) return;
+
+      if (event.key === 'Escape') {
+        setSelectedLayer(null);
+        return;
+      }
+
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedLayer) {
+        event.preventDefault();
+        updateCurrentScreenshot(selectedLayer === 'text' ? { textVisible: false } : { deviceVisible: false });
+        notify(`${selectedLayer === 'text' ? 'Text' : 'Device'} layer hidden`);
+        return;
+      }
+
+      if (event.key.startsWith('Arrow') && selectedLayer) {
+        event.preventDefault();
+        const amount = event.shiftKey ? 10 : 1;
+        if (event.key === 'ArrowLeft') nudgeCurrent(selectedLayer, 'x', -amount);
+        if (event.key === 'ArrowRight') nudgeCurrent(selectedLayer, 'x', amount);
+        if (event.key === 'ArrowUp') nudgeCurrent(selectedLayer, 'y', -amount);
+        if (event.key === 'ArrowDown') nudgeCurrent(selectedLayer, 'y', amount);
+      }
+    };
+    window.addEventListener('keydown', handleEditorShortcuts);
+    return () => window.removeEventListener('keydown', handleEditorShortcuts);
+  }, [activeScreenshot, notify, selectedLayer]);
+
+  const buildExportFilename = (slide: Screenshot, index: number, slideSettings: Settings) => {
+    const extension = exportFormat === 'jpeg' ? 'jpg' : exportFormat;
+    const name = filenamePattern
+      .replaceAll('{project}', projectName)
+      .replaceAll('{locale}', activeLocale)
+      .replaceAll('{index}', String(index + 1).padStart(2, '0'))
+      .replaceAll('{width}', String(slideSettings.canvasWidth * exportScale))
+      .replaceAll('{height}', String(slideSettings.canvasHeight * exportScale))
+      .replaceAll('{title}', slide.title.replace(/\[\/?accent\]/g, ''));
+    return `${sanitizeFilename(name)}.${extension}`;
+  };
+
+  const renderSlideForExport = async (slide: Screenshot) => {
+    const node = document.getElementById(`export-${slide.id}`);
+    if (!node) throw new Error('Export node not found');
+    const slideSettings = { ...settings, ...slide.settingsOverrides };
+    const previousBackground = node.style.background;
+    if (transparentExport && exportFormat === 'png') node.style.background = 'transparent';
+    try {
+      const pngUrl = await toPng(node, {
+        width: slideSettings.canvasWidth,
+        height: slideSettings.canvasHeight,
+        pixelRatio: exportScale,
+      });
+      if (exportFormat === 'png') return { dataUrl: pngUrl, slideSettings };
+      return {
+        dataUrl: await convertImageDataUrl(pngUrl, exportFormat, exportQuality),
+        slideSettings,
+      };
+    } finally {
+      node.style.background = previousBackground;
+    }
+  };
+
+  const downloadDataUrl = (dataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataUrl;
+    link.click();
+  };
+
   const exportCurrent = async () => {
     if (!activeScreenshot) return;
     setIsExporting(true);
     try {
-      const node = document.getElementById(`export-${activeScreenshot.id}`);
-      if (!node) throw new Error('Export node not found');
-      const dataUrl = await toPng(node, { width: 1080, height: 1920, pixelRatio: 1 });
-      const link = document.createElement('a');
-      link.download = `mockup-slide-${activeIndex + 1}.png`;
-      link.href = dataUrl;
-      link.click();
+      const { dataUrl, slideSettings } = await renderSlideForExport(activeScreenshot);
+      downloadDataUrl(dataUrl, buildExportFilename(activeScreenshot, activeIndex, slideSettings));
+      notify(`Slide ${activeIndex + 1} exported as ${exportFormat.toUpperCase()}`);
     } catch (err) {
       console.error('Export failed', err);
-      alert('Export failed. Please try again.');
+      notify('Export failed. Please try again.', 'error');
     } finally {
       setIsExporting(false);
     }
   };
 
-  const exportZip = async () => {
-    if (screenshots.length === 0) return;
+  const exportZip = async (selectedOnly = false) => {
+    const exportSlides = selectedOnly
+      ? screenshots.filter((slide) => selectedSlideIds.includes(slide.id))
+      : screenshots;
+    if (exportSlides.length === 0) return;
     setIsExporting(true);
     try {
       const zip = new JSZip();
-      for (let i = 0; i < screenshots.length; i++) {
-        const s = screenshots[i];
-        const node = document.getElementById(`export-${s.id}`);
-        if (!node) continue;
-        const dataUrl = await toPng(node, { width: 1080, height: 1920, pixelRatio: 1 });
-        const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
-        zip.file(`mockup-${i + 1}.png`, base64Data, { base64: true });
+      for (const slide of exportSlides) {
+        const index = screenshots.findIndex((item) => item.id === slide.id);
+        const { dataUrl, slideSettings } = await renderSlideForExport(slide);
+        const base64Data = dataUrl.split(',')[1];
+        const platform = CANVAS_PRESETS.find((preset) => preset.width === slideSettings.canvasWidth && preset.height === slideSettings.canvasHeight)?.id ?? 'custom';
+        zip.file(`${platform}/${activeLocale}/${buildExportFilename(slide, index, slideSettings)}`, base64Data, { base64: true });
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
+      zip.file('export-summary.json', JSON.stringify({
+        project: projectName,
+        locale: activeLocale,
+        format: exportFormat,
+        scale: exportScale,
+        slides: exportSlides.length,
+        exportedAt: new Date().toISOString(),
+      }, null, 2));
       const zipContent = await zip.generateAsync({ type: 'blob' });
       const link = document.createElement('a');
-      link.download = 'mockups.zip';
+      link.download = `${sanitizeFilename(projectName)}-${activeLocale}.zip`;
       link.href = URL.createObjectURL(zipContent);
       link.click();
       setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      notify(`${exportSlides.length} slide${exportSlides.length === 1 ? '' : 's'} packaged as ZIP`);
     } catch (err) {
       console.error('Zip Export failed', err);
-      alert('Zip Export failed. Please try again.');
+      notify('ZIP export failed. Please try again.', 'error');
     } finally {
       setIsExporting(false);
     }
@@ -951,73 +1905,156 @@ export default function App() {
     setIsExporting(true);
     try {
       for (let i = 0; i < screenshots.length; i++) {
-        const s = screenshots[i];
-        const node = document.getElementById(`export-${s.id}`);
-        if (!node) continue;
-        const dataUrl = await toPng(node, { width: 1080, height: 1920, pixelRatio: 1 });
-        const link = document.createElement('a');
-        link.download = `mockup-${i + 1}.png`;
-        link.href = dataUrl;
-        link.click();
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        const slide = screenshots[i];
+        const { dataUrl, slideSettings } = await renderSlideForExport(slide);
+        downloadDataUrl(dataUrl, buildExportFilename(slide, i, slideSettings));
+        await new Promise((resolve) => setTimeout(resolve, 350));
       }
+      notify(`${screenshots.length} ${exportFormat.toUpperCase()} files exported`);
     } catch (err) {
       console.error('Export failed', err);
-      alert('Export failed. Please try again.');
+      notify('Export failed. Please try again.', 'error');
     } finally {
       setIsExporting(false);
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
-      {/* ── LEFT PANEL ── */}
-      <div className="w-96 bg-gray-50 border-r border-gray-200 flex flex-col overflow-y-auto shrink-0">
-        <div className="p-4 space-y-4">
-          {/* Workflow card */}
-          <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white p-5 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-indigo-100">Workflow</p>
-            <h2 className="text-lg font-semibold mt-2">Faster multi-app mockups</h2>
-            <div className="grid grid-cols-2 gap-2 mt-4 text-xs font-medium">
-              <div className="rounded-xl bg-white/10 px-3 py-2">1. Pick a preset</div>
-              <div className="rounded-xl bg-white/10 px-3 py-2">2. Upload shots</div>
-              <div className="rounded-xl bg-white/10 px-3 py-2">3. Tilt & tune</div>
-              <div className="rounded-xl bg-white/10 px-3 py-2">4. Export</div>
+    <div className="app-shell flex h-dvh min-w-0 bg-slate-100 font-sans text-slate-900">
+      {/* ── LEFT CONTROL RAIL ── */}
+      {showLeftPanel && (
+      <aside className="flex w-[300px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/95 xl:w-[320px] 2xl:w-[360px]">
+        <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-200">
+                <MonitorSmartphone size={18} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-extrabold tracking-tight text-slate-950">Frameflow</h1>
+                  <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-600">Studio</span>
+                </div>
+                <p className="text-[11px] text-slate-500">App-store mockups, without the busywork</p>
+              </div>
             </div>
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Saved
+            </span>
           </div>
 
-          {/* Apply-to-all toggle */}
-          <div
-            className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ${applyToAll ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
-              }`}
-          >
+          <nav className="mt-4 grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1" aria-label="Editor tools">
+            {[
+              { key: 'presets' as const, label: 'Presets', icon: Save },
+              { key: 'layout' as const, label: 'Canvas', icon: Layout },
+              { key: 'device' as const, label: 'Device', icon: Smartphone },
+              { key: 'typography' as const, label: 'Type', icon: Type },
+            ].map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => focusSection(key)}
+                className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-[10px] font-semibold transition-all ${activeTool === key
+                  ? 'bg-white text-indigo-700 shadow-sm'
+                  : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
+                  }`}
+              >
+                <Icon size={15} />
+                {label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          {/* Editing scope */}
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <div>
-              <p className={`text-sm font-semibold ${applyToAll ? 'text-indigo-800' : 'text-amber-800'}`}>
-                {applyToAll ? 'Editing all slides' : 'Editing current slide only'}
-              </p>
-              <p className={`text-xs mt-0.5 ${applyToAll ? 'text-indigo-500' : 'text-amber-600'}`}>
-                {applyToAll ? 'Changes apply globally' : 'Only this slide is affected'}
+              <p className="text-xs font-bold text-slate-800">Editing scope</p>
+              <p className={`mt-0.5 text-[11px] font-medium ${applyToAll ? 'text-indigo-600' : 'text-amber-600'}`}>
+                {applyToAll ? 'All slides' : `Slide ${activeIndex + 1} only`}
               </p>
             </div>
             <button
-              onClick={() => setApplyToAll((v) => !v)}
-              className={`relative inline-flex w-11 h-6 rounded-full transition-colors shrink-0 ${applyToAll ? 'bg-indigo-600' : 'bg-amber-400'
-                }`}
+              onClick={() => setApplyToAll((value) => !value)}
+              aria-pressed={applyToAll}
+              className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${applyToAll ? 'bg-indigo-600' : 'bg-amber-400'}`}
+              title="Toggle whether changes apply to every slide"
             >
-              <span
-                className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${applyToAll ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-              />
+              <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${applyToAll ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </div>
 
           {/* Brand Presets */}
           <PanelSection
+            id="section-presets"
             title="Brand Presets"
             description="Switching preset instantly previews that look. Import a JSON file to load a per-app preset."
             open={openSections.presets}
             onToggle={() => toggleSection('presets')}
           >
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Project name</label>
+              <input
+                value={projectName}
+                onChange={(event) => setProjectName(event.target.value)}
+                className="mt-1 w-full bg-transparent text-sm font-bold text-slate-800 outline-none"
+                placeholder="Untitled project"
+              />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                  <Upload size={13} /> Import project
+                  <input type="file" accept=".json,.frameflow.json,application/json" className="hidden" onChange={handleProjectImport} />
+                </label>
+                <button type="button" onClick={handleExportProject} className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-2 py-2 text-xs font-bold text-white hover:bg-indigo-600">
+                  <FileDown size={13} /> Export project
+                </button>
+              </div>
+              <p className="mt-2 text-[10px] leading-relaxed text-slate-400">Autosaved locally. Project files include slides, images, and settings.</p>
+            </div>
+
+            <details className="group rounded-xl border border-slate-200 bg-white">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
+                <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-indigo-500" /> Project tools</span>
+                <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="space-y-4 border-t border-slate-100 p-3">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700"><Palette size={14} /> Brand kit</div>
+                  <input value={brandKit.name} onChange={(event) => setBrandKit((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold outline-none focus:border-indigo-400" aria-label="Brand name" />
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-[10px] font-bold text-slate-500"><input type="color" value={brandKit.primary} onChange={(event) => setBrandKit((current) => ({ ...current, primary: event.target.value }))} className="h-6 w-6" /> Accent</label>
+                    <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-[10px] font-bold text-slate-500"><input type="color" value={brandKit.secondary} onChange={(event) => setBrandKit((current) => ({ ...current, secondary: event.target.value }))} className="h-6 w-6" /> Text</label>
+                  </div>
+                  <select value={brandKit.fontFamily} onChange={(event) => setBrandKit((current) => ({ ...current, fontFamily: event.target.value }))} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold">
+                    {FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
+                  </select>
+                  <button type="button" onClick={applyBrandKit} className="mt-2 w-full rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100">Apply brand to editing scope</button>
+                </div>
+
+                <div className="border-t border-slate-100 pt-3">
+                  <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-700"><Library size={14} /> Media library</span><span className="text-[10px] font-semibold text-slate-400">{mediaLibrary.length} assets</span></div>
+                  {mediaLibrary.length > 0 ? (
+                    <div className="mt-2 grid grid-cols-5 gap-1.5">
+                      {mediaLibrary.slice(0, 10).map((asset) => <button key={asset.url} type="button" onClick={() => updateCurrentScreenshot({ url: asset.url })} className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100 hover:ring-2 hover:ring-indigo-300" title="Use this image"><img src={asset.url} alt="Reusable project asset" className="h-full w-full object-cover" /></button>)}
+                    </div>
+                  ) : <p className="mt-2 text-[11px] text-slate-400">Uploaded screenshots appear here for quick reuse.</p>}
+                </div>
+
+                <div className="border-t border-slate-100 pt-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700"><Languages size={14} /> Localization</div>
+                  <select value={activeLocale} onChange={(event) => setActiveLocale(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold">
+                    <option value="en-US">English (source)</option><option value="fr-FR">French</option><option value="de-DE">German</option><option value="es-ES">Spanish</option><option value="pt-BR">Portuguese (Brazil)</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option>
+                  </select>
+                  <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">Switch locale, then edit copy in the inspector. Source copy is used until a translation changes.</p>
+                </div>
+
+                <div className="border-t border-slate-100 pt-3">
+                  <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-700"><History size={14} /> Versions</span><button type="button" onClick={saveVersion} className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-200">Save version</button></div>
+                  {versions.length > 0 ? <div className="mt-2 space-y-1.5">{versions.slice(0, 4).map((version) => <button type="button" key={version.id} onClick={() => restoreVersion(version)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-2.5 py-2 text-left hover:bg-slate-50"><span className="text-[11px] font-bold text-slate-600">{version.name}</span><span className="text-[9px] text-slate-400">{new Date(version.createdAt).toLocaleDateString()}</span></button>)}</div> : <p className="mt-2 text-[11px] text-slate-400">Save a checkpoint before a major edit.</p>}
+                </div>
+              </div>
+            </details>
+
             <div className="space-y-2">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active Preset</label>
               <select
@@ -1143,14 +2180,78 @@ export default function App() {
 
           {/* Layout */}
           <PanelSection
-            title="Layout"
+            id="section-layout"
+            title="Canvas & Layout"
             description="Control canvas background, content flow, text and device alignment."
             open={openSections.layout}
             onToggle={() => toggleSection('layout')}
           >
             <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <MonitorSmartphone size={16} className="text-indigo-500" /> Output size
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateSetting({ canvasWidth: activeSettings.canvasHeight, canvasHeight: activeSettings.canvasWidth })}
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50"
+                    title="Swap canvas orientation"
+                  >
+                    Rotate
+                  </button>
+                  <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500">
+                    {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {CANVAS_PRESETS.map((preset) => {
+                  const selected = activeSettings.canvasWidth === preset.width && activeSettings.canvasHeight === preset.height;
+                  return (
+                    <button
+                      key={preset.id}
+                      onClick={() => updateSetting({ canvasWidth: preset.width, canvasHeight: preset.height })}
+                      className={`rounded-xl border px-3 py-2.5 text-left transition-all ${selected
+                        ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-100'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                    >
+                      <span className={`block text-xs font-bold ${selected ? 'text-indigo-700' : 'text-slate-700'}`}>{preset.label}</span>
+                      <span className="mt-0.5 block font-mono text-[10px] text-slate-400">{preset.width} × {preset.height}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Width</span>
+                  <input
+                    type="number"
+                    min={320}
+                    max={4096}
+                    value={activeSettings.canvasWidth}
+                    onChange={(e) => updateSetting({ canvasWidth: Math.max(320, Number(e.target.value)) })}
+                    className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                  />
+                </label>
+                <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Height</span>
+                  <input
+                    type="number"
+                    min={320}
+                    max={4096}
+                    value={activeSettings.canvasHeight}
+                    onChange={(e) => updateSetting({ canvasHeight: Math.max(320, Number(e.target.value)) })}
+                    className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="space-y-3">
               <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <ImageIcon size={16} className="text-indigo-500" /> Background
+                <Palette size={16} className="text-indigo-500" /> Background
               </label>
               <div className="grid grid-cols-6 gap-2 mb-3">
                 {BACKGROUNDS.map((bg, i) => (
@@ -1166,6 +2267,52 @@ export default function App() {
                   />
                 ))}
               </div>
+              <details className="group rounded-xl border border-slate-200 bg-slate-50">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-xs font-bold text-slate-600">
+                  Gradient builder
+                  <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+                </summary>
+                <div className="space-y-3 border-t border-slate-200 p-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { label: 'Start', key: 'backgroundGradientStart' as const },
+                      { label: 'End', key: 'backgroundGradientEnd' as const },
+                    ]).map(({ label, key }) => (
+                      <label key={key} className="flex items-center gap-2 rounded-lg bg-white p-2 shadow-sm">
+                        <input
+                          type="color"
+                          value={activeSettings[key]}
+                          onChange={(e) => {
+                            const next = e.target.value;
+                            const start = key === 'backgroundGradientStart' ? next : activeSettings.backgroundGradientStart;
+                            const end = key === 'backgroundGradientEnd' ? next : activeSettings.backgroundGradientEnd;
+                            updateSetting({ [key]: next, background: `linear-gradient(${activeSettings.backgroundGradientAngle}deg, ${start} 0%, ${end} 100%)` });
+                          }}
+                          className="h-7 w-7 rounded-md border-0 bg-transparent p-0"
+                        />
+                        <span className="text-[11px] font-bold text-slate-500">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Angle · {activeSettings.backgroundGradientAngle}°
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      value={activeSettings.backgroundGradientAngle}
+                      onChange={(e) => {
+                        const angle = Number(e.target.value);
+                        updateSetting({
+                          backgroundGradientAngle: angle,
+                          background: `linear-gradient(${angle}deg, ${activeSettings.backgroundGradientStart} 0%, ${activeSettings.backgroundGradientEnd} 100%)`,
+                        });
+                      }}
+                      className="mt-2 w-full"
+                    />
+                  </label>
+                </div>
+              </details>
               <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl bg-gray-50 shadow-sm">
                 <span className="text-sm font-medium text-gray-700">Custom</span>
                 <input
@@ -1289,38 +2436,202 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            <details className="group rounded-xl border border-slate-200 bg-slate-50">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
+                Screenshot crop & adjustments
+                <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+              </summary>
+              <div className="space-y-4 border-t border-slate-200 p-3">
+                {([
+                  { label: 'Zoom', key: 'screenshotScale' as const, min: 50, max: 200, suffix: '%' },
+                  { label: 'Horizontal', key: 'screenshotOffsetX' as const, min: -300, max: 300, suffix: 'px' },
+                  { label: 'Vertical', key: 'screenshotOffsetY' as const, min: -300, max: 300, suffix: 'px' },
+                  { label: 'Rotation', key: 'screenshotRotation' as const, min: -180, max: 180, suffix: '°' },
+                  { label: 'Brightness', key: 'screenshotBrightness' as const, min: 25, max: 175, suffix: '%' },
+                  { label: 'Contrast', key: 'screenshotContrast' as const, min: 25, max: 175, suffix: '%' },
+                  { label: 'Saturation', key: 'screenshotSaturation' as const, min: 0, max: 200, suffix: '%' },
+                ]).map(({ label, key, min, max, suffix }) => (
+                  <label key={key} className="block">
+                    <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                      {label}<span className="font-mono text-slate-600">{activeSettings[key]}{suffix}</span>
+                    </span>
+                    <input type="range" min={min} max={max} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
+                  </label>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => updateSetting({ screenshotScale: 100, screenshotOffsetX: 0, screenshotOffsetY: 0, screenshotRotation: 0, screenshotBrightness: 100, screenshotContrast: 100, screenshotSaturation: 100 })}
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Reset screenshot
+                </button>
+              </div>
+            </details>
           </PanelSection>
 
           {/* Device */}
           <PanelSection
+            id="section-device"
             title="Device"
             description="Scale, frame, rotate, tilt, and shadow for modern-looking mockups."
             open={openSections.device}
             onToggle={() => toggleSection('device')}
           >
             <div className="space-y-3">
-              <label className="flex items-center justify-between cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Device type</p>
+                <p className="mt-0.5 text-xs text-slate-400">Choose the right presentation frame</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { id: 'iphone' as const, label: 'iPhone' },
+                  { id: 'android' as const, label: 'Android' },
+                  { id: 'tablet' as const, label: 'Tablet' },
+                  { id: 'laptop' as const, label: 'Laptop' },
+                  { id: 'browser' as const, label: 'Browser' },
+                ]).map((device) => (
+                  <button
+                    key={device.id}
+                    type="button"
+                    onClick={() => updateSetting({ deviceType: device.id })}
+                    className={`rounded-xl border px-2 py-2.5 text-xs font-bold transition-all ${activeSettings.deviceType === device.id ? 'border-indigo-300 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
+                  >
+                    {device.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Orientation</p>
+                <p className="mt-0.5 text-xs text-slate-400">Rotate or mirror the device</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                {(['portrait', 'landscape'] as const).map((orientation) => (
+                  <button
+                    key={orientation}
+                    type="button"
+                    onClick={() => updateSetting({ deviceOrientation: orientation })}
+                    disabled={activeSettings.deviceType === 'laptop' || activeSettings.deviceType === 'browser'}
+                    className={`rounded-lg py-2 text-xs font-bold capitalize transition-all disabled:cursor-not-allowed disabled:opacity-40 ${activeSettings.deviceOrientation === orientation ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}
+                  >
+                    {orientation}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => updateSetting({ deviceFlipX: !activeSettings.deviceFlipX })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipX ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                  Flip horizontal
+                </button>
+                <button type="button" onClick={() => updateSetting({ deviceFlipY: !activeSettings.deviceFlipY })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipY ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                  Flip vertical
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-700">Device Frame</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Show phone bezel around screenshot</p>
+                  <p className="text-sm font-semibold text-slate-700">Quick poses</p>
+                  <p className="mt-0.5 text-xs text-slate-400">Professional angles in one click</p>
                 </div>
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={activeSettings.deviceFrame}
-                    onChange={(e) => updateSetting({ deviceFrame: e.target.checked })}
-                  />
-                  <div
-                    className={`block w-10 h-6 rounded-full transition-colors ${activeSettings.deviceFrame ? 'bg-indigo-600' : 'bg-gray-300'
-                      }`}
-                  />
-                  <div
-                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${activeSettings.deviceFrame ? 'translate-x-4' : ''
-                      }`}
-                  />
+                <span className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-violet-600">New</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {DEVICE_POSES.map((pose, index) => (
+                  <button
+                    key={pose.name}
+                    onClick={() => updateSetting(pose.settings)}
+                    className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 text-left transition-all hover:border-indigo-300 hover:bg-indigo-50/50"
+                  >
+                    <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200">
+                      <span
+                        className="h-8 w-4 rounded-[4px] border-2 border-slate-700 bg-white shadow-sm transition-transform group-hover:scale-105"
+                        style={{ transform: `rotate(${[-0, -7, 7, -12][index]}deg)` }}
+                      />
+                    </span>
+                    <span className="text-xs font-bold text-slate-700">{pose.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Frame style</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Choose a polished device finish</p>
                 </div>
-              </label>
+                <button
+                  onClick={() => updateSetting({ deviceFrame: !activeSettings.deviceFrame })}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${activeSettings.deviceFrame
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'bg-gray-100 text-gray-500'
+                    }`}
+                >
+                  {activeSettings.deviceFrame ? 'Frame on' : 'Frame off'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {DEVICE_FRAMES.map((frame) => {
+                  const selected = activeSettings.deviceFrame && activeSettings.deviceFrameStyle === frame.id;
+                  return (
+                    <button
+                      key={frame.id}
+                      onClick={() => updateSetting({
+                        deviceFrame: true,
+                        deviceFrameStyle: frame.id,
+                        deviceFrameColor: frame.shell,
+                        deviceFrameEdgeColor: frame.edge,
+                      })}
+                      className={`group relative flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all ${selected
+                        ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-200'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                        }`}
+                    >
+                      <span
+                        className="relative h-12 w-7 shrink-0 rounded-[8px] p-[3px] shadow-sm"
+                        style={{ background: `linear-gradient(145deg, ${frame.edge}, ${frame.shell})` }}
+                      >
+                        <span className="block h-full w-full rounded-[6px] bg-gradient-to-b from-slate-100 to-slate-300" />
+                        {frame.id !== 'minimal' && (
+                          <span className="absolute left-1/2 top-1 -translate-x-1/2 h-1 w-2.5 rounded-full" style={{ backgroundColor: frame.island }} />
+                        )}
+                      </span>
+                      <span className={`text-xs font-semibold ${selected ? 'text-indigo-800' : 'text-gray-700'}`}>
+                        {frame.name}
+                      </span>
+                      {selected && (
+                        <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-white">
+                          <Check size={10} strokeWidth={3} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'Frame', key: 'deviceFrameColor' as const },
+                  { label: 'Edge', key: 'deviceFrameEdgeColor' as const },
+                ].map(({ label, key }) => (
+                  <label key={key} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2.5">
+                    <input
+                      type="color"
+                      value={activeSettings[key]}
+                      onChange={(e) => updateSetting({ [key]: e.target.value })}
+                      className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                      aria-label={`${label} color`}
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
+                      <span className="block truncate font-mono text-[11px] text-gray-600">{activeSettings[key].toUpperCase()}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -1346,6 +2657,30 @@ export default function App() {
                 className="w-full"
                 disabled={!activeSettings.deviceFrame}
               />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Corner curve ({activeSettings.deviceCornerRadius}px)
+                </span>
+                <button
+                  onClick={() => updateSetting({ deviceCornerRadius: DEFAULT_SETTINGS.deviceCornerRadius })}
+                  className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700"
+                >
+                  Reset
+                </button>
+              </div>
+              <input
+                type="range" min={0} max={120}
+                value={activeSettings.deviceCornerRadius}
+                onChange={(e) => updateSetting({ deviceCornerRadius: Number(e.target.value) })}
+                className="w-full"
+              />
+              <div className="flex justify-between text-[10px] text-gray-400">
+                <span>Square</span>
+                <span>Extra round</span>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -1414,6 +2749,7 @@ export default function App() {
 
           {/* Typography */}
           <PanelSection
+            id="section-typography"
             title="Typography"
             description="Tune title and subtitle fonts, sizes, weights, and colors."
             open={openSections.typography}
@@ -1495,6 +2831,28 @@ export default function App() {
                   className="w-full"
                 />
               </div>
+              <details className="group rounded-xl border border-slate-200 bg-slate-50">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
+                  Advanced spacing
+                  <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+                </summary>
+                <div className="space-y-4 border-t border-slate-200 p-3">
+                  {([
+                    { label: 'Title line height', key: 'titleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
+                    { label: 'Subtitle line height', key: 'subtitleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
+                    { label: 'Title tracking', key: 'titleLetterSpacing' as const, min: -8, max: 20, step: 0.5 },
+                    { label: 'Subtitle tracking', key: 'subtitleLetterSpacing' as const, min: -4, max: 20, step: 0.5 },
+                  ]).map(({ label, key, min, max, step }) => (
+                    <label key={key} className="block">
+                      <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                        {label}<span className="font-mono text-slate-600">{activeSettings[key]}</span>
+                      </span>
+                      <input type="range" min={min} max={max} step={step} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
+                    </label>
+                  ))}
+                </div>
+              </details>
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title Weight</span>
@@ -1524,87 +2882,115 @@ export default function App() {
             </div>
           </PanelSection>
         </div>
-      </div>
+      </aside>
+      )}
 
       {/* ── CENTER CANVAS ── */}
-      <div className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-gray-800">Mockup Generator</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {hasSlides && (
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5">
-                <button
-                  onClick={() => setZoomScale((z) => Math.max(0.08, z - 0.03))}
-                  className="p-1.5 rounded hover:bg-white text-gray-600"
-                  title="Zoom out"
-                >
-                  <ZoomOut size={16} />
-                </button>
-                <input
-                  type="range" min={0.08} max={1.1} step={0.01}
-                  value={zoomScale}
-                  onChange={(e) => setZoomScale(Number(e.target.value))}
-                  className="w-28"
-                />
-                <button
-                  onClick={() => setZoomScale((z) => Math.min(1.1, z + 0.03))}
-                  className="p-1.5 rounded hover:bg-white text-gray-600"
-                  title="Zoom in"
-                >
-                  <ZoomIn size={16} />
-                </button>
-                <button
-                  onClick={() => setZoomScale(fitScale)}
-                  className="text-xs font-semibold px-2 py-1 rounded bg-white border border-gray-200 text-gray-700 hover:border-indigo-300"
-                  title="Fit to viewport"
-                >
-                  Fit
-                </button>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
+      <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="z-10 flex h-[72px] shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur-xl">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
               <button
-                onClick={exportCurrent}
-                disabled={!hasSlides || isExporting}
-                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
-                  }`}
+                type="button"
+                onClick={() => setLeftPanelOpen((value) => !value)}
+                className={`rounded-lg p-1.5 transition-colors ${showLeftPanel ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+                title={showLeftPanel ? 'Hide tools panel' : 'Show tools panel'}
               >
-                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
-                Export Current
+                <PanelLeft size={15} />
               </button>
               <button
-                onClick={exportAll}
-                disabled={!hasSlides || isExporting}
-                className={`px-3 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
-                  }`}
+                type="button"
+                onClick={() => setRightPanelOpen((value) => !value)}
+                className={`rounded-lg p-1.5 transition-colors ${showRightPanel ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+                title={showRightPanel ? 'Hide inspector' : 'Show inspector'}
               >
-                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                Export All (PNGs)
+                <PanelRight size={15} />
               </button>
               <button
-                onClick={exportZip}
-                disabled={!hasSlides || isExporting}
-                className={`px-4 py-2 text-sm rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm ${!hasSlides
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md active:scale-95'
-                  }`}
+                type="button"
+                onClick={() => setFocusMode((value) => !value)}
+                className={`rounded-lg p-1.5 transition-colors ${focusMode ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
+                title={focusMode ? 'Exit focus mode' : 'Focus on canvas'}
               >
-                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Archive size={16} />}
-                Export ZIP
+                {focusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
               </button>
             </div>
+            <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+              <span>{selectedPreset.name}</span>
+              <ChevronRight size={12} />
+              <span>Slide {hasSlides ? activeIndex + 1 : 0}</span>
+            </div>
+            <div className="mt-0.5 flex items-center gap-2">
+              <h2 className="truncate text-base font-extrabold tracking-tight text-slate-900">
+                {activeScreenshot?.title.replace(/\[\/?accent\]/g, '') || 'Untitled mockup set'}
+              </h2>
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-500">
+                {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
+              </span>
+            </div>
+            </div>
           </div>
-        </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
+              <button
+                onClick={undo}
+                disabled={history.past.length === 0 && !hasPendingHistory}
+                className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-white hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-30"
+                title="Undo (Ctrl/Cmd + Z)"
+              >
+                <Undo2 size={16} />
+              </button>
+              <button
+                onClick={redo}
+                disabled={history.future.length === 0 || hasPendingHistory}
+                className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-white hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-30"
+                title="Redo (Ctrl/Cmd + Shift + Z)"
+              >
+                <Redo2 size={16} />
+              </button>
+            </div>
+
+            {hasSlides && (
+              <>
+                <button
+                  onClick={() => setShowGuides((value) => !value)}
+                  aria-pressed={showGuides}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${showGuides
+                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  title="Toggle safe-area and center guides"
+                >
+                  <Grid3X3 size={15} /> Guides
+                </button>
+                <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1">
+                  <button onClick={() => setZoomScale((z) => Math.max(0.08, z - 0.03))} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100" title="Zoom out">
+                    <ZoomOut size={15} />
+                  </button>
+                  <span className="w-12 text-center text-[11px] font-bold tabular-nums text-slate-600">{Math.round(zoomScale * 100)}%</span>
+                  <button onClick={() => setZoomScale((z) => Math.min(1.1, z + 0.03))} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100" title="Zoom in">
+                    <ZoomIn size={15} />
+                  </button>
+                  <button onClick={() => setZoomScale(fitScale)} className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50" title="Fit to viewport">Fit</button>
+                </div>
+              </>
+            )}
+
+            <button
+              onClick={exportCurrent}
+              disabled={!hasSlides || isExporting}
+              className="flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-300 transition-all hover:bg-indigo-600 hover:shadow-indigo-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+            >
+              {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Export
+            </button>
+          </div>
+        </header>
 
         <div
-          className={`flex-1 overflow-auto relative p-8 transition-colors ${isFileDragging ? 'bg-indigo-50' : 'bg-gray-100'
-            }`}
+          className={`canvas-workspace relative flex-1 overflow-auto p-8 transition-colors ${isFileDragging ? 'is-dragging' : ''}`}
           ref={containerRef}
           onDragOver={(e) => { e.preventDefault(); setIsFileDragging(true); }}
           onDragLeave={() => setIsFileDragging(false)}
@@ -1617,94 +3003,223 @@ export default function App() {
             }
           }}
         >
+          {hasSlides && (
+            <div className="absolute left-4 top-4 z-20 flex items-center gap-1 rounded-xl border border-slate-200 bg-white/90 p-1 shadow-lg shadow-slate-300/40 backdrop-blur-xl">
+              <button
+                onClick={() => setDragMode(true)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold transition-colors ${dragMode
+                  ? 'bg-slate-950 text-white'
+                  : 'text-slate-500 hover:bg-slate-100'
+                  }`}
+                title="Move text and device directly on the canvas"
+              >
+                <Move size={14} /> Move
+              </button>
+              <button
+                onClick={() => setDragMode(false)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold transition-colors ${!dragMode
+                  ? 'bg-slate-950 text-white'
+                  : 'text-slate-500 hover:bg-slate-100'
+                  }`}
+                title="Lock canvas elements"
+              >
+                <MousePointer2 size={14} /> Select
+              </button>
+            </div>
+          )}
           <div className="min-h-full min-w-full flex items-center justify-center">
             {hasSlides && activeScreenshot ? (
               <div
-                className="shadow-2xl rounded-lg overflow-hidden shrink-0"
-                style={{ width: 1080 * zoomScale, height: 1920 * zoomScale }}
+                className="shrink-0 overflow-hidden rounded-md shadow-[0_24px_80px_rgba(15,23,42,0.20)] ring-1 ring-slate-900/5"
+                style={{
+                  width: activeSettings.canvasWidth * zoomScale,
+                  height: activeSettings.canvasHeight * zoomScale,
+                }}
               >
                 <div
                   style={{
                     transform: `scale(${zoomScale})`,
                     transformOrigin: 'top left',
-                    width: 1080,
-                    height: 1920,
+                    width: activeSettings.canvasWidth,
+                    height: activeSettings.canvasHeight,
                   }}
                 >
                   <MockupTemplate
-                    screenshot={activeScreenshot}
+                    screenshot={localizedActiveScreenshot ?? activeScreenshot}
                     settings={activeSettings}
                     draggingTarget={draggingTarget}
+                    selectedLayer={selectedLayer}
+                    onSelectLayer={setSelectedLayer}
                     onStartDrag={dragMode ? handleStartDrag : undefined}
+                    showGuides={showGuides}
                   />
                 </div>
               </div>
             ) : (
-              <div className="text-center text-gray-400 flex flex-col items-center max-w-md pointer-events-none">
-                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-6">
-                  <ImageIcon size={48} className="text-gray-400" />
+              <div className="pointer-events-none flex max-w-lg flex-col items-center text-center">
+                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-indigo-600 shadow-xl shadow-slate-200 ring-1 ring-slate-200">
+                  <ImageIcon size={32} />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-700 mb-2">Create Professional Mockups</h2>
-                <p className="text-gray-500 mb-2">
-                  Upload screenshots, choose a reusable preset, then tilt and style the phone.
+                <span className="mb-3 rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-600">Start a project</span>
+                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Turn screenshots into launch-ready stories</h2>
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-500">
+                  Drop your app screens here. Frameflow will build editable slides with your active brand preset.
                 </p>
-                <p className="text-sm text-gray-400 mb-8">Drag & drop images anywhere on the canvas.</p>
-                <label className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold cursor-pointer pointer-events-auto hover:bg-indigo-700 transition-colors shadow-lg flex items-center gap-3">
-                  <Plus size={24} /> Upload Screenshots
-                  <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
-                </label>
+                <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                  <label className="pointer-events-auto flex cursor-pointer items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-indigo-600">
+                    <Plus size={17} /> Upload screenshots
+                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={createDemoProject}
+                    className="pointer-events-auto flex items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                  >
+                    <Sparkles size={16} /> Explore demo
+                  </button>
+                </div>
+                <p className="mt-4 text-xs font-medium text-slate-400">You can also drag and drop PNG, JPG, or WebP files anywhere.</p>
+              </div>
+            )}
+            {isFileDragging && (
+              <div className="pointer-events-none absolute inset-5 z-30 flex items-center justify-center rounded-3xl border-2 border-dashed border-indigo-400 bg-indigo-50/90 backdrop-blur-sm">
+                <div className="text-center">
+                  <Upload size={32} className="mx-auto text-indigo-600" />
+                  <p className="mt-3 text-lg font-extrabold text-indigo-900">Drop screenshots to add slides</p>
+                  <p className="mt-1 text-sm text-indigo-600">PNG, JPG, and WebP are supported</p>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        {hasSlides && (
-          <div className="h-36 bg-white border-t border-gray-200 flex items-center px-6 gap-4 overflow-x-auto shrink-0 z-10">
-            {screenshots.map((s, i) => (
-              <div
-                key={s.id}
-                onClick={() => setActiveIndex(i)}
-                className={`relative h-24 w-16 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 transition-all group ${i === activeIndex
-                  ? 'border-indigo-600 shadow-md scale-105'
-                  : 'border-transparent opacity-60 hover:opacity-100'
-                  }`}
-              >
-                <img src={s.url} className="w-full h-full object-cover" alt={`Slide ${i + 1}`} />
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeScreenshot(s.id); }}
-                  className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                  title="Remove"
-                >
-                  <Trash2 size={12} />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] font-bold text-center py-0.5">
-                  {i + 1}
-                </div>
+        {hasSlides && !focusMode && (
+          <div className="z-10 h-40 shrink-0 border-t border-slate-200 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.04)] backdrop-blur-xl">
+            <div className="flex h-9 items-center justify-between px-6 text-[11px] font-semibold text-slate-400">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-2"><GripVertical size={13} /> Scenes · drag to reorder</span>
+                {selectedSlideIds.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-600">{selectedSlideIds.length} selected</span>
+                    <button type="button" onClick={applyStyleToSelectedSlides} className="rounded-md px-2 py-1 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50">Apply style</button>
+                    <button type="button" onClick={duplicateSelectedSlides} className="rounded-md px-2 py-1 text-[10px] font-bold text-slate-500 hover:bg-slate-100">Duplicate</button>
+                    <button type="button" onClick={removeSelectedSlides} className="rounded-md px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-50">Remove</button>
+                    <button type="button" onClick={() => setSelectedSlideIds([])} className="rounded-md px-2 py-1 text-[10px] font-bold text-slate-400 hover:bg-slate-100">Clear</button>
+                  </div>
+                )}
               </div>
-            ))}
-            <label className="h-24 w-16 flex-shrink-0 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-indigo-400 hover:text-indigo-500 transition-colors text-gray-400">
-              <Plus size={24} className="mb-1" />
-              <span className="text-[10px] font-medium">Add More</span>
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
-            </label>
+              <button
+                type="button"
+                onClick={() => setConfirmClearOpen(true)}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              >
+                <X size={12} /> Clear all
+              </button>
+            </div>
+            <div className="flex h-[124px] items-start gap-3 overflow-x-auto px-6 pb-4">
+              {screenshots.map((s, i) => (
+                <div
+                  key={s.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', s.id);
+                    setDraggedSlideId(s.id);
+                    setDropTargetId(null);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (draggedSlideId && draggedSlideId !== s.id) setDropTargetId(s.id);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const draggedId = e.dataTransfer.getData('text/plain') || draggedSlideId;
+                    if (draggedId) moveScreenshot(draggedId, s.id);
+                    setDraggedSlideId(null);
+                    setDropTargetId(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedSlideId(null);
+                    setDropTargetId(null);
+                  }}
+                  onClick={() => setActiveIndex(i)}
+                  className={`group relative h-24 w-16 flex-shrink-0 cursor-grab rounded-xl border-2 bg-white p-1 shadow-sm transition-all active:cursor-grabbing ${i === activeIndex
+                    ? 'border-indigo-600 shadow-md -translate-y-0.5'
+                    : 'border-gray-200 opacity-75 hover:border-gray-300 hover:opacity-100'
+                    } ${draggedSlideId === s.id ? 'opacity-30 scale-95' : ''} ${dropTargetId === s.id ? 'translate-x-2 ring-2 ring-indigo-200' : ''}`}
+                >
+                  <div className="relative h-full w-full overflow-hidden rounded-lg bg-gray-100">
+                    <img src={s.url} className="w-full h-full object-cover pointer-events-none" alt={`Slide ${i + 1}`} />
+                    <button
+                      type="button"
+                      onClick={(event) => { event.stopPropagation(); toggleSlideSelection(s.id); }}
+                      className={`absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full border transition-all ${selectedSlideIds.includes(s.id) ? 'border-indigo-600 bg-indigo-600 text-white opacity-100' : 'border-white/80 bg-slate-950/40 text-transparent opacity-0 group-hover:opacity-100'}`}
+                      title={selectedSlideIds.includes(s.id) ? 'Remove from selection' : 'Select slide'}
+                      draggable={false}
+                    >
+                      <Check size={10} strokeWidth={3} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeScreenshot(s.id); }}
+                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                      title="Remove"
+                      draggable={false}
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 to-transparent pt-4 pb-1 text-white text-[10px] font-bold text-center">
+                      {i + 1}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <label className="flex h-24 w-16 flex-shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-slate-400 transition-colors hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-600">
+                <Plus size={22} className="mb-1" />
+                <span className="text-[10px] font-bold">Add scene</span>
+                <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+            </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* ── RIGHT PANEL ── */}
-      <div className="w-80 bg-white border-l border-gray-200 flex flex-col overflow-y-auto shrink-0">
+      {showRightPanel && (
+      <aside className="flex w-[272px] shrink-0 flex-col overflow-y-auto border-l border-slate-200 bg-white xl:w-[288px] 2xl:w-[320px]">
         {hasSlides && activeScreenshot ? (
-          <div className="p-6 space-y-6">
+          <div className="space-y-5 p-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Slide Content</h2>
-                <p className="text-sm text-gray-500 mt-1">Preset: {selectedPreset.name}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Inspector</p>
+                <h2 className="mt-1 text-base font-extrabold tracking-tight text-slate-900">Slide {activeIndex + 1}</h2>
               </div>
-              <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded">
+              <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
                 {activeIndex + 1} / {screenshots.length}
               </span>
             </div>
 
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
+              {([
+                { id: 'content' as const, label: 'Content', icon: Type },
+                { id: 'position' as const, label: 'Position', icon: MousePointer2 },
+                { id: 'export' as const, label: 'Export', icon: Download },
+              ]).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setInspectorTab(id)}
+                  className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition-all ${inspectorTab === id
+                    ? 'bg-white text-indigo-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                >
+                  <Icon size={13} /> {label}
+                </button>
+              ))}
+            </div>
+
+            {inspectorTab === 'content' && (
+              <>
             <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">Tip</p>
               <p className="text-xs text-indigo-800 mt-1">
@@ -1715,8 +3230,8 @@ export default function App() {
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700">Title</label>
               <textarea
-                value={activeScreenshot.title}
-                onChange={(e) => updateCurrentScreenshot({ title: e.target.value })}
+                value={localizedActiveScreenshot?.title ?? activeScreenshot.title}
+                onChange={(e) => updateCurrentCopy('title', e.target.value)}
                 className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
                 rows={3}
                 placeholder="Enter title... use [accent]word[/accent] for color"
@@ -1726,8 +3241,8 @@ export default function App() {
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700">Subtitle</label>
               <textarea
-                value={activeScreenshot.subtitle}
-                onChange={(e) => updateCurrentScreenshot({ subtitle: e.target.value })}
+                value={localizedActiveScreenshot?.subtitle ?? activeScreenshot.subtitle}
+                onChange={(e) => updateCurrentCopy('subtitle', e.target.value)}
                 className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
                 rows={3}
                 placeholder="Enter subtitle..."
@@ -1749,8 +3264,83 @@ export default function App() {
                 </button>
               </div>
             </div>
+              </>
+            )}
 
-            <div className="border-t border-gray-100 pt-4 space-y-3">
+            {inspectorTab === 'position' && (
+            <>
+              <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="flex items-center justify-between px-1">
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Layers</p>
+                    <p className="mt-0.5 text-[11px] text-slate-400">Select, hide, or lock canvas elements</p>
+                  </div>
+                  <Layers size={16} className="text-indigo-500" />
+                </div>
+                {([
+                  {
+                    id: 'text' as const,
+                    label: 'Headline & subtitle',
+                    icon: Type,
+                    visible: activeScreenshot.textVisible !== false,
+                    locked: activeScreenshot.textLocked === true,
+                  },
+                  {
+                    id: 'device' as const,
+                    label: 'Device mockup',
+                    icon: Smartphone,
+                    visible: activeScreenshot.deviceVisible !== false,
+                    locked: activeScreenshot.deviceLocked === true,
+                  },
+                ]).map((layer) => {
+                  const Icon = layer.icon;
+                  return (
+                    <div
+                      key={layer.id}
+                      className={`flex items-center gap-1 rounded-xl border p-1.5 transition-colors ${selectedLayer === layer.id
+                        ? 'border-indigo-200 bg-indigo-50'
+                        : 'border-slate-200 bg-slate-50/70 hover:bg-slate-50'
+                        }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLayer(layer.id)}
+                        className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left"
+                      >
+                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${selectedLayer === layer.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 shadow-sm'}`}>
+                          <Icon size={14} />
+                        </span>
+                        <span className="truncate text-xs font-bold text-slate-700">{layer.label}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateCurrentScreenshot(layer.id === 'text'
+                            ? { textVisible: !layer.visible }
+                            : { deviceVisible: !layer.visible });
+                          if (!layer.visible) setSelectedLayer(layer.id);
+                        }}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700"
+                        title={layer.visible ? `Hide ${layer.label}` : `Show ${layer.label}`}
+                      >
+                        {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateCurrentScreenshot(layer.id === 'text'
+                          ? { textLocked: !layer.locked }
+                          : { deviceLocked: !layer.locked })}
+                        className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700"
+                        title={layer.locked ? `Unlock ${layer.label}` : `Lock ${layer.label}`}
+                      >
+                        {layer.locked ? <LockKeyhole size={14} /> : <LockKeyholeOpen size={14} />}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <Move size={16} className="text-indigo-500" /> Drag & Position
@@ -1797,6 +3387,90 @@ export default function App() {
                 <LocateFixed size={14} /> Reset Position
               </button>
             </div>
+            </>
+            )}
+
+            {inspectorTab === 'export' && (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <Settings2 size={16} className="text-indigo-500" /> Export quality
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500">Choose a web-ready format or exact store-ready output.</p>
+                  <div className="mt-4 grid grid-cols-3 gap-1 rounded-xl bg-slate-200/60 p-1">
+                    {(['png', 'jpeg', 'webp'] as const).map((format) => (
+                      <button key={format} type="button" onClick={() => setExportFormat(format)} className={`rounded-lg py-2 text-[10px] font-bold uppercase transition-all ${exportFormat === format ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>{format === 'jpeg' ? 'JPG' : format}</button>
+                    ))}
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2 rounded-xl bg-slate-200/60 p-1">
+                    {([1, 2, 3] as const).map((scale) => (
+                      <button
+                        key={scale}
+                        onClick={() => setExportScale(scale)}
+                        className={`rounded-lg py-2 text-xs font-bold transition-all ${exportScale === scale
+                          ? 'bg-white text-indigo-700 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                      >
+                        {scale}× {scale === 1 ? 'Standard' : 'Retina'}
+                      </button>
+                    ))}
+                  </div>
+                  {exportFormat !== 'png' && (
+                    <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Quality · {Math.round(exportQuality * 100)}%
+                      <input type="range" min="0.5" max="1" step="0.01" value={exportQuality} onChange={(event) => setExportQuality(Number(event.target.value))} className="mt-2 w-full" />
+                    </label>
+                  )}
+                  {exportFormat === 'png' && (
+                    <label className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600"><span>Transparent background</span><input type="checkbox" checked={transparentExport} onChange={(event) => setTransparentExport(event.target.checked)} className="h-4 w-4 accent-indigo-600" /></label>
+                  )}
+                  <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Filename template
+                    <input value={filenamePattern} onChange={(event) => setFilenamePattern(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 font-mono text-[10px] normal-case text-slate-600 outline-none focus:border-indigo-400" />
+                  </label>
+                  <p className="mt-1 text-[9px] leading-relaxed text-slate-400">Tokens: {'{project}'} {'{locale}'} {'{index}'} {'{width}'} {'{height}'} {'{title}'}</p>
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500">Preview</span><span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-500">{activeLocale}</span></div>
+                    <p className="mt-2 truncate font-mono text-[10px] font-bold text-slate-700">{buildExportFilename(activeScreenshot, activeIndex, activeSettings)}</p>
+                    <p className="mt-1 font-mono text-[10px] text-slate-400">{activeSettings.canvasWidth * exportScale} × {activeSettings.canvasHeight * exportScale} · {exportFormat.toUpperCase()}</p>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-bold text-slate-800"><ShieldCheck size={16} className="text-indigo-500" /> Readiness</span><span className={`text-[10px] font-bold ${exportChecks.every((check) => check.ok) ? 'text-emerald-600' : 'text-amber-600'}`}>{exportChecks.filter((check) => check.ok).length}/{exportChecks.length}</span></div>
+                  <div className="mt-3 space-y-2">{exportChecks.map((check) => <div key={check.label} className="flex items-center gap-2 text-[11px] font-medium text-slate-600">{check.ok ? <Check size={13} className="text-emerald-500" /> : <X size={13} className="text-amber-500" />} {check.label}</div>)}</div>
+                </div>
+                <button
+                  onClick={exportCurrent}
+                  disabled={isExporting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
+                >
+                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+                  Export current slide
+                </button>
+                <button
+                  onClick={exportAll}
+                  disabled={isExporting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <Download size={16} /> Export all {exportFormat === 'jpeg' ? 'JPGs' : `${exportFormat.toUpperCase()}s`}
+                </button>
+                {selectedSlideIds.length > 0 && (
+                  <button
+                    onClick={() => exportZip(true)}
+                    disabled={isExporting}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <Check size={16} /> Export {selectedSlideIds.length} selected
+                  </button>
+                )}
+                <button
+                  onClick={() => exportZip(false)}
+                  disabled={isExporting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 py-3 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-50"
+                >
+                  <Archive size={16} /> Download organized ZIP
+                </button>
+              </div>
+            )}
 
             <div className="border-t border-gray-100 pt-4 flex justify-between">
               <button
@@ -1835,7 +3509,49 @@ export default function App() {
             </label>
           </div>
         )}
-      </div>
+      </aside>
+      )}
+
+      {toast && (
+        <div
+          role="status"
+          className={`fixed bottom-5 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold shadow-2xl backdrop-blur-xl ${toast.tone === 'success'
+            ? 'border-emerald-200 bg-emerald-50/95 text-emerald-800'
+            : 'border-red-200 bg-red-50/95 text-red-700'
+            }`}
+        >
+          {toast.tone === 'success' ? <Check size={16} /> : <X size={16} />}
+          {toast.message}
+        </div>
+      )}
+
+      {confirmClearOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="clear-project-title">
+          <div className="w-full max-w-sm rounded-3xl border border-white/20 bg-white p-6 shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+              <Trash2 size={20} />
+            </div>
+            <h2 id="clear-project-title" className="mt-4 text-lg font-extrabold tracking-tight text-slate-900">Clear this project?</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">All scenes will be removed from the workspace. You can still use Undo immediately afterward.</p>
+            <div className="mt-6 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmClearOpen(false)}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50"
+              >
+                Keep project
+              </button>
+              <button
+                type="button"
+                onClick={clearProject}
+                className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700"
+              >
+                Clear project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hidden export layer */}
       <div
@@ -1847,7 +3563,10 @@ export default function App() {
           <MockupTemplate
             key={`export-${s.id}`}
             id={`export-${s.id}`}
-            screenshot={s}
+            screenshot={activeLocale === 'en-US' ? s : {
+              ...s,
+              ...(s.translations?.[activeLocale] ?? { title: s.title, subtitle: s.subtitle }),
+            }}
             settings={{ ...settings, ...s.settingsOverrides }}
           />
         ))}

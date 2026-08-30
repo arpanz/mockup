@@ -11,7 +11,12 @@
  */
 
 export type PresetSettings = {
+  canvasWidth?: number;
+  canvasHeight?: number;
   background?: string;
+  backgroundGradientStart?: string;
+  backgroundGradientEnd?: string;
+  backgroundGradientAngle?: number;
   titleColor?: string;
   accentColor?: string;
   subtitleColor?: string;
@@ -20,13 +25,32 @@ export type PresetSettings = {
   textAlign?: 'left' | 'center' | 'right';
   deviceAlign?: 'left' | 'center' | 'right';
   deviceFrame?: boolean;
+  deviceFrameStyle?: 'midnight' | 'graphite' | 'silver' | 'gold' | 'minimal';
+  deviceType?: 'iphone' | 'android' | 'tablet' | 'laptop' | 'browser';
+  deviceOrientation?: 'portrait' | 'landscape';
+  deviceFlipX?: boolean;
+  deviceFlipY?: boolean;
+  deviceFrameColor?: string;
+  deviceFrameEdgeColor?: string;
+  deviceCornerRadius?: number;
   imageFit?: 'cover' | 'contain';
+  screenshotScale?: number;
+  screenshotOffsetX?: number;
+  screenshotOffsetY?: number;
+  screenshotRotation?: number;
+  screenshotBrightness?: number;
+  screenshotContrast?: number;
+  screenshotSaturation?: number;
   titleFontFamily?: string;
   subtitleFontFamily?: string;
   titleFontSize?: number;
   subtitleFontSize?: number;
   titleFontWeight?: number;
   subtitleFontWeight?: number;
+  titleLineHeight?: number;
+  subtitleLineHeight?: number;
+  titleLetterSpacing?: number;
+  subtitleLetterSpacing?: number;
   textSpacing?: number;
   deviceScale?: number;
   deviceBorder?: number;
