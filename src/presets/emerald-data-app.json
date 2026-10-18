@@ -1,0 +1,80 @@
+{
+  "name": "Emerald Wave – Store Listing",
+  "description": "App store listing design with geometric emerald ribbons and 3D fluid wave. High-contrast white and mint typography.",
+  "defaultTitle": "Heavy data?\n[accent]No sweat.[/accent]",
+  "defaultSubtitle": "Opens 1 million+ row files smoothly.",
+  "settings": {
+    "background": "linear-gradient(160deg, #057a44 0%, #046637 45%, #02381e 100%)",
+    "backgroundPattern": "emerald-wave",
+    "titleColor": "#FFFFFF",
+    "accentColor": "#34D399",
+    "subtitleColor": "#D1FAE5",
+    "layout": "text-top",
+    "phonePositionMode": "centered",
+    "textAlign": "center",
+    "deviceAlign": "center",
+    "deviceFrame": true,
+    "deviceType": "android",
+    "deviceFrameStyle": "midnight",
+    "imageFit": "cover",
+    "titleFontFamily": "'Plus Jakarta Sans', sans-serif",
+    "subtitleFontFamily": "'Inter', sans-serif",
+    "titleFontSize": 112,
+    "subtitleFontSize": 46,
+    "titleFontWeight": 800,
+    "subtitleFontWeight": 500,
+    "textSpacing": 26,
+    "deviceScale": 72,
+    "deviceBorder": 10,
+    "deviceRotation": 0,
+    "deviceTiltX": 0,
+    "deviceTiltY": 0,
+    "deviceShadow": 52
+  },
+  "slides": [
+    {
+      "index": 0,
+      "title": "Heavy data?\n[accent]No sweat.[/accent]",
+      "subtitle": "Opens 1 million+ row files smoothly.",
+      "settingsOverrides": {
+        "layout": "text-top",
+        "deviceRotation": 0,
+        "deviceTiltX": 0,
+        "deviceTiltY": 0
+      }
+    },
+    {
+      "index": 1,
+      "title": "Everything you need\nfor [accent]CSVs[/accent].",
+      "subtitle": "Edit, analyze, export, and share with ease.",
+      "settingsOverrides": {
+        "layout": "text-bottom",
+        "deviceRotation": 0,
+        "deviceTiltX": 0,
+        "deviceTiltY": 0
+      }
+    },
+    {
+      "index": 2,
+      "title": "Instant formulas &\n[accent]million-row[/accent] speed",
+      "subtitle": "Blazing-fast calculation engine on any mobile device.",
+      "settingsOverrides": {
+        "layout": "text-top",
+        "deviceRotation": 0,
+        "deviceTiltX": 0,
+        "deviceTiltY": 0
+      }
+    },
+    {
+      "index": 3,
+      "title": "Export to\n[accent]Excel & PDF[/accent]",
+      "subtitle": "Share clean spreadsheets with teammates and clients.",
+      "settingsOverrides": {
+        "layout": "text-bottom",
+        "deviceRotation": 0,
+        "deviceTiltX": 0,
+        "deviceTiltY": 0
+      }
+    }
+  ]
+}

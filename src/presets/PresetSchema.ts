@@ -14,6 +14,11 @@ export type PresetSettings = {
   canvasWidth?: number;
   canvasHeight?: number;
   background?: string;
+  backgroundPattern?: 'none' | 'emerald-wave' | string;
+  backgroundPatternColor?: string;
+  backgroundPatternCornerStart?: string;
+  backgroundPatternCornerEnd?: string;
+  backgroundPatternWaveColor?: string;
   backgroundGradientStart?: string;
   backgroundGradientEnd?: string;
   backgroundGradientAngle?: number;
@@ -21,7 +26,7 @@ export type PresetSettings = {
   accentColor?: string;
   subtitleColor?: string;
   layout?: 'text-top' | 'text-bottom' | 'centered';
-  phonePositionMode?: 'centered' | 'half-down';
+  phonePositionMode?: 'centered' | 'half-down' | 'half-up';
   textAlign?: 'left' | 'center' | 'right';
   deviceAlign?: 'left' | 'center' | 'right';
   deviceFrame?: boolean;

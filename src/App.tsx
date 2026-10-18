@@ -56,6 +56,11 @@ type Settings = {
   canvasWidth: number;
   canvasHeight: number;
   background: string;
+  backgroundPattern?: 'none' | 'emerald-wave' | string;
+  backgroundPatternColor?: string;
+  backgroundPatternCornerStart?: string;
+  backgroundPatternCornerEnd?: string;
+  backgroundPatternWaveColor?: string;
   backgroundGradientStart: string;
   backgroundGradientEnd: string;
   backgroundGradientAngle: number;
@@ -63,7 +68,7 @@ type Settings = {
   accentColor: string;
   subtitleColor: string;
   layout: 'text-top' | 'text-bottom' | 'centered';
-  phonePositionMode: 'centered' | 'half-down';
+  phonePositionMode: 'centered' | 'half-down' | 'half-up';
   textAlign: 'left' | 'center' | 'right';
   deviceAlign: 'left' | 'center' | 'right';
   deviceFrame: boolean;
@@ -171,6 +176,7 @@ const BACKGROUNDS = [
   '#ffffff',
   '#f8fafc',
   '#0f172a',
+  'linear-gradient(160deg, #057a44 0%, #046637 45%, #02381e 100%)',
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
   'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)',
@@ -199,12 +205,12 @@ const DEVICE_FRAMES: Array<{
   edge: string;
   island: string;
 }> = [
-  { id: 'midnight', name: 'Midnight', shell: '#09090B', edge: '#27272A', island: '#020203' },
-  { id: 'graphite', name: 'Graphite', shell: '#303238', edge: '#71717A', island: '#111216' },
-  { id: 'silver', name: 'Silver', shell: '#D7D9DD', edge: '#F4F4F5', island: '#151518' },
-  { id: 'gold', name: 'Champagne', shell: '#C7AF86', edge: '#F1E4C9', island: '#17130E' },
-  { id: 'minimal', name: 'Minimal', shell: '#FFFFFF', edge: '#E4E4E7', island: '#18181B' },
-];
+    { id: 'midnight', name: 'Midnight', shell: '#09090B', edge: '#27272A', island: '#020203' },
+    { id: 'graphite', name: 'Graphite', shell: '#303238', edge: '#71717A', island: '#111216' },
+    { id: 'silver', name: 'Silver', shell: '#D7D9DD', edge: '#F4F4F5', island: '#151518' },
+    { id: 'gold', name: 'Champagne', shell: '#C7AF86', edge: '#F1E4C9', island: '#17130E' },
+    { id: 'minimal', name: 'Minimal', shell: '#FFFFFF', edge: '#E4E4E7', island: '#18181B' },
+  ];
 
 const DEVICE_POSES: Array<{ name: string; settings: Partial<Settings> }> = [
   { name: 'Straight', settings: { deviceRotation: 0, deviceTiltX: 0, deviceTiltY: 0, deviceShadow: 32 } },
@@ -217,6 +223,11 @@ const DEFAULT_SETTINGS: Settings = {
   canvasWidth: 1080,
   canvasHeight: 1920,
   background: 'linear-gradient(180deg, #F8FAFC 0%, #EEF2F7 100%)',
+  backgroundPattern: 'none',
+  backgroundPatternColor: '#009e52',
+  backgroundPatternCornerStart: '#05c065',
+  backgroundPatternCornerEnd: '#00783d',
+  backgroundPatternWaveColor: '#008e49',
   backgroundGradientStart: '#F8FAFC',
   backgroundGradientEnd: '#EEF2F7',
   backgroundGradientAngle: 180,
@@ -317,6 +328,110 @@ const DEFAULT_PRESETS: AppPreset[] = [
       deviceTiltX: 0,
       deviceTiltY: 0,
       deviceShadow: 56,
+    },
+  },
+  {
+    id: 'preset-emerald-flow',
+    name: 'Emerald Flow',
+    title: 'Heavy data? [accent]No sweat.[/accent]',
+    subtitle: 'Opens 1 million+ row files smoothly.',
+    settings: {
+      ...DEFAULT_SETTINGS,
+      background: 'linear-gradient(160deg, #00a455 0%, #00984f 45%, #008746 100%)',
+      backgroundPattern: 'emerald-wave',
+      backgroundPatternColor: '#009e52',
+      backgroundPatternCornerStart: '#05c065',
+      backgroundPatternCornerEnd: '#00783d',
+      backgroundPatternWaveColor: '#008e49',
+      titleColor: '#FFFFFF',
+      subtitleColor: '#E6FBF0',
+      accentColor: '#6EE7B7',
+      titleFontFamily: "'Plus Jakarta Sans', sans-serif",
+      subtitleFontFamily: "'Inter', sans-serif",
+      deviceFrameStyle: 'midnight',
+      deviceType: 'android',
+      deviceRotation: 0,
+      deviceTiltX: 0,
+      deviceTiltY: 0,
+      deviceShadow: 52,
+    },
+  },
+  {
+    id: 'preset-cyber-grid',
+    name: 'Cyber Horizon',
+    title: 'Next-gen [accent]trading[/accent] engine',
+    subtitle: 'Built for precision, sub-millisecond execution.',
+    settings: {
+      ...DEFAULT_SETTINGS,
+      background: 'linear-gradient(160deg, #0a101f 0%, #082f49 45%, #020617 100%)',
+      backgroundPattern: 'cyber-grid',
+      backgroundPatternColor: '#0a101f',
+      backgroundPatternCornerStart: '#06b6d4',
+      backgroundPatternCornerEnd: '#082f49',
+      backgroundPatternWaveColor: '#38bdf8',
+      titleColor: '#FFFFFF',
+      subtitleColor: '#BAE6FD',
+      accentColor: '#38BDF8',
+      titleFontFamily: "'Space Grotesk', sans-serif",
+      subtitleFontFamily: "'Inter', sans-serif",
+      deviceFrameStyle: 'midnight',
+      deviceType: 'iphone',
+      deviceRotation: 0,
+      deviceTiltX: 0,
+      deviceTiltY: 0,
+      deviceShadow: 56,
+    },
+  },
+  {
+    id: 'preset-aurora-glow',
+    name: 'Aurora Mesh',
+    title: 'Experience [accent]pure clarity[/accent]',
+    subtitle: 'Fluid intelligence designed around you.',
+    settings: {
+      ...DEFAULT_SETTINGS,
+      background: 'linear-gradient(160deg, #1a072d 0%, #3b0764 45%, #0f021f 100%)',
+      backgroundPattern: 'aurora-mesh',
+      backgroundPatternColor: '#1a072d',
+      backgroundPatternCornerStart: '#ec4899',
+      backgroundPatternCornerEnd: '#3b0764',
+      backgroundPatternWaveColor: '#c084fc',
+      titleColor: '#FFFFFF',
+      subtitleColor: '#F5D0FE',
+      accentColor: '#F472B6',
+      titleFontFamily: "'Outfit', sans-serif",
+      subtitleFontFamily: "'Inter', sans-serif",
+      deviceFrameStyle: 'silver',
+      deviceType: 'iphone',
+      deviceRotation: 0,
+      deviceTiltX: 0,
+      deviceTiltY: 0,
+      deviceShadow: 54,
+    },
+  },
+  {
+    id: 'preset-glass-orbs',
+    name: 'Glass Spheres',
+    title: 'Smart [accent]wealth[/accent] management',
+    subtitle: 'Track assets, portfolios, and yields in one place.',
+    settings: {
+      ...DEFAULT_SETTINGS,
+      background: 'linear-gradient(160deg, #121212 0%, #292524 45%, #09090b 100%)',
+      backgroundPattern: 'glass-spheres',
+      backgroundPatternColor: '#121212',
+      backgroundPatternCornerStart: '#eab308',
+      backgroundPatternCornerEnd: '#292524',
+      backgroundPatternWaveColor: '#fde047',
+      titleColor: '#FFFFFF',
+      subtitleColor: '#FEF08A',
+      accentColor: '#FACC15',
+      titleFontFamily: "'Plus Jakarta Sans', sans-serif",
+      subtitleFontFamily: "'Inter', sans-serif",
+      deviceFrameStyle: 'gold',
+      deviceType: 'iphone',
+      deviceRotation: 0,
+      deviceTiltX: 0,
+      deviceTiltY: 0,
+      deviceShadow: 50,
     },
   },
 ];
@@ -526,6 +641,902 @@ const PanelSection = ({
   </section>
 );
 
+const DESIGNER_PATTERN_PRESETS = [
+  {
+    id: 'emerald-flow',
+    name: 'Emerald Flow',
+    base: '#009e52',
+    cornerStart: '#05c065',
+    cornerEnd: '#00783d',
+    wave: '#008e49',
+    badge: 'Play Store',
+  },
+  {
+    id: 'cyber-cyan',
+    name: 'Cyber Cyan',
+    base: '#0a101f',
+    cornerStart: '#06b6d4',
+    cornerEnd: '#082f49',
+    wave: '#38bdf8',
+    badge: 'SaaS / Pro',
+  },
+  {
+    id: 'royal-magenta',
+    name: 'Royal Magenta',
+    base: '#1a072d',
+    cornerStart: '#ec4899',
+    cornerEnd: '#3b0764',
+    wave: '#c084fc',
+    badge: 'AI / Creative',
+  },
+  {
+    id: 'sunset-amber',
+    name: 'Sunset Gold',
+    base: '#1c0e1e',
+    cornerStart: '#f59e0b',
+    cornerEnd: '#451a03',
+    wave: '#fb923c',
+    badge: 'Warm / Finance',
+  },
+  {
+    id: 'crimson-ruby',
+    name: 'Crimson Rose',
+    base: '#1f0910',
+    cornerStart: '#f43f5e',
+    cornerEnd: '#4c0519',
+    wave: '#fb7185',
+    badge: 'Fitness',
+  },
+  {
+    id: 'electric-lime',
+    name: 'Acid Lime',
+    base: '#0b1610',
+    cornerStart: '#84cc16',
+    cornerEnd: '#14532d',
+    wave: '#4ade80',
+    badge: 'Gaming',
+  },
+  {
+    id: 'ocean-teal',
+    name: 'Ocean Teal',
+    base: '#041f22',
+    cornerStart: '#14b8a6',
+    cornerEnd: '#042f2e',
+    wave: '#2dd4bf',
+    badge: 'Health',
+  },
+  {
+    id: 'obsidian-gold',
+    name: 'Obsidian Gold',
+    base: '#121212',
+    cornerStart: '#eab308',
+    cornerEnd: '#292524',
+    wave: '#fde047',
+    badge: 'Dark Luxury',
+  },
+];
+
+function hexToHsl(hexColor: string) {
+  const clean = hexColor.replace(/[^0-9a-fA-F]/g, '');
+  const hex = clean.length === 3
+    ? clean.split('').map((c) => c + c).join('')
+    : clean.padEnd(6, '0').slice(0, 6);
+
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
+      case g: h = ((b - r) / d + 2) * 60; break;
+      case b: h = ((r - g) / d + 4) * 60; break;
+    }
+  }
+  return {
+    h: Math.round(h),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100),
+  };
+}
+
+function hslToHex(hue: number, sat: number, lit: number) {
+  lit = Math.max(0, Math.min(100, lit)) / 100;
+  sat = Math.max(0, Math.min(100, sat));
+  const a = (sat * Math.min(lit, 1 - lit)) / 100;
+  const f = (n: number) => {
+    const k = (n + hue / 30) % 12;
+    const color = lit - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function computePatternTones(
+  baseColor: string = '#009e52',
+  cornerStart?: string,
+  cornerEnd?: string,
+  waveColor?: string
+) {
+  const baseHsl = hexToHsl(baseColor);
+
+  const cStartHsl = cornerStart
+    ? hexToHsl(cornerStart)
+    : { h: baseHsl.h, s: baseHsl.s, l: Math.min(56, baseHsl.l + 6) };
+
+  const cEndHsl = cornerEnd
+    ? hexToHsl(cornerEnd)
+    : { h: baseHsl.h, s: baseHsl.s, l: Math.max(20, baseHsl.l - 8) };
+
+  const waveHsl = waveColor
+    ? hexToHsl(waveColor)
+    : { h: baseHsl.h, s: baseHsl.s, l: Math.max(22, baseHsl.l - 4) };
+
+  // 1. Base backdrop tones — smooth, luminous, low-contrast gradient
+  const baseGrad0 = hslToHex(baseHsl.h, baseHsl.s, Math.min(54, baseHsl.l + 3));
+  const baseGrad30 = hslToHex(baseHsl.h, baseHsl.s, Math.min(50, baseHsl.l + 1));
+  const baseGrad65 = hslToHex(baseHsl.h, baseHsl.s, Math.max(24, baseHsl.l - 2));
+  const baseGrad100 = hslToHex(baseHsl.h, baseHsl.s, Math.max(20, baseHsl.l - 5));
+  const glowCenter = hslToHex(baseHsl.h, Math.min(100, baseHsl.s + 8), Math.min(62, baseHsl.l + 8));
+  const glowWave = hslToHex(waveHsl.h, Math.min(100, waveHsl.s + 8), Math.min(62, waveHsl.l + 8));
+
+  // 2. Corner ribbon gradient stops (clean, light emerald facets)
+  const ribbonTop0 = hslToHex(cStartHsl.h, cStartHsl.s, Math.min(58, cStartHsl.l + 3));
+  const ribbonTop60 = hslToHex(cStartHsl.h, cStartHsl.s, cStartHsl.l);
+  const ribbonTop100 = hslToHex(cEndHsl.h, cEndHsl.s, Math.max(23, cEndHsl.l + 3));
+
+  const ribbonMid0 = hslToHex(cStartHsl.h, cStartHsl.s, Math.min(54, cStartHsl.l + 1));
+  const ribbonMid50 = hslToHex(
+    Math.round((cStartHsl.h + cEndHsl.h) / 2),
+    Math.round((cStartHsl.s + cEndHsl.s) / 2),
+    Math.max(25, Math.round((cStartHsl.l + cEndHsl.l) / 2))
+  );
+  const ribbonMid100 = hslToHex(cEndHsl.h, cEndHsl.s, Math.max(22, cEndHsl.l + 1));
+
+  const ribbonLow0 = hslToHex(cStartHsl.h, cStartHsl.s, Math.max(24, cStartHsl.l - 3));
+  const ribbonLow70 = hslToHex(cEndHsl.h, cEndHsl.s, Math.max(22, cEndHsl.l + 2));
+  const ribbonLow100 = hslToHex(cEndHsl.h, cEndHsl.s, Math.max(19, cEndHsl.l - 2));
+
+  const ribbonBottom0 = hslToHex(cStartHsl.h, cStartHsl.s, Math.max(22, cStartHsl.l - 5));
+  const ribbonBottom100 = hslToHex(cEndHsl.h, cEndHsl.s, Math.max(17, cEndHsl.l - 5));
+
+  // 3. 3D Wave body & highlight
+  const waveBody0 = hslToHex(waveHsl.h, waveHsl.s, Math.min(50, waveHsl.l + 3));
+  const waveBody35 = hslToHex(waveHsl.h, waveHsl.s, waveHsl.l);
+  const waveBody75 = hslToHex(waveHsl.h, waveHsl.s, Math.max(22, waveHsl.l - 3));
+  const waveBody100 = hslToHex(waveHsl.h, waveHsl.s, Math.max(18, waveHsl.l - 6));
+  const waveHighlight0 = hslToHex(waveHsl.h, Math.min(100, waveHsl.s + 10), Math.min(76, waveHsl.l + 18));
+  const waveHighlight50 = hslToHex(waveHsl.h, Math.min(100, waveHsl.s + 5), Math.min(68, waveHsl.l + 12));
+  const waveUnderside = hslToHex(waveHsl.h, waveHsl.s, Math.max(14, waveHsl.l - 8));
+  const cornerBalance = hslToHex(cEndHsl.h, cEndHsl.s, Math.max(16, cEndHsl.l - 6));
+
+  const lineStroke1 = hslToHex(cStartHsl.h, Math.min(100, cStartHsl.s + 10), Math.min(78, cStartHsl.l + 18));
+  const lineStroke2 = hslToHex(cStartHsl.h, Math.min(100, cStartHsl.s + 15), Math.min(84, cStartHsl.l + 22));
+
+  return {
+    baseGrad0,
+    baseGrad30,
+    baseGrad65,
+    baseGrad100,
+    glowCenter,
+    glowWave,
+    ribbonTop0,
+    ribbonTop60,
+    ribbonTop100,
+    ribbonMid0,
+    ribbonMid50,
+    ribbonMid100,
+    ribbonLow0,
+    ribbonLow70,
+    ribbonLow100,
+    ribbonBottom0,
+    ribbonBottom100,
+    waveBody0,
+    waveBody35,
+    waveBody75,
+    waveBody100,
+    waveHighlight0,
+    waveHighlight50,
+    waveUnderside,
+    cornerBalance,
+    lineStroke1,
+    lineStroke2,
+    titleColor: '#FFFFFF',
+    subtitleColor: hslToHex(cStartHsl.h, Math.min(60, cStartHsl.s), 94),
+    accentColor: hslToHex(cStartHsl.h, Math.min(100, cStartHsl.s + 20), 72),
+  };
+}
+
+type PatternProps = {
+  idPrefix?: string;
+  baseColor?: string;
+  cornerStart?: string;
+  cornerEnd?: string;
+  waveColor?: string;
+};
+
+const EmeraldWaveBackground = ({
+  idPrefix = 'ew',
+  baseColor = '#009e52',
+  cornerStart,
+  cornerEnd,
+  waveColor,
+}: PatternProps) => {
+  const uid = React.useId().replace(/[:]/g, '');
+  const prefix = `${idPrefix}-${uid}`;
+  const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1080 1920"
+      width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 pointer-events-none select-none"
+      style={{ display: 'block', width: '100%', height: '100%' }}
+    >
+      <defs>
+        <linearGradient id={`${prefix}-base-grad`} x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0%" stopColor={tones.baseGrad0} />
+          <stop offset="35%" stopColor={tones.baseGrad30} />
+          <stop offset="70%" stopColor={tones.baseGrad65} />
+          <stop offset="100%" stopColor={tones.baseGrad100} />
+        </linearGradient>
+
+        <radialGradient id={`${prefix}-glow`} cx="50%" cy="26%" r="55%">
+          <stop offset="0%" stopColor={tones.glowCenter} stopOpacity="0.08" />
+          <stop offset="60%" stopColor={tones.baseGrad30} stopOpacity="0.02" />
+          <stop offset="100%" stopColor={tones.baseGrad65} stopOpacity="0" />
+        </radialGradient>
+
+        <radialGradient id={`${prefix}-wave-glow`} cx="85%" cy="56%" r="38%">
+          <stop offset="0%" stopColor={tones.glowWave} stopOpacity="0.08" />
+          <stop offset="60%" stopColor={tones.baseGrad65} stopOpacity="0.02" />
+          <stop offset="100%" stopColor={tones.baseGrad100} stopOpacity="0" />
+        </radialGradient>
+
+        <filter id={`${prefix}-shadow-1`} x="-20%" y="-20%" width="160%" height="160%">
+          <feDropShadow dx="8" dy="16" stdDeviation="16" floodColor="#000000" floodOpacity="0.22" />
+        </filter>
+        <filter id={`${prefix}-shadow-2`} x="-20%" y="-20%" width="160%" height="160%">
+          <feDropShadow dx="6" dy="12" stdDeviation="14" floodColor="#000000" floodOpacity="0.18" />
+        </filter>
+        <filter id={`${prefix}-shadow-3`} x="-20%" y="-20%" width="160%" height="160%">
+          <feDropShadow dx="4" dy="10" stdDeviation="12" floodColor="#000000" floodOpacity="0.14" />
+        </filter>
+        <filter id={`${prefix}-wave-shadow`} x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="-4" dy="18" stdDeviation="22" floodColor="#000000" floodOpacity="0.22" />
+        </filter>
+
+        <linearGradient id={`${prefix}-ribbon-grad-top`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={tones.ribbonTop0} />
+          <stop offset="60%" stopColor={tones.ribbonTop60} />
+          <stop offset="100%" stopColor={tones.ribbonTop100} />
+        </linearGradient>
+
+        <linearGradient id={`${prefix}-ribbon-grad-mid`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={tones.ribbonMid0} />
+          <stop offset="50%" stopColor={tones.ribbonMid50} />
+          <stop offset="100%" stopColor={tones.ribbonMid100} />
+        </linearGradient>
+
+        <linearGradient id={`${prefix}-ribbon-grad-low`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={tones.ribbonLow0} />
+          <stop offset="70%" stopColor={tones.ribbonLow70} />
+          <stop offset="100%" stopColor={tones.ribbonLow100} />
+        </linearGradient>
+
+        <linearGradient id={`${prefix}-ribbon-grad-bottom`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={tones.ribbonBottom0} />
+          <stop offset="100%" stopColor={tones.ribbonBottom100} />
+        </linearGradient>
+
+        <linearGradient id={`${prefix}-wave-grad-body`} x1="0.1" y1="0.2" x2="0.9" y2="0.8">
+          <stop offset="0%" stopColor={tones.waveBody0} />
+          <stop offset="35%" stopColor={tones.waveBody35} />
+          <stop offset="75%" stopColor={tones.waveBody75} />
+          <stop offset="100%" stopColor={tones.waveBody100} />
+        </linearGradient>
+
+        <linearGradient id={`${prefix}-wave-top-highlight`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={tones.waveHighlight0} stopOpacity="0.45" />
+          <stop offset="45%" stopColor={tones.waveHighlight50} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={tones.glowCenter} stopOpacity="0.05" />
+        </linearGradient>
+      </defs>
+
+      {/* 1. Deep Base Layer */}
+      <rect width="1080" height="1920" fill={`url(#${prefix}-base-grad)`} />
+
+      {/* 2. Ambient Lighting Overlays */}
+      <rect width="1080" height="1920" fill={`url(#${prefix}-glow)`} />
+      <rect width="1080" height="1920" fill={`url(#${prefix}-wave-glow)`} />
+
+      {/* 3. Left Diagonal Ribbons */}
+      <g id={`${prefix}-left-ribbons`}>
+        <polygon
+          points="-60,1440 260,1720 160,1960 -60,1780"
+          fill={`url(#${prefix}-ribbon-grad-bottom)`}
+          filter={`url(#${prefix}-shadow-3)`}
+        />
+        <polygon
+          points="-60,1040 320,1380 200,1640 -60,1360"
+          fill={`url(#${prefix}-ribbon-grad-low)`}
+          filter={`url(#${prefix}-shadow-2)`}
+        />
+        <polygon
+          points="-60,340 310,680 180,920 -60,620"
+          fill={`url(#${prefix}-ribbon-grad-top)`}
+          filter={`url(#${prefix}-shadow-1)`}
+        />
+        <polygon
+          points="-60,620 400,1020 250,1320 -60,960"
+          fill={`url(#${prefix}-ribbon-grad-mid)`}
+          filter={`url(#${prefix}-shadow-1)`}
+        />
+
+        <line x1="-60" y1="620" x2="400" y2="1020" stroke={tones.lineStroke1} strokeWidth="2.5" strokeOpacity="0.32" />
+        <line x1="-60" y1="340" x2="310" y2="680" stroke={tones.lineStroke2} strokeWidth="2" strokeOpacity="0.28" />
+        <line x1="-60" y1="1040" x2="320" y2="1380" stroke={tones.lineStroke1} strokeWidth="1.5" strokeOpacity="0.2" />
+      </g>
+
+      {/* 4. Right 3D Sweeping Wave Ribbon */}
+      <g id={`${prefix}-right-wave`} filter={`url(#${prefix}-wave-shadow)`}>
+        <path
+          d="M 460,920
+             C 640,940 780,1060 860,1160
+             C 940,1260 1000,1290 1140,1260
+             L 1140,1430
+             C 970,1470 880,1400 790,1300
+             C 700,1200 560,1100 460,1080
+             Z"
+          fill={`url(#${prefix}-wave-grad-body)`}
+        />
+        <path
+          d="M 460,920
+             C 640,940 780,1060 860,1160
+             C 940,1260 1000,1290 1140,1260"
+          fill="none"
+          stroke={`url(#${prefix}-wave-top-highlight)`}
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M 790,1300
+             C 880,1400 970,1470 1140,1430
+             L 1140,1470
+             C 950,1510 860,1430 770,1330
+             Z"
+          fill={tones.waveUnderside}
+          opacity="0.5"
+        />
+      </g>
+
+      {/* 5. Bottom subtle corner balance */}
+      <polygon
+        points="-40,1800 300,1980 -40,1980"
+        fill={tones.cornerBalance}
+        opacity="0.5"
+      />
+    </svg>
+  );
+};
+
+// ── 2. AURORA MESH BACKGROUND ───────────────────────────────────────────────
+const AuroraMeshBackground = ({
+  idPrefix = 'am',
+  baseColor = '#078249',
+  cornerStart,
+  cornerEnd,
+  waveColor,
+}: PatternProps) => {
+  const uid = React.useId().replace(/[:]/g, '');
+  const prefix = `${idPrefix}-${uid}`;
+  const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1080 1920"
+      width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 pointer-events-none select-none"
+      style={{ display: 'block', width: '100%', height: '100%' }}
+    >
+      <defs>
+        <filter id={`${prefix}-blur-deep`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="110" />
+        </filter>
+        <filter id={`${prefix}-blur-mid`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="70" />
+        </filter>
+        <linearGradient id={`${prefix}-base`} x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0%" stopColor={tones.baseGrad0} />
+          <stop offset="40%" stopColor={tones.baseGrad30} />
+          <stop offset="80%" stopColor={tones.baseGrad65} />
+          <stop offset="100%" stopColor={tones.baseGrad100} />
+        </linearGradient>
+        <linearGradient id={`${prefix}-ray-1`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={tones.ribbonTop0} stopOpacity="0.5" />
+          <stop offset="60%" stopColor={tones.waveHighlight0} stopOpacity="0.2" />
+          <stop offset="100%" stopColor={tones.baseGrad100} stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id={`${prefix}-ray-2`} x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={tones.glowWave} stopOpacity="0.45" />
+          <stop offset="50%" stopColor={tones.ribbonMid0} stopOpacity="0.15" />
+          <stop offset="100%" stopColor={tones.baseGrad65} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      <rect width="1080" height="1920" fill={`url(#${prefix}-base)`} />
+
+      {/* Atmospheric Aurora Fluid Blobs */}
+      <g filter={`url(#${prefix}-blur-deep)`}>
+        <ellipse cx="280" cy="380" rx="420" ry="340" fill={tones.ribbonTop0} opacity="0.7" />
+        <ellipse cx="880" cy="720" rx="380" ry="460" fill={tones.waveBody0} opacity="0.6" />
+        <ellipse cx="320" cy="1480" rx="460" ry="400" fill={tones.glowCenter} opacity="0.65" />
+        <ellipse cx="860" cy="1580" rx="420" ry="360" fill={tones.ribbonMid0} opacity="0.55" />
+      </g>
+
+      {/* Sharper Fluid Accents & Light Rays */}
+      <g filter={`url(#${prefix}-blur-mid)`}>
+        <circle cx="540" cy="620" r="240" fill={tones.waveHighlight0} opacity="0.4" />
+        <path
+          d="M -100,200 Q 300,600 700,500 T 1200,900 L 1200,1400 Q 800,1000 400,1200 Z"
+          fill={`url(#${prefix}-ray-1)`}
+        />
+        <path
+          d="M 1180,600 Q 800,1000 500,1200 T -100,1600 L -100,1200 Q 300,900 700,700 Z"
+          fill={`url(#${prefix}-ray-2)`}
+        />
+      </g>
+
+      {/* Subtle fine celestial rings */}
+      <ellipse cx="540" cy="960" rx="520" ry="880" fill="none" stroke={tones.lineStroke1} strokeWidth="1.5" strokeOpacity="0.2" />
+      <ellipse cx="540" cy="960" rx="440" ry="780" fill="none" stroke={tones.lineStroke2} strokeWidth="1" strokeOpacity="0.15" />
+    </svg>
+  );
+};
+
+// ── 3. CYBER GRID BACKGROUND ───────────────────────────────────────────────
+const CyberGridBackground = ({
+  idPrefix = 'cg',
+  baseColor = '#078249',
+  cornerStart,
+  cornerEnd,
+  waveColor,
+}: PatternProps) => {
+  const uid = React.useId().replace(/[:]/g, '');
+  const prefix = `${idPrefix}-${uid}`;
+  const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1080 1920"
+      width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 pointer-events-none select-none"
+      style={{ display: 'block', width: '100%', height: '100%' }}
+    >
+      <defs>
+        <linearGradient id={`${prefix}-base`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={tones.baseGrad0} />
+          <stop offset="50%" stopColor={tones.baseGrad30} />
+          <stop offset="100%" stopColor={tones.baseGrad100} />
+        </linearGradient>
+        <radialGradient id={`${prefix}-horizon-bloom`} cx="50%" cy="54%" r="45%">
+          <stop offset="0%" stopColor={tones.glowWave} stopOpacity="0.55" />
+          <stop offset="40%" stopColor={tones.ribbonTop0} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={tones.baseGrad100} stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={`${prefix}-grid-fade`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={tones.lineStroke1} stopOpacity="0.05" />
+          <stop offset="35%" stopColor={tones.lineStroke1} stopOpacity="0.55" />
+          <stop offset="100%" stopColor={tones.waveHighlight0} stopOpacity="0.1" />
+        </linearGradient>
+      </defs>
+
+      <rect width="1080" height="1920" fill={`url(#${prefix}-base)`} />
+      <rect width="1080" height="1920" fill={`url(#${prefix}-horizon-bloom)`} />
+
+      {/* Upper Tech Crosses */}
+      <g stroke={tones.lineStroke1} strokeWidth="1.5" strokeOpacity="0.3">
+        {[
+          [160, 240], [920, 280], [220, 520], [860, 560], [140, 820], [940, 860]
+        ].map(([x, y], idx) => (
+          <g key={idx}>
+            <line x1={x - 9} y1={y} x2={x + 9} y2={y} />
+            <line x1={x} y1={y - 9} x2={x} y2={y + 9} />
+          </g>
+        ))}
+      </g>
+
+      {/* Perspective 3D Grid Floor */}
+      <g stroke={`url(#${prefix}-grid-fade)`} strokeWidth="1.5">
+        {[1040, 1090, 1150, 1220, 1300, 1390, 1490, 1600, 1720, 1850, 1990].map((y, idx) => (
+          <line key={`h-${idx}`} x1="-200" y1={y} x2="1280" y2={y} strokeWidth={1 + idx * 0.25} />
+        ))}
+        {[-300, -150, 0, 120, 240, 360, 460, 540, 620, 720, 840, 960, 1080, 1230, 1380].map((x, idx) => (
+          <line key={`v-${idx}`} x1={540} y1={1000} x2={x} y2={2020} strokeWidth={x === 540 ? 2 : 1.2} />
+        ))}
+      </g>
+
+      {/* Horizon Laser Line */}
+      <line x1="-100" y1="1000" x2="1180" y2="1000" stroke={tones.waveHighlight0} strokeWidth="2.5" strokeOpacity="0.65" />
+    </svg>
+  );
+};
+
+// ── 4. GLASS SPHERES BACKGROUND ────────────────────────────────────────────
+const GlassSpheresBackground = ({
+  idPrefix = 'gs',
+  baseColor = '#078249',
+  cornerStart,
+  cornerEnd,
+  waveColor,
+}: PatternProps) => {
+  const uid = React.useId().replace(/[:]/g, '');
+  const prefix = `${idPrefix}-${uid}`;
+  const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1080 1920"
+      width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 pointer-events-none select-none"
+      style={{ display: 'block', width: '100%', height: '100%' }}
+    >
+      <defs>
+        <linearGradient id={`${prefix}-base`} x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0%" stopColor={tones.baseGrad0} />
+          <stop offset="45%" stopColor={tones.baseGrad30} />
+          <stop offset="100%" stopColor={tones.baseGrad100} />
+        </linearGradient>
+
+        <filter id={`${prefix}-sphere-shadow`} x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="20" dy="32" stdDeviation="28" floodColor="#000000" floodOpacity="0.45" />
+        </filter>
+
+        <radialGradient id={`${prefix}-sphere-1`} cx="32%" cy="30%" r="72%">
+          <stop offset="0%" stopColor={tones.waveHighlight0} stopOpacity="0.95" />
+          <stop offset="28%" stopColor={tones.ribbonTop0} stopOpacity="0.85" />
+          <stop offset="70%" stopColor={tones.ribbonMid100} stopOpacity="0.95" />
+          <stop offset="100%" stopColor={tones.ribbonBottom100} stopOpacity="1" />
+        </radialGradient>
+
+        <radialGradient id={`${prefix}-sphere-2`} cx="30%" cy="28%" r="75%">
+          <stop offset="0%" stopColor={tones.glowWave} stopOpacity="0.95" />
+          <stop offset="35%" stopColor={tones.waveBody0} stopOpacity="0.9" />
+          <stop offset="75%" stopColor={tones.waveBody100} stopOpacity="0.95" />
+          <stop offset="100%" stopColor={tones.waveUnderside} stopOpacity="1" />
+        </radialGradient>
+
+        <radialGradient id={`${prefix}-sphere-3`} cx="35%" cy="32%" r="68%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+          <stop offset="30%" stopColor={tones.ribbonTop0} stopOpacity="0.8" />
+          <stop offset="100%" stopColor={tones.ribbonBottom0} stopOpacity="1" />
+        </radialGradient>
+
+        <linearGradient id={`${prefix}-rim`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6" />
+          <stop offset="50%" stopColor={tones.waveHighlight0} stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0.5" />
+        </linearGradient>
+      </defs>
+
+      <rect width="1080" height="1920" fill={`url(#${prefix}-base)`} />
+
+      <circle cx="200" cy="500" r="320" fill={tones.glowCenter} opacity="0.18" />
+      <circle cx="950" cy="1150" r="380" fill={tones.glowWave} opacity="0.18" />
+
+      {/* Sphere 1 (Top Left) */}
+      <ellipse
+        cx="140"
+        cy="520"
+        rx="340"
+        ry="160"
+        transform="rotate(-24 140 520)"
+        fill="none"
+        stroke={`url(#${prefix}-rim)`}
+        strokeWidth="4"
+        strokeOpacity="0.4"
+      />
+      <g filter={`url(#${prefix}-sphere-shadow)`}>
+        <circle cx="140" cy="520" r="240" fill={`url(#${prefix}-sphere-1)`} />
+        <ellipse cx="100" cy="460" rx="90" ry="55" transform="rotate(-30 100 460)" fill="#FFFFFF" opacity="0.4" />
+      </g>
+
+      {/* Sphere 2 (Right Edge) */}
+      <ellipse
+        cx="960"
+        cy="1180"
+        rx="400"
+        ry="180"
+        transform="rotate(28 960 1180)"
+        fill="none"
+        stroke={`url(#${prefix}-rim)`}
+        strokeWidth="5"
+        strokeOpacity="0.35"
+      />
+      <g filter={`url(#${prefix}-sphere-shadow)`}>
+        <circle cx="960" cy="1180" r="300" fill={`url(#${prefix}-sphere-2)`} />
+        <ellipse cx="910" cy="1100" rx="110" ry="70" transform="rotate(-25 910 1100)" fill="#FFFFFF" opacity="0.45" />
+      </g>
+
+      {/* Sphere 3 (Bottom Left Small Satellite) */}
+      <g filter={`url(#${prefix}-sphere-shadow)`}>
+        <circle cx="260" cy="1480" r="95" fill={`url(#${prefix}-sphere-3)`} />
+        <ellipse cx="245" cy="1455" rx="35" ry="22" transform="rotate(-25 245 1455)" fill="#FFFFFF" opacity="0.6" />
+      </g>
+    </svg>
+  );
+};
+
+// ── 5. TOPOGRAPHY CONTOUR BACKGROUND ────────────────────────────────────────
+const TopographyBackground = ({
+  idPrefix = 'tp',
+  baseColor = '#078249',
+  cornerStart,
+  cornerEnd,
+  waveColor,
+}: PatternProps) => {
+  const uid = React.useId().replace(/[:]/g, '');
+  const prefix = `${idPrefix}-${uid}`;
+  const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1080 1920"
+      width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 pointer-events-none select-none"
+      style={{ display: 'block', width: '100%', height: '100%' }}
+    >
+      <defs>
+        <linearGradient id={`${prefix}-base`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={tones.baseGrad0} />
+          <stop offset="50%" stopColor={tones.baseGrad30} />
+          <stop offset="100%" stopColor={tones.baseGrad100} />
+        </linearGradient>
+
+        <linearGradient id={`${prefix}-fill-1`} x1="0" y1="0" x2="1" y2="0.8">
+          <stop offset="0%" stopColor={tones.ribbonTop0} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={tones.ribbonTop100} stopOpacity="0.05" />
+        </linearGradient>
+        <linearGradient id={`${prefix}-fill-2`} x1="0" y1="0" x2="1" y2="0.8">
+          <stop offset="0%" stopColor={tones.waveBody0} stopOpacity="0.24" />
+          <stop offset="100%" stopColor={tones.waveBody100} stopOpacity="0.04" />
+        </linearGradient>
+        <linearGradient id={`${prefix}-fill-3`} x1="0" y1="0" x2="1" y2="0.8">
+          <stop offset="0%" stopColor={tones.ribbonMid0} stopOpacity="0.2" />
+          <stop offset="100%" stopColor={tones.ribbonBottom100} stopOpacity="0.03" />
+        </linearGradient>
+
+        <filter id={`${prefix}-drop`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="8" dy="14" stdDeviation="16" floodColor="#000000" floodOpacity="0.35" />
+        </filter>
+      </defs>
+
+      <rect width="1080" height="1920" fill={`url(#${prefix}-base)`} />
+
+      {/* Layered Topographic Ridges */}
+      <g filter={`url(#${prefix}-drop)`}>
+        <path
+          d="M -50,180 C 240,160 420,380 620,340 C 820,300 940,160 1140,220 L 1140,-50 L -50,-50 Z"
+          fill={`url(#${prefix}-fill-1)`}
+        />
+        <path
+          d="M -50,180 C 240,160 420,380 620,340 C 820,300 940,160 1140,220"
+          fill="none"
+          stroke={tones.lineStroke1}
+          strokeWidth="3.5"
+          strokeOpacity="0.65"
+        />
+
+        <path
+          d="M -50,440 C 180,420 360,620 580,590 C 800,560 920,440 1140,510 L 1140,-50 L -50,-50 Z"
+          fill={`url(#${prefix}-fill-2)`}
+        />
+        <path
+          d="M -50,440 C 180,420 360,620 580,590 C 800,560 920,440 1140,510"
+          fill="none"
+          stroke={tones.waveHighlight0}
+          strokeWidth="3"
+          strokeOpacity="0.6"
+        />
+
+        <path
+          d="M -50,780 C 220,740 380,980 680,940 C 980,900 1020,780 1140,840 L 1140,-50 L -50,-50 Z"
+          fill={`url(#${prefix}-fill-3)`}
+        />
+        <path
+          d="M -50,780 C 220,740 380,980 680,940 C 980,900 1020,780 1140,840"
+          fill="none"
+          stroke={tones.lineStroke2}
+          strokeWidth="2.5"
+          strokeOpacity="0.5"
+        />
+
+        <path
+          d="M -50,1380 C 260,1260 480,1520 740,1440 C 980,1360 1040,1480 1140,1520 L 1140,2000 L -50,2000 Z"
+          fill={`url(#${prefix}-fill-1)`}
+        />
+        <path
+          d="M -50,1380 C 260,1260 480,1520 740,1440 C 980,1360 1040,1480 1140,1520"
+          fill="none"
+          stroke={tones.lineStroke1}
+          strokeWidth="3"
+          strokeOpacity="0.6"
+        />
+
+        <path
+          d="M -50,1680 C 280,1600 520,1780 780,1720 C 960,1680 1060,1740 1140,1780 L 1140,2000 L -50,2000 Z"
+          fill={`url(#${prefix}-fill-2)`}
+        />
+        <path
+          d="M -50,1680 C 280,1600 520,1780 780,1720 C 960,1680 1060,1740 1140,1780"
+          fill="none"
+          stroke={tones.waveHighlight0}
+          strokeWidth="2.5"
+          strokeOpacity="0.5"
+        />
+      </g>
+
+      <g stroke={tones.lineStroke1} strokeWidth="1" strokeOpacity="0.25" fill="none">
+        <path d="M -50,280 C 240,260 420,480 620,440 C 820,400 940,260 1140,320" />
+        <path d="M -50,580 C 180,560 360,760 580,730 C 800,700 920,580 1140,650" strokeDasharray="6,8" />
+        <path d="M -50,1180 C 220,1140 380,1380 680,1340 C 980,1300 1020,1180 1140,1240" />
+        <path d="M -50,1520 C 260,1400 480,1660 740,1580 C 980,1500 1040,1620 1140,1660" strokeDasharray="6,8" />
+      </g>
+    </svg>
+  );
+};
+
+// ── 6. CRYSTAL PRISM BACKGROUND ─────────────────────────────────────────────
+const CrystalPrismBackground = ({
+  idPrefix = 'cp',
+  baseColor = '#078249',
+  cornerStart,
+  cornerEnd,
+  waveColor,
+}: PatternProps) => {
+  const uid = React.useId().replace(/[:]/g, '');
+  const prefix = `${idPrefix}-${uid}`;
+  const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1080 1920"
+      width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 pointer-events-none select-none"
+      style={{ display: 'block', width: '100%', height: '100%' }}
+    >
+      <defs>
+        <linearGradient id={`${prefix}-base`} x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0%" stopColor={tones.baseGrad0} />
+          <stop offset="50%" stopColor={tones.baseGrad30} />
+          <stop offset="100%" stopColor={tones.baseGrad100} />
+        </linearGradient>
+
+        <filter id={`${prefix}-shadow`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="12" dy="20" stdDeviation="22" floodColor="#000000" floodOpacity="0.45" />
+        </filter>
+
+        <linearGradient id={`${prefix}-f1`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor={tones.ribbonTop0} />
+          <stop offset="100%" stopColor={tones.ribbonTop100} />
+        </linearGradient>
+        <linearGradient id={`${prefix}-f2`} x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={tones.waveHighlight0} />
+          <stop offset="100%" stopColor={tones.waveBody100} />
+        </linearGradient>
+        <linearGradient id={`${prefix}-f3`} x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stopColor={tones.ribbonMid0} />
+          <stop offset="100%" stopColor={tones.ribbonBottom100} />
+        </linearGradient>
+        <linearGradient id={`${prefix}-f4`} x1="0" y1="0" x2="1" y2="0.8">
+          <stop offset="0%" stopColor={tones.waveBody0} />
+          <stop offset="100%" stopColor={tones.baseGrad100} />
+        </linearGradient>
+      </defs>
+
+      <rect width="1080" height="1920" fill={`url(#${prefix}-base)`} />
+
+      {/* Top-Left Crystal Prism Cluster */}
+      <g id={`${prefix}-top-cluster`} filter={`url(#${prefix}-shadow)`}>
+        <polygon points="-60,-60 380,-60 180,340" fill={`url(#${prefix}-f1)`} />
+        <polygon points="380,-60 620,-60 480,240 180,340" fill={`url(#${prefix}-f2)`} />
+        <polygon points="-60,-60 180,340 -60,540" fill={`url(#${prefix}-f3)`} />
+        <polygon points="180,340 480,240 360,580 60,680" fill={`url(#${prefix}-f1)`} />
+        <polygon points="-60,540 60,680 -60,860" fill={`url(#${prefix}-f4)`} />
+        <polygon points="60,680 360,580 240,920" fill={`url(#${prefix}-f2)`} />
+
+        <line x1="-60" y1="-60" x2="180" y2="340" stroke="#FFFFFF" strokeWidth="2.5" strokeOpacity="0.4" />
+        <line x1="380" y1="-60" x2="180" y2="340" stroke={tones.lineStroke1} strokeWidth="2" strokeOpacity="0.5" />
+        <line x1="180" y1="340" x2="360" y2="580" stroke="#FFFFFF" strokeWidth="2.5" strokeOpacity="0.45" />
+        <line x1="60" y1="680" x2="360" y2="580" stroke={tones.lineStroke2} strokeWidth="2" strokeOpacity="0.4" />
+      </g>
+
+      {/* Bottom-Right Crystal Prism Cluster */}
+      <g id={`${prefix}-bottom-cluster`} filter={`url(#${prefix}-shadow)`}>
+        <polygon points="1140,1980 720,1980 920,1580" fill={`url(#${prefix}-f2)`} />
+        <polygon points="720,1980 480,1980 620,1680 920,1580" fill={`url(#${prefix}-f3)`} />
+        <polygon points="1140,1980 920,1580 1140,1380" fill={`url(#${prefix}-f1)`} />
+        <polygon points="920,1580 620,1680 740,1340 1020,1240" fill={`url(#${prefix}-f4)`} />
+        <polygon points="1140,1380 1020,1240 1140,1060" fill={`url(#${prefix}-f2)`} />
+        <polygon points="1020,1240 740,1340 840,1000" fill={`url(#${prefix}-f1)`} />
+
+        <line x1="1140" y1="1980" x2="920" y2="1580" stroke="#FFFFFF" strokeWidth="2.5" strokeOpacity="0.4" />
+        <line x1="920" y1="1580" x2="740" y2="1340" stroke="#FFFFFF" strokeWidth="2.5" strokeOpacity="0.45" />
+        <line x1="1020" y1="1240" x2="740" y2="1340" stroke={tones.lineStroke1} strokeWidth="2" strokeOpacity="0.4" />
+      </g>
+    </svg>
+  );
+};
+
+const DESIGNER_PATTERNS = [
+  {
+    id: 'none',
+    name: 'Classic Gradient',
+    desc: 'Solid or linear palette',
+    badge: 'Standard',
+  },
+  {
+    id: 'emerald-wave',
+    name: 'Wave & Ribbons',
+    desc: '3D ribbon facets & curved wave',
+    badge: 'Play Store',
+  },
+  {
+    id: 'aurora-mesh',
+    name: 'Aurora Glow Mesh',
+    desc: 'Cosmic multi-point fluid bloom',
+    badge: 'Trending',
+  },
+  {
+    id: 'cyber-grid',
+    name: 'Cyber 3D Grid',
+    desc: 'Horizon wireframe & tech coordinates',
+    badge: 'Web3 / Dev',
+  },
+  {
+    id: 'glass-spheres',
+    name: 'Floating Glass Orbs',
+    desc: '3D glossy specular refraction spheres',
+    badge: 'Fintech / Luxury',
+  },
+  {
+    id: 'topography-contour',
+    name: 'Topographic Waves',
+    desc: 'Elevation contour lines & relief fills',
+    badge: 'Maps / Outdoor',
+  },
+  {
+    id: 'crystal-prism',
+    name: 'Crystal Prism Facets',
+    desc: '3D diamond corner facets & refraction',
+    badge: 'Geometric',
+  },
+] as const;
+
 const MockupTemplate = ({
   screenshot,
   settings,
@@ -560,8 +1571,12 @@ const MockupTemplate = ({
         ? 120
         : layout === 'centered'
           ? 64
-          : 0
-      : 0;
+          : 60
+      : settings.phonePositionMode === 'half-up'
+        ? layout === 'text-bottom'
+          ? -160
+          : -90
+        : 0;
 
   const shadowOpacity = Math.min(0.34, Math.max(0.1, settings.deviceShadow / 120));
   const shadowStyle = {
@@ -598,57 +1613,57 @@ const MockupTemplate = ({
   const TextContent = () => {
     if (!textVisible) return null;
     return (
-    <div
-      className={`w-full flex flex-col px-16 ${getTextAlignClass()} ${interactiveClass(textLocked)}`}
-      style={{
-        transform: `translate(${screenshot.textOffset.x}px, ${screenshot.textOffset.y}px)`,
-        outline: interactive && selectedLayer === 'text' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
-        outlineOffset: interactive && selectedLayer === 'text' ? '10px' : undefined,
-      }}
-      onPointerDown={interactive ? (e) => {
-        onSelectLayer?.('text');
-        if (dragEnabled && !textLocked) onStartDrag?.('text', e);
-      } : undefined}
-    >
-      <h1
+      <div
+        className={`w-full flex flex-col px-16 ${getTextAlignClass()} ${interactiveClass(textLocked)}`}
         style={{
-          color: settings.titleColor,
-          fontSize: `${settings.titleFontSize}px`,
-          fontWeight: settings.titleFontWeight,
-          lineHeight: settings.titleLineHeight,
-          fontFamily: settings.titleFontFamily,
-          letterSpacing: `${settings.titleLetterSpacing}px`,
+          transform: `translate(${screenshot.textOffset.x}px, ${screenshot.textOffset.y}px)`,
+          outline: interactive && selectedLayer === 'text' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
+          outlineOffset: interactive && selectedLayer === 'text' ? '10px' : undefined,
         }}
-        className="whitespace-pre-wrap break-words"
+        onPointerDown={interactive ? (e) => {
+          onSelectLayer?.('text');
+          if (dragEnabled && !textLocked) onStartDrag?.('text', e);
+        } : undefined}
       >
-        {titleParts.map((part, idx) => {
-          const match = part.match(/^\[accent\]([\s\S]*?)\[\/accent\]$/);
-          if (!match) return <React.Fragment key={`title-part-${idx}`}>{part}</React.Fragment>;
-          return (
-            <span key={`title-part-${idx}`} style={{ color: settings.accentColor }}>
-              {match[1]}
-            </span>
-          );
-        })}
-      </h1>
-      {screenshot.subtitle && (
-        <p
+        <h1
           style={{
-            color: settings.subtitleColor,
-            fontSize: `${settings.subtitleFontSize}px`,
-            fontWeight: settings.subtitleFontWeight,
-            opacity: 0.9,
-            fontFamily: settings.subtitleFontFamily,
-            lineHeight: settings.subtitleLineHeight,
-            letterSpacing: `${settings.subtitleLetterSpacing}px`,
-            marginTop: `${settings.textSpacing}px`,
+            color: settings.titleColor,
+            fontSize: `${settings.titleFontSize}px`,
+            fontWeight: settings.titleFontWeight,
+            lineHeight: settings.titleLineHeight,
+            fontFamily: settings.titleFontFamily,
+            letterSpacing: `${settings.titleLetterSpacing}px`,
           }}
           className="whitespace-pre-wrap break-words"
         >
-          {screenshot.subtitle}
-        </p>
-      )}
-    </div>
+          {titleParts.map((part, idx) => {
+            const match = part.match(/^\[accent\]([\s\S]*?)\[\/accent\]$/);
+            if (!match) return <React.Fragment key={`title-part-${idx}`}>{part}</React.Fragment>;
+            return (
+              <span key={`title-part-${idx}`} style={{ color: settings.accentColor }}>
+                {match[1]}
+              </span>
+            );
+          })}
+        </h1>
+        {screenshot.subtitle && (
+          <p
+            style={{
+              color: settings.subtitleColor,
+              fontSize: `${settings.subtitleFontSize}px`,
+              fontWeight: settings.subtitleFontWeight,
+              opacity: 0.9,
+              fontFamily: settings.subtitleFontFamily,
+              lineHeight: settings.subtitleLineHeight,
+              letterSpacing: `${settings.subtitleLetterSpacing}px`,
+              marginTop: `${settings.textSpacing}px`,
+            }}
+            className="whitespace-pre-wrap break-words"
+          >
+            {screenshot.subtitle}
+          </p>
+        )}
+      </div>
     );
   };
 
@@ -658,13 +1673,7 @@ const MockupTemplate = ({
     const isNone = bleed === 'none';
     const frame = DEVICE_FRAMES.find((option) => option.id === settings.deviceFrameStyle) ?? DEVICE_FRAMES[0];
     const outerRadius = Math.max(0, settings.deviceCornerRadius);
-    const innerRadius = Math.max(0, outerRadius - settings.deviceBorder);
-    const radiusForBleed = (radius: number) =>
-      isBleedBottom
-        ? `${radius}px ${radius}px 0 0`
-        : isBleedTop
-          ? `0 0 ${radius}px ${radius}px`
-          : `${radius}px`;
+    const innerRadius = Math.max(0, Math.round(outerRadius * 0.82));
     const frameColor = settings.deviceFrameColor || frame.shell;
     const edgeColor = settings.deviceFrameEdgeColor || frame.edge;
     const imgClasses = `block h-full w-full object-top ${settings.imageFit === 'contain' ? 'object-contain bg-gray-100' : 'object-cover'}`;
@@ -705,7 +1714,7 @@ const MockupTemplate = ({
           style={{
             width: `${deviceWidth}px`,
             aspectRatio: `${deviceAspectRatio}`,
-            borderRadius: radiusForBleed(outerRadius),
+            borderRadius: `${outerRadius}px`,
             ...shadowStyle,
             outline: interactive && selectedLayer === 'device' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
             outlineOffset: interactive && selectedLayer === 'device' ? '10px' : undefined,
@@ -724,7 +1733,7 @@ const MockupTemplate = ({
           width: `${deviceWidth}px`,
           aspectRatio: `${deviceAspectRatio}`,
           padding: `${settings.deviceBorder}px`,
-          borderRadius: radiusForBleed(outerRadius),
+          borderRadius: `${outerRadius}px`,
           background: `linear-gradient(145deg, ${edgeColor}, ${frameColor} 42%, ${edgeColor} 100%)`,
           boxShadow: `${shadowStyle.boxShadow}, inset 0 0 0 1px rgba(255,255,255,0.24)`,
           outline: interactive && selectedLayer === 'device' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
@@ -733,13 +1742,13 @@ const MockupTemplate = ({
       >
         <div
           className="relative w-full h-full overflow-hidden bg-white"
-          style={{ borderRadius: radiusForBleed(innerRadius) }}
+          style={{ borderRadius: `${innerRadius}px` }}
         >
           <img src={screenshot.url} className={imgClasses} style={screenshotStyle} alt="App Screenshot" />
-          {!isBleedTop && settings.deviceFrameStyle !== 'minimal' && settings.deviceType === 'iphone' && (
+          {settings.deviceFrameStyle !== 'minimal' && settings.deviceType === 'iphone' && (
             <span className="absolute left-1/2 top-3.5 h-6 w-[25%] -translate-x-1/2 rounded-full shadow-sm" style={{ backgroundColor: frame.island }} />
           )}
-          {!isBleedTop && settings.deviceFrameStyle !== 'minimal' && settings.deviceType === 'android' && (
+          {settings.deviceFrameStyle !== 'minimal' && settings.deviceType === 'android' && (
             <span className="absolute left-1/2 top-3 h-4 w-4 -translate-x-1/2 rounded-full shadow-sm" style={{ backgroundColor: frame.island }} />
           )}
           {settings.deviceType === 'browser' && (
@@ -765,21 +1774,35 @@ const MockupTemplate = ({
   const DeviceWrapper = ({ bleed, className }: { bleed: 'top' | 'bottom' | 'none'; className: string }) => {
     if (!deviceVisible) return null;
     return (
-    <div
-      className={`${className} ${interactiveClass(deviceLocked)}`}
-      style={{
-        transform: `perspective(1600px) translate(${screenshot.deviceOffset.x}px, ${screenshot.deviceOffset.y + baseDeviceOffsetY}px) rotateX(${settings.deviceTiltX}deg) rotateY(${settings.deviceTiltY}deg) rotateZ(${settings.deviceRotation}deg)`,
-        transformStyle: 'preserve-3d',
-        willChange: 'transform',
-      }}
-      onPointerDown={interactive ? (e) => {
-        onSelectLayer?.('device');
-        if (dragEnabled && !deviceLocked) onStartDrag?.('device', e);
-      } : undefined}
-    >
-      <DeviceFrame bleed={bleed} />
-    </div>
+      <div
+        className={`${className} ${interactiveClass(deviceLocked)}`}
+        style={{
+          transform: `perspective(1600px) translate(${screenshot.deviceOffset.x}px, ${screenshot.deviceOffset.y + baseDeviceOffsetY}px) rotateX(${settings.deviceTiltX}deg) rotateY(${settings.deviceTiltY}deg) rotateZ(${settings.deviceRotation}deg)`,
+          transformStyle: 'preserve-3d',
+          willChange: 'transform',
+        }}
+        onPointerDown={interactive ? (e) => {
+          onSelectLayer?.('device');
+          if (dragEnabled && !deviceLocked) onStartDrag?.('device', e);
+        } : undefined}
+      >
+        <DeviceFrame bleed={bleed} />
+      </div>
     );
+  };
+
+  const patternType =
+    settings.backgroundPattern === 'wave-ribbons'
+      ? 'emerald-wave'
+      : settings.backgroundPattern ||
+      (typeof settings.background === 'string' && settings.background.includes('#057a44') ? 'emerald-wave' : 'none');
+
+  const patternCommonProps = {
+    idPrefix: id || 'canvas',
+    baseColor: settings.backgroundPatternColor || '#009e52',
+    cornerStart: settings.backgroundPatternCornerStart,
+    cornerEnd: settings.backgroundPatternCornerEnd,
+    waveColor: settings.backgroundPatternWaveColor,
   };
 
   return (
@@ -788,6 +1811,17 @@ const MockupTemplate = ({
       className="relative flex flex-col overflow-hidden"
       style={{ width: settings.canvasWidth, height: settings.canvasHeight, background: settings.background }}
     >
+      {patternType !== 'none' && (
+        <div className="mockup-bg-pattern absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+          {patternType === 'emerald-wave' && <EmeraldWaveBackground {...patternCommonProps} />}
+          {patternType === 'aurora-mesh' && <AuroraMeshBackground {...patternCommonProps} />}
+          {patternType === 'cyber-grid' && <CyberGridBackground {...patternCommonProps} />}
+          {patternType === 'glass-spheres' && <GlassSpheresBackground {...patternCommonProps} />}
+          {patternType === 'topography-contour' && <TopographyBackground {...patternCommonProps} />}
+          {patternType === 'crystal-prism' && <CrystalPrismBackground {...patternCommonProps} />}
+        </div>
+      )}
+
       {layout === 'text-top' && (
         <>
           <div className="flex-none pt-24 pb-12 z-10 flex flex-col items-center justify-center w-full">
@@ -795,7 +1829,7 @@ const MockupTemplate = ({
           </div>
           <DeviceWrapper
             bleed={settings.phonePositionMode === 'centered' ? 'none' : 'bottom'}
-            className={`flex-1 w-full flex ${getDeviceAlignClass()} ${settings.phonePositionMode === 'centered' ? 'items-start pt-8' : 'items-start pt-16'
+            className={`flex-1 w-full flex ${getDeviceAlignClass()} relative z-10 ${settings.phonePositionMode === 'centered' ? 'items-start pt-8' : 'items-start pt-16'
               }`}
           />
         </>
@@ -805,10 +1839,14 @@ const MockupTemplate = ({
         <>
           <DeviceWrapper
             bleed={settings.phonePositionMode === 'centered' ? 'none' : 'top'}
-            className={`flex-1 w-full flex ${getDeviceAlignClass()} items-end ${settings.phonePositionMode === 'centered' ? 'pb-8' : 'pb-16'
+            className={`flex-1 w-full flex ${getDeviceAlignClass()} relative z-10 items-start ${settings.phonePositionMode === 'half-up'
+                ? 'pt-0'
+                : settings.phonePositionMode === 'centered'
+                  ? 'pt-12'
+                  : 'pt-16'
               }`}
           />
-          <div className="flex-none pt-12 pb-24 z-10 flex flex-col items-center justify-center w-full">
+          <div className="flex-none pt-6 pb-20 z-10 flex flex-col items-center justify-center w-full">
             <TextContent />
           </div>
         </>
@@ -819,7 +1857,7 @@ const MockupTemplate = ({
           <div className="flex-none pt-24 pb-8 z-10 flex flex-col items-center justify-center w-full">
             <TextContent />
           </div>
-          <DeviceWrapper bleed="none" className={`flex-1 w-full flex ${getDeviceAlignClass()} items-center pb-16`} />
+          <DeviceWrapper bleed="none" className={`flex-1 w-full flex ${getDeviceAlignClass()} relative z-10 items-center pb-16`} />
         </>
       )}
 
@@ -900,16 +1938,20 @@ export default function App() {
       const parsed = JSON.parse(raw) as AppPreset[];
       if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_PRESETS;
 
+      const existingIds = new Set(parsed.map((p) => p.id));
+      const missingDefaults = DEFAULT_PRESETS.filter((dp) => !existingIds.has(dp.id));
+      const combined = [...parsed, ...missingDefaults];
+
       if (!window.localStorage.getItem(PRESET_TRANSFORM_MIGRATION_KEY)) {
         window.localStorage.setItem(PRESET_TRANSFORM_MIGRATION_KEY, 'complete');
-        return parsed.map((preset) =>
+        return combined.map((preset) =>
           BUILT_IN_PRESET_IDS.has(preset.id)
             ? { ...preset, settings: { ...preset.settings, ...ZERO_DEVICE_TRANSFORMS } }
             : preset
         );
       }
 
-      return parsed;
+      return combined;
     } catch {
       return DEFAULT_PRESETS;
     }
@@ -928,7 +1970,6 @@ export default function App() {
   const historyCurrentRef = useRef<EditorSnapshot | null>(null);
   const historyTimerRef = useRef<number | null>(null);
   const isRestoringHistoryRef = useRef(false);
-  const skipPresetAutosaveRef = useRef(false);
   const projectHydratedRef = useRef(false);
   const projectSaveTimerRef = useRef<number | null>(null);
   const [fitScale, setFitScale] = useState(0.2);
@@ -959,12 +2000,12 @@ export default function App() {
   const activeScreenshot = screenshots[activeIndex];
   const localizedActiveScreenshot = activeScreenshot && activeLocale !== 'en-US'
     ? {
-        ...activeScreenshot,
-        ...(activeScreenshot.translations?.[activeLocale] ?? {
-          title: activeScreenshot.title,
-          subtitle: activeScreenshot.subtitle,
-        }),
-      }
+      ...activeScreenshot,
+      ...(activeScreenshot.translations?.[activeLocale] ?? {
+        title: activeScreenshot.title,
+        subtitle: activeScreenshot.subtitle,
+      }),
+    }
     : activeScreenshot;
   const hasSlides = screenshots.length > 0;
   const mediaLibrary = Array.from(
@@ -1057,7 +2098,6 @@ export default function App() {
   useEffect(() => {
     const preset = appPresets.find((p) => p.id === selectedPresetId);
     if (!preset) return;
-    skipPresetAutosaveRef.current = true;
     setPresetDraft({
       name: preset.name,
       title: preset.title,
@@ -1076,20 +2116,6 @@ export default function App() {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(PRESET_SELECTION_KEY, selectedPresetId);
   }, [selectedPresetId]);
-
-  useEffect(() => {
-    if (skipPresetAutosaveRef.current) {
-      skipPresetAutosaveRef.current = false;
-      return;
-    }
-    setAppPresets((prev) =>
-      prev.map((preset) =>
-        preset.id === selectedPresetId
-          ? { ...preset, settings: { ...preset.settings, ...settings } }
-          : preset
-      )
-    );
-  }, [settings, selectedPresetId]);
 
   useEffect(() => {
     const next = cloneEditorSnapshot(settings, screenshots, activeIndex);
@@ -1203,31 +2229,50 @@ export default function App() {
 
   const snapshotPresetSettings = (): Partial<Settings> => ({ ...activeSettings });
 
-  const buildPresetPayload = () => ({
-    name: presetDraft.name.trim() || 'Untitled Preset',
-    title: presetDraft.title,
-    subtitle: presetDraft.subtitle,
-    settings: snapshotPresetSettings(),
-  });
+  const buildPresetPayload = (nameOverride?: string) => {
+    const name = (nameOverride || presetDraft.name || '').trim() || selectedPreset.name || 'Custom Preset';
+    const title = presetDraft.title || activeScreenshot?.title || selectedPreset.title || '';
+    const subtitle = presetDraft.subtitle || activeScreenshot?.subtitle || selectedPreset.subtitle || '';
+    const currentSlides: PresetSlide[] = screenshots.map((s, idx) => ({
+      index: idx,
+      title: s.title,
+      subtitle: s.subtitle,
+      settingsOverrides: s.settingsOverrides ? { ...s.settingsOverrides } : undefined,
+    }));
+
+    return {
+      name,
+      title,
+      subtitle,
+      settings: snapshotPresetSettings(),
+      slides: currentSlides.length > 0 ? currentSlides : selectedPreset.slides,
+    };
+  };
 
   const savePresetChanges = () => {
     const payload = buildPresetPayload();
     setAppPresets((prev) =>
       prev.map((p) => (p.id === selectedPreset.id ? { ...p, ...payload } : p))
     );
+    notify(`Preset "${payload.name}" updated successfully`);
   };
 
   const createPreset = () => {
-    const newPreset: AppPreset = { id: makeId(), ...buildPresetPayload() };
+    const payload = buildPresetPayload();
+    const newId = `preset-${Date.now()}`;
+    const newPreset: AppPreset = { id: newId, ...payload };
     setAppPresets((prev) => [...prev, newPreset]);
-    setSelectedPresetId(newPreset.id);
+    setSelectedPresetId(newId);
+    notify(`New preset "${payload.name}" created and saved!`);
   };
 
   const deletePreset = () => {
     if (appPresets.length <= 1) return;
+    const deletedName = selectedPreset.name;
     const filtered = appPresets.filter((p) => p.id !== selectedPreset.id);
     setAppPresets(filtered);
     setSelectedPresetId(filtered[0].id);
+    notify(`Preset "${deletedName}" deleted`);
   };
 
   const applyPresetToSlides = (scope: 'current' | 'all') => {
@@ -1250,6 +2295,7 @@ export default function App() {
           };
         })
       );
+      notify(`Applied "${selectedPreset.name}" to all slides`);
       return;
     }
     if (!activeScreenshot) return;
@@ -1270,14 +2316,38 @@ export default function App() {
         };
       })
     );
+    notify(`Applied "${selectedPreset.name}" to current slide`);
   };
 
   const syncPresetDraftFromCanvas = () => {
-    setPresetDraft((prev) => ({
-      ...prev,
-      title: activeScreenshot?.title || prev.title,
-      subtitle: activeScreenshot?.subtitle || prev.subtitle,
-    }));
+    if (activeScreenshot) {
+      setPresetDraft((prev) => ({
+        ...prev,
+        title: activeScreenshot.title,
+        subtitle: activeScreenshot.subtitle,
+      }));
+      notify('Synced title & subtitle from active slide');
+    }
+  };
+
+  const handleExportCurrentPreset = () => {
+    const payload = buildPresetPayload();
+    const exportData: AppPresetFile = {
+      name: payload.name,
+      defaultTitle: payload.title,
+      defaultSubtitle: payload.subtitle,
+      settings: payload.settings,
+      slides: payload.slides,
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeName = (payload.name || 'preset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    link.download = `${safeName || 'preset'}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify(`Downloaded ${payload.name}.json`);
   };
 
   // ── JSON IMPORT ──────────────────────────────────────────────────────────
@@ -1822,7 +2892,12 @@ export default function App() {
     if (!node) throw new Error('Export node not found');
     const slideSettings = { ...settings, ...slide.settingsOverrides };
     const previousBackground = node.style.background;
-    if (transparentExport && exportFormat === 'png') node.style.background = 'transparent';
+    const bgPatternNode = node.querySelector('.mockup-bg-pattern') as HTMLElement | null;
+    const prevBgPatternDisplay = bgPatternNode?.style.display;
+    if (transparentExport && exportFormat === 'png') {
+      node.style.background = 'transparent';
+      if (bgPatternNode) bgPatternNode.style.display = 'none';
+    }
     try {
       const pngUrl = await toPng(node, {
         width: slideSettings.canvasWidth,
@@ -1836,6 +2911,9 @@ export default function App() {
       };
     } finally {
       node.style.background = previousBackground;
+      if (bgPatternNode && prevBgPatternDisplay !== undefined) {
+        bgPatternNode.style.display = prevBgPatternDisplay;
+      }
     }
   };
 
@@ -1923,491 +3001,811 @@ export default function App() {
     <div className="app-shell flex h-dvh min-w-0 bg-slate-100 font-sans text-slate-900">
       {/* ── LEFT CONTROL RAIL ── */}
       {showLeftPanel && (
-      <aside className="flex w-[300px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/95 xl:w-[320px] 2xl:w-[360px]">
-        <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-200">
-                <MonitorSmartphone size={18} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base font-extrabold tracking-tight text-slate-950">Frameflow</h1>
-                  <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-600">Studio</span>
+        <aside className="flex w-[300px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/95 xl:w-[320px] 2xl:w-[360px]">
+          <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-200">
+                  <MonitorSmartphone size={18} />
                 </div>
-                <p className="text-[11px] text-slate-500">App-store mockups, without the busywork</p>
-              </div>
-            </div>
-            <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Saved
-            </span>
-          </div>
-
-          <nav className="mt-4 grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1" aria-label="Editor tools">
-            {[
-              { key: 'presets' as const, label: 'Presets', icon: Save },
-              { key: 'layout' as const, label: 'Canvas', icon: Layout },
-              { key: 'device' as const, label: 'Device', icon: Smartphone },
-              { key: 'typography' as const, label: 'Type', icon: Type },
-            ].map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => focusSection(key)}
-                className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-[10px] font-semibold transition-all ${activeTool === key
-                  ? 'bg-white text-indigo-700 shadow-sm'
-                  : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
-                  }`}
-              >
-                <Icon size={15} />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          {/* Editing scope */}
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <div>
-              <p className="text-xs font-bold text-slate-800">Editing scope</p>
-              <p className={`mt-0.5 text-[11px] font-medium ${applyToAll ? 'text-indigo-600' : 'text-amber-600'}`}>
-                {applyToAll ? 'All slides' : `Slide ${activeIndex + 1} only`}
-              </p>
-            </div>
-            <button
-              onClick={() => setApplyToAll((value) => !value)}
-              aria-pressed={applyToAll}
-              className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${applyToAll ? 'bg-indigo-600' : 'bg-amber-400'}`}
-              title="Toggle whether changes apply to every slide"
-            >
-              <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${applyToAll ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
-          </div>
-
-          {/* Brand Presets */}
-          <PanelSection
-            id="section-presets"
-            title="Brand Presets"
-            description="Switching preset instantly previews that look. Import a JSON file to load a per-app preset."
-            open={openSections.presets}
-            onToggle={() => toggleSection('presets')}
-          >
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Project name</label>
-              <input
-                value={projectName}
-                onChange={(event) => setProjectName(event.target.value)}
-                className="mt-1 w-full bg-transparent text-sm font-bold text-slate-800 outline-none"
-                placeholder="Untitled project"
-              />
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
-                  <Upload size={13} /> Import project
-                  <input type="file" accept=".json,.frameflow.json,application/json" className="hidden" onChange={handleProjectImport} />
-                </label>
-                <button type="button" onClick={handleExportProject} className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-2 py-2 text-xs font-bold text-white hover:bg-indigo-600">
-                  <FileDown size={13} /> Export project
-                </button>
-              </div>
-              <p className="mt-2 text-[10px] leading-relaxed text-slate-400">Autosaved locally. Project files include slides, images, and settings.</p>
-            </div>
-
-            <details className="group rounded-xl border border-slate-200 bg-white">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
-                <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-indigo-500" /> Project tools</span>
-                <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
-              </summary>
-              <div className="space-y-4 border-t border-slate-100 p-3">
                 <div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700"><Palette size={14} /> Brand kit</div>
-                  <input value={brandKit.name} onChange={(event) => setBrandKit((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold outline-none focus:border-indigo-400" aria-label="Brand name" />
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-[10px] font-bold text-slate-500"><input type="color" value={brandKit.primary} onChange={(event) => setBrandKit((current) => ({ ...current, primary: event.target.value }))} className="h-6 w-6" /> Accent</label>
-                    <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-[10px] font-bold text-slate-500"><input type="color" value={brandKit.secondary} onChange={(event) => setBrandKit((current) => ({ ...current, secondary: event.target.value }))} className="h-6 w-6" /> Text</label>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-base font-extrabold tracking-tight text-slate-950">Frameflow</h1>
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-600">Studio</span>
                   </div>
-                  <select value={brandKit.fontFamily} onChange={(event) => setBrandKit((current) => ({ ...current, fontFamily: event.target.value }))} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold">
-                    {FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
-                  </select>
-                  <button type="button" onClick={applyBrandKit} className="mt-2 w-full rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100">Apply brand to editing scope</button>
-                </div>
-
-                <div className="border-t border-slate-100 pt-3">
-                  <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-700"><Library size={14} /> Media library</span><span className="text-[10px] font-semibold text-slate-400">{mediaLibrary.length} assets</span></div>
-                  {mediaLibrary.length > 0 ? (
-                    <div className="mt-2 grid grid-cols-5 gap-1.5">
-                      {mediaLibrary.slice(0, 10).map((asset) => <button key={asset.url} type="button" onClick={() => updateCurrentScreenshot({ url: asset.url })} className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100 hover:ring-2 hover:ring-indigo-300" title="Use this image"><img src={asset.url} alt="Reusable project asset" className="h-full w-full object-cover" /></button>)}
-                    </div>
-                  ) : <p className="mt-2 text-[11px] text-slate-400">Uploaded screenshots appear here for quick reuse.</p>}
-                </div>
-
-                <div className="border-t border-slate-100 pt-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700"><Languages size={14} /> Localization</div>
-                  <select value={activeLocale} onChange={(event) => setActiveLocale(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold">
-                    <option value="en-US">English (source)</option><option value="fr-FR">French</option><option value="de-DE">German</option><option value="es-ES">Spanish</option><option value="pt-BR">Portuguese (Brazil)</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option>
-                  </select>
-                  <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">Switch locale, then edit copy in the inspector. Source copy is used until a translation changes.</p>
-                </div>
-
-                <div className="border-t border-slate-100 pt-3">
-                  <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-700"><History size={14} /> Versions</span><button type="button" onClick={saveVersion} className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-200">Save version</button></div>
-                  {versions.length > 0 ? <div className="mt-2 space-y-1.5">{versions.slice(0, 4).map((version) => <button type="button" key={version.id} onClick={() => restoreVersion(version)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-2.5 py-2 text-left hover:bg-slate-50"><span className="text-[11px] font-bold text-slate-600">{version.name}</span><span className="text-[9px] text-slate-400">{new Date(version.createdAt).toLocaleDateString()}</span></button>)}</div> : <p className="mt-2 text-[11px] text-slate-400">Save a checkpoint before a major edit.</p>}
+                  <p className="text-[11px] text-slate-500">App-store mockups, without the busywork</p>
                 </div>
               </div>
-            </details>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active Preset</label>
-              <select
-                value={selectedPreset.id}
-                onChange={(e) => setSelectedPresetId(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl p-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              >
-                {appPresets.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <p className="text-xs text-indigo-600 font-medium">↑ Switching preset instantly applies its look to the canvas.</p>
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Saved
+              </span>
             </div>
 
-            {/* JSON import / export row */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preset JSON</label>
-              <div className="flex gap-2">
-                <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 text-sm font-medium cursor-pointer hover:bg-indigo-100 transition-colors">
-                  <Upload size={14} /> Import JSON
-                  <input
-                    type="file"
-                    accept=".json,application/json"
-                    className="hidden"
-                    onChange={handleJsonImport}
-                  />
-                </label>
+            <nav className="mt-4 grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1" aria-label="Editor tools">
+              {[
+                { key: 'presets' as const, label: 'Presets', icon: Save },
+                { key: 'layout' as const, label: 'Canvas', icon: Layout },
+                { key: 'device' as const, label: 'Device', icon: Smartphone },
+                { key: 'typography' as const, label: 'Type', icon: Type },
+              ].map(({ key, label, icon: Icon }) => (
                 <button
-                  onClick={handleExportPresetsJson}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                  key={key}
+                  onClick={() => focusSection(key)}
+                  className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-[10px] font-semibold transition-all ${activeTool === key
+                    ? 'bg-white text-indigo-700 shadow-sm'
+                    : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
+                    }`}
                 >
-                  <FileDown size={14} /> Export JSON
+                  <Icon size={15} />
+                  {label}
                 </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {/* Editing scope */}
+            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <div>
+                <p className="text-xs font-bold text-slate-800">Editing scope</p>
+                <p className={`mt-0.5 text-[11px] font-medium ${applyToAll ? 'text-indigo-600' : 'text-amber-600'}`}>
+                  {applyToAll ? 'All slides' : `Slide ${activeIndex + 1} only`}
+                </p>
               </div>
-              {jsonImportError && (
-                <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{jsonImportError}</p>
-              )}
-              <p className="text-xs text-gray-400">
-                Create a <code className="bg-gray-100 px-1 py-0.5 rounded">.json</code> file per app with
-                slide-by-slide titles. See{' '}
-                <code className="bg-gray-100 px-1 py-0.5 rounded">src/presets/example-fitness-app.json</code> for the format.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preset Name</label>
-              <input
-                value={presetDraft.name}
-                onChange={(e) => setPresetDraft((prev) => ({ ...prev, name: e.target.value }))}
-                className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                placeholder="Fitness App Launch"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Default Title</label>
-              <textarea
-                value={presetDraft.title}
-                onChange={(e) => setPresetDraft((prev) => ({ ...prev, title: e.target.value }))}
-                className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
-                rows={3}
-                placeholder="Use [accent]accent tags[/accent] to highlight words"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Default Subtitle</label>
-              <textarea
-                value={presetDraft.subtitle}
-                onChange={(e) => setPresetDraft((prev) => ({ ...prev, subtitle: e.target.value }))}
-                className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
-                rows={3}
-                placeholder="Clean supporting copy for new screenshots"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={savePresetChanges}
-                className="px-3 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                onClick={() => setApplyToAll((value) => !value)}
+                aria-pressed={applyToAll}
+                className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${applyToAll ? 'bg-indigo-600' : 'bg-amber-400'}`}
+                title="Toggle whether changes apply to every slide"
               >
-                Update Preset
-              </button>
-              <button
-                onClick={createPreset}
-                className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Save as New
-              </button>
-              <button
-                onClick={syncPresetDraftFromCanvas}
-                className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                title="Pull title & subtitle from current slide into this draft"
-              >
-                Use Canvas Copy
-              </button>
-              <button
-                onClick={deletePreset}
-                disabled={appPresets.length <= 1}
-                className="px-3 py-2.5 rounded-xl border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Delete
+                <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${applyToAll ? 'translate-x-5' : 'translate-x-0'}`} />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => applyPresetToSlides('current')}
-                disabled={!hasSlides}
-                className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Apply to Current
-              </button>
-              <button
-                onClick={() => applyPresetToSlides('all')}
-                disabled={!hasSlides}
-                className="px-3 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Apply to All Slides
-              </button>
-            </div>
-          </PanelSection>
-
-          {/* Layout */}
-          <PanelSection
-            id="section-layout"
-            title="Canvas & Layout"
-            description="Control canvas background, content flow, text and device alignment."
-            open={openSections.layout}
-            onToggle={() => toggleSection('layout')}
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  <MonitorSmartphone size={16} className="text-indigo-500" /> Output size
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updateSetting({ canvasWidth: activeSettings.canvasHeight, canvasHeight: activeSettings.canvasWidth })}
-                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50"
-                    title="Swap canvas orientation"
-                  >
-                    Rotate
+            {/* Brand Presets */}
+            <PanelSection
+              id="section-presets"
+              title="Brand Presets"
+              description="Switching preset instantly previews that look. Import a JSON file to load a per-app preset."
+              open={openSections.presets}
+              onToggle={() => toggleSection('presets')}
+            >
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Project name</label>
+                <input
+                  value={projectName}
+                  onChange={(event) => setProjectName(event.target.value)}
+                  className="mt-1 w-full bg-transparent text-sm font-bold text-slate-800 outline-none"
+                  placeholder="Untitled project"
+                />
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                    <Upload size={13} /> Import project
+                    <input type="file" accept=".json,.frameflow.json,application/json" className="hidden" onChange={handleProjectImport} />
+                  </label>
+                  <button type="button" onClick={handleExportProject} className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-2 py-2 text-xs font-bold text-white hover:bg-indigo-600">
+                    <FileDown size={13} /> Export project
                   </button>
-                  <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500">
-                    {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
-                  </span>
                 </div>
+                <p className="mt-2 text-[10px] leading-relaxed text-slate-400">Autosaved locally. Project files include slides, images, and settings.</p>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {CANVAS_PRESETS.map((preset) => {
-                  const selected = activeSettings.canvasWidth === preset.width && activeSettings.canvasHeight === preset.height;
-                  return (
-                    <button
-                      key={preset.id}
-                      onClick={() => updateSetting({ canvasWidth: preset.width, canvasHeight: preset.height })}
-                      className={`rounded-xl border px-3 py-2.5 text-left transition-all ${selected
-                        ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-100'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                        }`}
-                    >
-                      <span className={`block text-xs font-bold ${selected ? 'text-indigo-700' : 'text-slate-700'}`}>{preset.label}</span>
-                      <span className="mt-0.5 block font-mono text-[10px] text-slate-400">{preset.width} × {preset.height}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Width</span>
-                  <input
-                    type="number"
-                    min={320}
-                    max={4096}
-                    value={activeSettings.canvasWidth}
-                    onChange={(e) => updateSetting({ canvasWidth: Math.max(320, Number(e.target.value)) })}
-                    className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
-                  />
-                </label>
-                <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Height</span>
-                  <input
-                    type="number"
-                    min={320}
-                    max={4096}
-                    value={activeSettings.canvasHeight}
-                    onChange={(e) => updateSetting({ canvasHeight: Math.max(320, Number(e.target.value)) })}
-                    className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
-                  />
-                </label>
-              </div>
-            </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Palette size={16} className="text-indigo-500" /> Background
-              </label>
-              <div className="grid grid-cols-6 gap-2 mb-3">
-                {BACKGROUNDS.map((bg, i) => (
-                  <button
-                    key={i}
-                    onClick={() => updateSetting({ background: bg })}
-                    className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${activeSettings.background === bg
-                      ? 'border-indigo-600 scale-110 shadow-md'
-                      : 'border-transparent shadow-sm'
-                      }`}
-                    style={{ background: bg }}
-                    title={bg}
-                  />
-                ))}
-              </div>
-              <details className="group rounded-xl border border-slate-200 bg-slate-50">
-                <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-xs font-bold text-slate-600">
-                  Gradient builder
+              <details className="group rounded-xl border border-slate-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
+                  <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-indigo-500" /> Project tools</span>
                   <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
                 </summary>
-                <div className="space-y-3 border-t border-slate-200 p-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    {([
-                      { label: 'Start', key: 'backgroundGradientStart' as const },
-                      { label: 'End', key: 'backgroundGradientEnd' as const },
-                    ]).map(({ label, key }) => (
-                      <label key={key} className="flex items-center gap-2 rounded-lg bg-white p-2 shadow-sm">
-                        <input
-                          type="color"
-                          value={activeSettings[key]}
-                          onChange={(e) => {
-                            const next = e.target.value;
-                            const start = key === 'backgroundGradientStart' ? next : activeSettings.backgroundGradientStart;
-                            const end = key === 'backgroundGradientEnd' ? next : activeSettings.backgroundGradientEnd;
-                            updateSetting({ [key]: next, background: `linear-gradient(${activeSettings.backgroundGradientAngle}deg, ${start} 0%, ${end} 100%)` });
-                          }}
-                          className="h-7 w-7 rounded-md border-0 bg-transparent p-0"
-                        />
-                        <span className="text-[11px] font-bold text-slate-500">{label}</span>
-                      </label>
-                    ))}
+                <div className="space-y-4 border-t border-slate-100 p-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-700"><Palette size={14} /> Brand kit</div>
+                    <input value={brandKit.name} onChange={(event) => setBrandKit((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold outline-none focus:border-indigo-400" aria-label="Brand name" />
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-[10px] font-bold text-slate-500"><input type="color" value={brandKit.primary} onChange={(event) => setBrandKit((current) => ({ ...current, primary: event.target.value }))} className="h-6 w-6" /> Accent</label>
+                      <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-[10px] font-bold text-slate-500"><input type="color" value={brandKit.secondary} onChange={(event) => setBrandKit((current) => ({ ...current, secondary: event.target.value }))} className="h-6 w-6" /> Text</label>
+                    </div>
+                    <select value={brandKit.fontFamily} onChange={(event) => setBrandKit((current) => ({ ...current, fontFamily: event.target.value }))} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold">
+                      {FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
+                    </select>
+                    <button type="button" onClick={applyBrandKit} className="mt-2 w-full rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100">Apply brand to editing scope</button>
                   </div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                    Angle · {activeSettings.backgroundGradientAngle}°
+
+                  <div className="border-t border-slate-100 pt-3">
+                    <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-700"><Library size={14} /> Media library</span><span className="text-[10px] font-semibold text-slate-400">{mediaLibrary.length} assets</span></div>
+                    {mediaLibrary.length > 0 ? (
+                      <div className="mt-2 grid grid-cols-5 gap-1.5">
+                        {mediaLibrary.slice(0, 10).map((asset) => <button key={asset.url} type="button" onClick={() => updateCurrentScreenshot({ url: asset.url })} className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100 hover:ring-2 hover:ring-indigo-300" title="Use this image"><img src={asset.url} alt="Reusable project asset" className="h-full w-full object-cover" /></button>)}
+                      </div>
+                    ) : <p className="mt-2 text-[11px] text-slate-400">Uploaded screenshots appear here for quick reuse.</p>}
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-700"><Languages size={14} /> Localization</div>
+                    <select value={activeLocale} onChange={(event) => setActiveLocale(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold">
+                      <option value="en-US">English (source)</option><option value="fr-FR">French</option><option value="de-DE">German</option><option value="es-ES">Spanish</option><option value="pt-BR">Portuguese (Brazil)</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option>
+                    </select>
+                    <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">Switch locale, then edit copy in the inspector. Source copy is used until a translation changes.</p>
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-3">
+                    <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-700"><History size={14} /> Versions</span><button type="button" onClick={saveVersion} className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-200">Save version</button></div>
+                    {versions.length > 0 ? <div className="mt-2 space-y-1.5">{versions.slice(0, 4).map((version) => <button type="button" key={version.id} onClick={() => restoreVersion(version)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-2.5 py-2 text-left hover:bg-slate-50"><span className="text-[11px] font-bold text-slate-600">{version.name}</span><span className="text-[9px] text-slate-400">{new Date(version.createdAt).toLocaleDateString()}</span></button>)}</div> : <p className="mt-2 text-[11px] text-slate-400">Save a checkpoint before a major edit.</p>}
+                  </div>
+                </div>
+              </details>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active Preset</label>
+                <select
+                  value={selectedPreset.id}
+                  onChange={(e) => setSelectedPresetId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                >
+                  {appPresets.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-indigo-600 font-medium">↑ Switching preset instantly applies its look to the canvas.</p>
+              </div>
+
+              {/* JSON import / export row */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preset Files (.json)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-semibold cursor-pointer hover:bg-indigo-100 transition-colors">
+                    <Upload size={14} /> Import JSON
                     <input
-                      type="range"
-                      min={0}
-                      max={360}
-                      value={activeSettings.backgroundGradientAngle}
-                      onChange={(e) => {
-                        const angle = Number(e.target.value);
-                        updateSetting({
-                          backgroundGradientAngle: angle,
-                          background: `linear-gradient(${angle}deg, ${activeSettings.backgroundGradientStart} 0%, ${activeSettings.backgroundGradientEnd} 100%)`,
-                        });
-                      }}
-                      className="mt-2 w-full"
+                      type="file"
+                      accept=".json,application/json"
+                      className="hidden"
+                      onChange={handleJsonImport}
+                    />
+                  </label>
+                  <button
+                    onClick={handleExportCurrentPreset}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-indigo-200 bg-white text-indigo-700 text-xs font-semibold hover:bg-indigo-50 transition-colors shadow-2xs"
+                    title="Download the active preset as a standalone .json file"
+                  >
+                    <FileDown size={14} /> Export Preset
+                  </button>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleExportPresetsJson}
+                    className="text-[10px] text-slate-500 hover:text-indigo-600 underline transition-colors"
+                    title="Export all presets as a single bundle file"
+                  >
+                    Export all presets bundle
+                  </button>
+                </div>
+                {jsonImportError && (
+                  <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{jsonImportError}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preset Name</label>
+                <input
+                  value={presetDraft.name}
+                  onChange={(e) => setPresetDraft((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  placeholder="e.g. Fitness App Launch"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Default Title</label>
+                <textarea
+                  value={presetDraft.title}
+                  onChange={(e) => setPresetDraft((prev) => ({ ...prev, title: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                  rows={2}
+                  placeholder="Headline (supports [accent]word[/accent])"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Default Subtitle</label>
+                <textarea
+                  value={presetDraft.subtitle}
+                  onChange={(e) => setPresetDraft((prev) => ({ ...prev, subtitle: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                  rows={2}
+                  placeholder="Supporting description copy"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={savePresetChanges}
+                  className="px-3 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                  title="Save current canvas settings and copy into this preset"
+                >
+                  <Check size={14} /> Update Preset
+                </button>
+                <button
+                  onClick={createPreset}
+                  className="px-3 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/80 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors flex items-center justify-center gap-1.5"
+                  title="Save this design as a brand new preset"
+                >
+                  <Plus size={14} /> Save as New
+                </button>
+                <button
+                  onClick={syncPresetDraftFromCanvas}
+                  className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  title="Pull title & subtitle from active slide into this draft"
+                >
+                  Use Slide Copy
+                </button>
+                <button
+                  onClick={deletePreset}
+                  disabled={appPresets.length <= 1}
+                  className="px-3 py-2 rounded-xl border border-red-200 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 size={13} /> Delete
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                <button
+                  onClick={() => applyPresetToSlides('current')}
+                  disabled={!hasSlides}
+                  className="px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Apply to Current
+                </button>
+                <button
+                  onClick={() => applyPresetToSlides('all')}
+                  disabled={!hasSlides}
+                  className="px-3 py-2.5 rounded-xl bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Apply to All Slides
+                </button>
+              </div>
+            </PanelSection>
+
+            {/* Layout */}
+            <PanelSection
+              id="section-layout"
+              title="Canvas & Layout"
+              description="Control canvas background, content flow, text and device alignment."
+              open={openSections.layout}
+              onToggle={() => toggleSection('layout')}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <MonitorSmartphone size={16} className="text-indigo-500" /> Output size
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateSetting({ canvasWidth: activeSettings.canvasHeight, canvasHeight: activeSettings.canvasWidth })}
+                      className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50"
+                      title="Swap canvas orientation"
+                    >
+                      Rotate
+                    </button>
+                    <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500">
+                      {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {CANVAS_PRESETS.map((preset) => {
+                    const selected = activeSettings.canvasWidth === preset.width && activeSettings.canvasHeight === preset.height;
+                    return (
+                      <button
+                        key={preset.id}
+                        onClick={() => updateSetting({ canvasWidth: preset.width, canvasHeight: preset.height })}
+                        className={`rounded-xl border px-3 py-2.5 text-left transition-all ${selected
+                          ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-100'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                          }`}
+                      >
+                        <span className={`block text-xs font-bold ${selected ? 'text-indigo-700' : 'text-slate-700'}`}>{preset.label}</span>
+                        <span className="mt-0.5 block font-mono text-[10px] text-slate-400">{preset.width} × {preset.height}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Width</span>
+                    <input
+                      type="number"
+                      min={320}
+                      max={4096}
+                      value={activeSettings.canvasWidth}
+                      onChange={(e) => updateSetting({ canvasWidth: Math.max(320, Number(e.target.value)) })}
+                      className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
+                    />
+                  </label>
+                  <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Height</span>
+                    <input
+                      type="number"
+                      min={320}
+                      max={4096}
+                      value={activeSettings.canvasHeight}
+                      onChange={(e) => updateSetting({ canvasHeight: Math.max(320, Number(e.target.value)) })}
+                      className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
                     />
                   </label>
                 </div>
-              </details>
-              <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl bg-gray-50 shadow-sm">
-                <span className="text-sm font-medium text-gray-700">Custom</span>
-                <input
-                  type="color"
-                  value={
-                    activeSettings.background.startsWith('#')
-                      ? activeSettings.background.slice(0, 7)
-                      : '#ffffff'
-                  }
-                  onChange={(e) => updateSetting({ background: e.target.value })}
-                  className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
-                  title="Solid Color"
-                />
-                <input
-                  type="text"
-                  placeholder="linear-gradient(...)"
-                  value={activeSettings.background}
-                  onChange={(e) => updateSetting({ background: e.target.value })}
-                  className="flex-1 min-w-0 border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
-                />
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Layout size={16} className="text-indigo-500" /> Layout
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['text-top', 'text-bottom', 'centered'] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => updateSetting({ layout: l })}
-                    className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.layout === l
-                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
-                  >
-                    {l === 'text-top' ? 'Text Top' : l === 'text-bottom' ? 'Text Bottom' : 'Centered'}
-                  </button>
-                ))}
-              </div>
-            </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Palette size={16} className="text-indigo-500" /> Background
+                  </label>
+                  {(() => {
+                    const activePatternId =
+                      activeSettings.backgroundPattern === 'wave-ribbons'
+                        ? 'emerald-wave'
+                        : activeSettings.backgroundPattern ||
+                        (typeof activeSettings.background === 'string' && activeSettings.background.includes('#057a44') ? 'emerald-wave' : 'none');
+                    return activePatternId !== 'none' ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-200 shadow-2xs">
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: activeSettings.backgroundPatternColor || '#078249' }} />
+                        {DESIGNER_PATTERNS.find(p => p.id === activePatternId)?.name || 'Pattern'} Active
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Text Align</label>
-              <div className="flex bg-gray-100 p-1 rounded-xl">
-                {(['left', 'center', 'right'] as const).map((align) => (
-                  <button
-                    key={align}
-                    onClick={() => {
-                      updateSetting({ textAlign: align });
-                      if (activeScreenshot)
-                        updateCurrentScreenshot({ textOffset: { x: 0, y: activeScreenshot.textOffset.y } });
-                    }}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.textAlign === align
-                      ? 'bg-white shadow text-indigo-700'
-                      : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    {align}
-                  </button>
-                ))}
-              </div>
-            </div>
+                {/* Designer Background Pattern Selector */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Designer Patterns
+                    </span>
+                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                      {DESIGNER_PATTERNS.length - 1} Pro Styles
+                    </span>
+                  </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Smartphone size={16} className="text-indigo-500" /> Phone Position
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {(['centered', 'half-down'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => updateSetting({ phonePositionMode: mode })}
-                    className={`py-2 px-3 rounded-xl text-xs font-medium border transition-colors ${activeSettings.phonePositionMode === mode
-                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
-                  >
-                    {mode === 'centered' ? 'Centered' : 'Half Down'}
-                  </button>
-                ))}
+                  {(() => {
+                    const activePatternId =
+                      activeSettings.backgroundPattern === 'wave-ribbons'
+                        ? 'emerald-wave'
+                        : activeSettings.backgroundPattern ||
+                        (typeof activeSettings.background === 'string' && activeSettings.background.includes('#057a44') ? 'emerald-wave' : 'none');
+                    const isAnyPatternActive = activePatternId !== 'none';
+
+                    return (
+                      <>
+                        <div className="grid grid-cols-2 gap-2">
+                          {DESIGNER_PATTERNS.map((pat) => {
+                            const isSelected = activePatternId === pat.id;
+                            return (
+                              <button
+                                key={pat.id}
+                                type="button"
+                                onClick={() => {
+                                  if (pat.id === 'none') {
+                                    updateSetting({ backgroundPattern: 'none' });
+                                  } else {
+                                    const baseColor = activeSettings.backgroundPatternColor || '#078249';
+                                    const cornerStart = activeSettings.backgroundPatternCornerStart || '#10b981';
+                                    const cornerEnd = activeSettings.backgroundPatternCornerEnd || '#02381e';
+                                    const waveColor = activeSettings.backgroundPatternWaveColor || '#34d399';
+                                    const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
+                                    updateSetting({
+                                      backgroundPattern: pat.id,
+                                      backgroundPatternColor: baseColor,
+                                      backgroundPatternCornerStart: cornerStart,
+                                      backgroundPatternCornerEnd: cornerEnd,
+                                      backgroundPatternWaveColor: waveColor,
+                                      background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
+                                      titleColor: '#FFFFFF',
+                                      subtitleColor: tones.subtitleColor,
+                                      accentColor: tones.accentColor,
+                                    });
+                                  }
+                                }}
+                                className={`relative overflow-hidden rounded-xl border p-2 text-left transition-all ${isSelected
+                                  ? 'border-indigo-600 bg-indigo-50/40 ring-2 ring-indigo-500/20 shadow-sm'
+                                  : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm'
+                                  }`}
+                              >
+                                <div
+                                  className="relative h-14 w-full rounded-lg overflow-hidden mb-1.5 shadow-inner border border-slate-200/60"
+                                  style={{
+                                    backgroundColor:
+                                      pat.id === 'none'
+                                        ? undefined
+                                        : activeSettings.backgroundPatternColor || '#078249',
+                                    background:
+                                      pat.id === 'none'
+                                        ? isSelected
+                                          ? activeSettings.background
+                                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                        : undefined,
+                                  }}
+                                >
+                                  {pat.id === 'emerald-wave' && (
+                                    <EmeraldWaveBackground
+                                      idPrefix="thumb-wave"
+                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                      cornerStart={activeSettings.backgroundPatternCornerStart}
+                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                      waveColor={activeSettings.backgroundPatternWaveColor}
+                                    />
+                                  )}
+                                  {pat.id === 'aurora-mesh' && (
+                                    <AuroraMeshBackground
+                                      idPrefix="thumb-aurora"
+                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                      cornerStart={activeSettings.backgroundPatternCornerStart}
+                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                      waveColor={activeSettings.backgroundPatternWaveColor}
+                                    />
+                                  )}
+                                  {pat.id === 'cyber-grid' && (
+                                    <CyberGridBackground
+                                      idPrefix="thumb-grid"
+                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                      cornerStart={activeSettings.backgroundPatternCornerStart}
+                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                      waveColor={activeSettings.backgroundPatternWaveColor}
+                                    />
+                                  )}
+                                  {pat.id === 'glass-spheres' && (
+                                    <GlassSpheresBackground
+                                      idPrefix="thumb-spheres"
+                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                      cornerStart={activeSettings.backgroundPatternCornerStart}
+                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                      waveColor={activeSettings.backgroundPatternWaveColor}
+                                    />
+                                  )}
+                                  {pat.id === 'topography-contour' && (
+                                    <TopographyBackground
+                                      idPrefix="thumb-topo"
+                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                      cornerStart={activeSettings.backgroundPatternCornerStart}
+                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                      waveColor={activeSettings.backgroundPatternWaveColor}
+                                    />
+                                  )}
+                                  {pat.id === 'crystal-prism' && (
+                                    <CrystalPrismBackground
+                                      idPrefix="thumb-prism"
+                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                      cornerStart={activeSettings.backgroundPatternCornerStart}
+                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                      waveColor={activeSettings.backgroundPatternWaveColor}
+                                    />
+                                  )}
+                                  <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider backdrop-blur-xs">
+                                    {pat.badge}
+                                  </span>
+                                </div>
+                                <span className="block text-xs font-bold text-slate-800 leading-tight">{pat.name}</span>
+                                <span className="block text-[10px] text-slate-500 leading-tight truncate">{pat.desc}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {isAnyPatternActive && (
+                          <div className="pt-3 border-t border-slate-200/80 space-y-3">
+                            {/* 1. Duo-Tone & Multi-Color Presets */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                                  Designer Duo-Tone Palettes
+                                </span>
+                                <span className="text-[10px] text-slate-400">Pre-harmonized</span>
+                              </div>
+
+                              <div className="grid grid-cols-4 gap-1.5">
+                                {DESIGNER_PATTERN_PRESETS.map((p) => {
+                                  const isCurrent =
+                                    (activeSettings.backgroundPatternColor || '#078249').toLowerCase() === p.base.toLowerCase() &&
+                                    (activeSettings.backgroundPatternCornerStart || '').toLowerCase() === p.cornerStart.toLowerCase();
+                                  return (
+                                    <button
+                                      key={p.id}
+                                      type="button"
+                                      onClick={() => {
+                                        const tones = computePatternTones(p.base, p.cornerStart, p.cornerEnd, p.wave);
+                                        updateSetting({
+                                          backgroundPatternColor: p.base,
+                                          backgroundPatternCornerStart: p.cornerStart,
+                                          backgroundPatternCornerEnd: p.cornerEnd,
+                                          backgroundPatternWaveColor: p.wave,
+                                          background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
+                                          titleColor: '#FFFFFF',
+                                          subtitleColor: tones.subtitleColor,
+                                          accentColor: tones.accentColor,
+                                        });
+                                      }}
+                                      className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${isCurrent
+                                        ? 'border-slate-800 bg-white shadow-xs ring-1 ring-slate-800'
+                                        : 'border-slate-200 bg-white/70 hover:bg-white hover:border-slate-300'
+                                        }`}
+                                      title={`${p.name} (${p.badge})`}
+                                    >
+                                      <span className="relative w-4 h-4 rounded-full flex-shrink-0 overflow-hidden shadow-2xs border border-black/10">
+                                        <span className="absolute inset-0 w-1/2" style={{ backgroundColor: p.cornerStart }} />
+                                        <span className="absolute inset-0 left-1/2 w-1/2" style={{ backgroundColor: p.base }} />
+                                        <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white" style={{ backgroundColor: p.wave }} />
+                                      </span>
+                                      <span className="text-[10px] font-semibold text-slate-700 truncate">{p.name}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* 2. Direct Corner & Wave Gradient Customizer */}
+                            <div className="rounded-xl border border-slate-200 bg-white p-2.5 space-y-2.5 shadow-2xs">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                                  Corner & Wave Gradient Colors
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const base = activeSettings.backgroundPatternColor || '#009e52';
+                                    const tones = computePatternTones(base);
+                                    updateSetting({
+                                      backgroundPatternCornerStart: tones.ribbonTop0,
+                                      backgroundPatternCornerEnd: tones.ribbonBottom100,
+                                      backgroundPatternWaveColor: tones.waveBody0,
+                                      subtitleColor: tones.subtitleColor,
+                                      accentColor: tones.accentColor,
+                                    });
+                                  }}
+                                  className="text-[10px] font-semibold text-indigo-600 hover:underline"
+                                  title="Recalculate corner gradient colors from the base background"
+                                >
+                                  Auto-Match Base
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-1.5 hover:bg-slate-50 cursor-pointer">
+                                  <input
+                                    type="color"
+                                    value={activeSettings.backgroundPatternCornerStart || '#05c065'}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateSetting({ backgroundPatternCornerStart: val });
+                                    }}
+                                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-tight">Corner Start</span>
+                                    <span className="block text-[11px] font-mono text-slate-700 truncate">
+                                      {activeSettings.backgroundPatternCornerStart || '#05c065'}
+                                    </span>
+                                  </div>
+                                </label>
+
+                                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-1.5 hover:bg-slate-50 cursor-pointer">
+                                  <input
+                                    type="color"
+                                    value={activeSettings.backgroundPatternCornerEnd || '#00783d'}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateSetting({ backgroundPatternCornerEnd: val });
+                                    }}
+                                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-tight">Corner End</span>
+                                    <span className="block text-[11px] font-mono text-slate-700 truncate">
+                                      {activeSettings.backgroundPatternCornerEnd || '#00783d'}
+                                    </span>
+                                  </div>
+                                </label>
+
+                                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-1.5 hover:bg-slate-50 cursor-pointer">
+                                  <input
+                                    type="color"
+                                    value={activeSettings.backgroundPatternWaveColor || '#008e49'}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      updateSetting({ backgroundPatternWaveColor: val });
+                                    }}
+                                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-tight">3D Wave Accent</span>
+                                    <span className="block text-[11px] font-mono text-slate-700 truncate">
+                                      {activeSettings.backgroundPatternWaveColor || '#008e49'}
+                                    </span>
+                                  </div>
+                                </label>
+
+                                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-1.5 hover:bg-slate-50 cursor-pointer">
+                                  <input
+                                    type="color"
+                                    value={activeSettings.backgroundPatternColor || '#009e52'}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const tones = computePatternTones(
+                                        val,
+                                        activeSettings.backgroundPatternCornerStart,
+                                        activeSettings.backgroundPatternCornerEnd,
+                                        activeSettings.backgroundPatternWaveColor
+                                      );
+                                      updateSetting({
+                                        backgroundPatternColor: val,
+                                        background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
+                                      });
+                                    }}
+                                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-tight">Base Backdrop</span>
+                                    <span className="block text-[11px] font-mono text-slate-700 truncate">
+                                      {activeSettings.backgroundPatternColor || '#009e52'}
+                                    </span>
+                                  </div>
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="pt-1 flex items-center justify-between text-[10px] text-slate-500">
+                              <span>Typography automatically harmonizes to corner accents</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const tones = computePatternTones(
+                                    activeSettings.backgroundPatternColor || '#078249',
+                                    activeSettings.backgroundPatternCornerStart,
+                                    activeSettings.backgroundPatternCornerEnd,
+                                    activeSettings.backgroundPatternWaveColor
+                                  );
+                                  updateSetting({
+                                    titleColor: '#FFFFFF',
+                                    subtitleColor: tones.subtitleColor,
+                                    accentColor: tones.accentColor,
+                                  });
+                                }}
+                                className="font-bold text-indigo-600 hover:underline"
+                              >
+                                Harmonize text
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                <div className="grid grid-cols-6 gap-2 mb-3">
+                  {BACKGROUNDS.map((bg, i) => (
+                    <button
+                      key={i}
+                      onClick={() => updateSetting({
+                        background: bg,
+                        backgroundPattern: bg.includes('#057a44') ? 'emerald-wave' : 'none',
+                      })}
+                      className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${activeSettings.background === bg
+                        ? 'border-indigo-600 scale-110 shadow-md'
+                        : 'border-transparent shadow-sm'
+                        }`}
+                      style={{ background: bg }}
+                      title={bg}
+                    />
+                  ))}
+                </div>
+                <details className="group rounded-xl border border-slate-200 bg-slate-50">
+                  <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-xs font-bold text-slate-600">
+                    Gradient builder
+                    <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+                  </summary>
+                  <div className="space-y-3 border-t border-slate-200 p-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      {([
+                        { label: 'Start', key: 'backgroundGradientStart' as const },
+                        { label: 'End', key: 'backgroundGradientEnd' as const },
+                      ]).map(({ label, key }) => (
+                        <label key={key} className="flex items-center gap-2 rounded-lg bg-white p-2 shadow-sm">
+                          <input
+                            type="color"
+                            value={activeSettings[key]}
+                            onChange={(e) => {
+                              const next = e.target.value;
+                              const start = key === 'backgroundGradientStart' ? next : activeSettings.backgroundGradientStart;
+                              const end = key === 'backgroundGradientEnd' ? next : activeSettings.backgroundGradientEnd;
+                              updateSetting({ [key]: next, background: `linear-gradient(${activeSettings.backgroundGradientAngle}deg, ${start} 0%, ${end} 100%)` });
+                            }}
+                            className="h-7 w-7 rounded-md border-0 bg-transparent p-0"
+                          />
+                          <span className="text-[11px] font-bold text-slate-500">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                      Angle · {activeSettings.backgroundGradientAngle}°
+                      <input
+                        type="range"
+                        min={0}
+                        max={360}
+                        value={activeSettings.backgroundGradientAngle}
+                        onChange={(e) => {
+                          const angle = Number(e.target.value);
+                          updateSetting({
+                            backgroundGradientAngle: angle,
+                            background: `linear-gradient(${angle}deg, ${activeSettings.backgroundGradientStart} 0%, ${activeSettings.backgroundGradientEnd} 100%)`,
+                          });
+                        }}
+                        className="mt-2 w-full"
+                      />
+                    </label>
+                  </div>
+                </details>
+                <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl bg-gray-50 shadow-sm">
+                  <span className="text-sm font-medium text-gray-700">Custom</span>
+                  <input
+                    type="color"
+                    value={
+                      activeSettings.background.startsWith('#')
+                        ? activeSettings.background.slice(0, 7)
+                        : '#ffffff'
+                    }
+                    onChange={(e) => updateSetting({ background: e.target.value })}
+                    className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
+                    title="Solid Color"
+                  />
+                  <input
+                    type="text"
+                    placeholder="linear-gradient(...)"
+                    value={activeSettings.background}
+                    onChange={(e) => updateSetting({ background: e.target.value })}
+                    className="flex-1 min-w-0 border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Device Align</label>
+
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Layout size={16} className="text-indigo-500" /> Layout
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['text-top', 'text-bottom', 'centered'] as const).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() =>
+                        updateSetting({
+                          layout: l,
+                          ...(l === 'text-bottom' && activeSettings.phonePositionMode !== 'half-up'
+                            ? { phonePositionMode: 'half-up' }
+                            : l === 'text-top' && activeSettings.phonePositionMode === 'half-up'
+                              ? { phonePositionMode: 'half-down' }
+                              : {}),
+                        })
+                      }
+                      className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.layout === l
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold shadow-2xs'
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                    >
+                      {l === 'text-top' ? 'Text Top' : l === 'text-bottom' ? 'Text Bottom' : 'Centered'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Text Align</label>
                 <div className="flex bg-gray-100 p-1 rounded-xl">
                   {(['left', 'center', 'right'] as const).map((align) => (
                     <button
                       key={align}
                       onClick={() => {
-                        updateSetting({ deviceAlign: align });
+                        updateSetting({ textAlign: align });
                         if (activeScreenshot)
-                          updateCurrentScreenshot({ deviceOffset: { x: 0, y: activeScreenshot.deviceOffset.y } });
+                          updateCurrentScreenshot({ textOffset: { x: 0, y: activeScreenshot.textOffset.y } });
                       }}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.deviceAlign === align
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.textAlign === align
                         ? 'bg-white shadow text-indigo-700'
                         : 'text-gray-600 hover:text-gray-900'
                         }`}
@@ -2417,472 +3815,520 @@ export default function App() {
                   ))}
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Image Fit</label>
-              <div className="flex bg-gray-100 p-1 rounded-xl">
-                {(['cover', 'contain'] as const).map((fit) => (
-                  <button
-                    key={fit}
-                    onClick={() => updateSetting({ imageFit: fit })}
-                    className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${activeSettings.imageFit === fit
-                      ? 'bg-white shadow text-indigo-700'
-                      : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                  >
-                    {fit}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <details className="group rounded-xl border border-slate-200 bg-slate-50">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
-                Screenshot crop & adjustments
-                <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
-              </summary>
-              <div className="space-y-4 border-t border-slate-200 p-3">
-                {([
-                  { label: 'Zoom', key: 'screenshotScale' as const, min: 50, max: 200, suffix: '%' },
-                  { label: 'Horizontal', key: 'screenshotOffsetX' as const, min: -300, max: 300, suffix: 'px' },
-                  { label: 'Vertical', key: 'screenshotOffsetY' as const, min: -300, max: 300, suffix: 'px' },
-                  { label: 'Rotation', key: 'screenshotRotation' as const, min: -180, max: 180, suffix: '°' },
-                  { label: 'Brightness', key: 'screenshotBrightness' as const, min: 25, max: 175, suffix: '%' },
-                  { label: 'Contrast', key: 'screenshotContrast' as const, min: 25, max: 175, suffix: '%' },
-                  { label: 'Saturation', key: 'screenshotSaturation' as const, min: 0, max: 200, suffix: '%' },
-                ]).map(({ label, key, min, max, suffix }) => (
-                  <label key={key} className="block">
-                    <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                      {label}<span className="font-mono text-slate-600">{activeSettings[key]}{suffix}</span>
-                    </span>
-                    <input type="range" min={min} max={max} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Smartphone size={16} className="text-indigo-500" /> Phone Position
                   </label>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => updateSetting({ screenshotScale: 100, screenshotOffsetX: 0, screenshotOffsetY: 0, screenshotRotation: 0, screenshotBrightness: 100, screenshotContrast: 100, screenshotSaturation: 100 })}
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
-                >
-                  Reset screenshot
-                </button>
-              </div>
-            </details>
-          </PanelSection>
-
-          {/* Device */}
-          <PanelSection
-            id="section-device"
-            title="Device"
-            description="Scale, frame, rotate, tilt, and shadow for modern-looking mockups."
-            open={openSections.device}
-            onToggle={() => toggleSection('device')}
-          >
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-700">Device type</p>
-                <p className="mt-0.5 text-xs text-slate-400">Choose the right presentation frame</p>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { id: 'iphone' as const, label: 'iPhone' },
-                  { id: 'android' as const, label: 'Android' },
-                  { id: 'tablet' as const, label: 'Tablet' },
-                  { id: 'laptop' as const, label: 'Laptop' },
-                  { id: 'browser' as const, label: 'Browser' },
-                ]).map((device) => (
-                  <button
-                    key={device.id}
-                    type="button"
-                    onClick={() => updateSetting({ deviceType: device.id })}
-                    className={`rounded-xl border px-2 py-2.5 text-xs font-bold transition-all ${activeSettings.deviceType === device.id ? 'border-indigo-300 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
-                  >
-                    {device.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-700">Orientation</p>
-                <p className="mt-0.5 text-xs text-slate-400">Rotate or mirror the device</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
-                {(['portrait', 'landscape'] as const).map((orientation) => (
-                  <button
-                    key={orientation}
-                    type="button"
-                    onClick={() => updateSetting({ deviceOrientation: orientation })}
-                    disabled={activeSettings.deviceType === 'laptop' || activeSettings.deviceType === 'browser'}
-                    className={`rounded-lg py-2 text-xs font-bold capitalize transition-all disabled:cursor-not-allowed disabled:opacity-40 ${activeSettings.deviceOrientation === orientation ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}
-                  >
-                    {orientation}
-                  </button>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => updateSetting({ deviceFlipX: !activeSettings.deviceFlipX })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipX ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                  Flip horizontal
-                </button>
-                <button type="button" onClick={() => updateSetting({ deviceFlipY: !activeSettings.deviceFlipY })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipY ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                  Flip vertical
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">Quick poses</p>
-                  <p className="mt-0.5 text-xs text-slate-400">Professional angles in one click</p>
+                  <span className="text-[10px] text-slate-400">Bleed & Alignment</span>
                 </div>
-                <span className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-violet-600">New</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {DEVICE_POSES.map((pose, index) => (
-                  <button
-                    key={pose.name}
-                    onClick={() => updateSetting(pose.settings)}
-                    className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 text-left transition-all hover:border-indigo-300 hover:bg-indigo-50/50"
-                  >
-                    <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200">
-                      <span
-                        className="h-8 w-4 rounded-[4px] border-2 border-slate-700 bg-white shadow-sm transition-transform group-hover:scale-105"
-                        style={{ transform: `rotate(${[-0, -7, 7, -12][index]}deg)` }}
-                      />
-                    </span>
-                    <span className="text-xs font-bold text-slate-700">{pose.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-gray-700">Frame style</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Choose a polished device finish</p>
-                </div>
-                <button
-                  onClick={() => updateSetting({ deviceFrame: !activeSettings.deviceFrame })}
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${activeSettings.deviceFrame
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'bg-gray-100 text-gray-500'
-                    }`}
-                >
-                  {activeSettings.deviceFrame ? 'Frame on' : 'Frame off'}
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {DEVICE_FRAMES.map((frame) => {
-                  const selected = activeSettings.deviceFrame && activeSettings.deviceFrameStyle === frame.id;
-                  return (
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'half-up' as const, label: 'Top Bleed', desc: 'Device at top (bleeds off top)' },
+                    { id: 'centered' as const, label: 'Centered', desc: 'In-frame device' },
+                    { id: 'half-down' as const, label: 'Bottom Bleed', desc: 'Device at bottom (bleeds off bottom)' },
+                  ].map((mode) => (
                     <button
-                      key={frame.id}
-                      onClick={() => updateSetting({
-                        deviceFrame: true,
-                        deviceFrameStyle: frame.id,
-                        deviceFrameColor: frame.shell,
-                        deviceFrameEdgeColor: frame.edge,
-                      })}
-                      className={`group relative flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all ${selected
-                        ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-200'
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                      key={mode.id}
+                      onClick={() => updateSetting({ phonePositionMode: mode.id })}
+                      className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.phonePositionMode === mode.id
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold shadow-2xs'
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      title={mode.desc}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Device Align</label>
+                  <div className="flex bg-gray-100 p-1 rounded-xl">
+                    {(['left', 'center', 'right'] as const).map((align) => (
+                      <button
+                        key={align}
+                        onClick={() => {
+                          updateSetting({ deviceAlign: align });
+                          if (activeScreenshot)
+                            updateCurrentScreenshot({ deviceOffset: { x: 0, y: activeScreenshot.deviceOffset.y } });
+                        }}
+                        className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.deviceAlign === align
+                          ? 'bg-white shadow text-indigo-700'
+                          : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                      >
+                        {align}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Image Fit</label>
+                <div className="flex bg-gray-100 p-1 rounded-xl">
+                  {(['cover', 'contain'] as const).map((fit) => (
+                    <button
+                      key={fit}
+                      onClick={() => updateSetting({ imageFit: fit })}
+                      className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${activeSettings.imageFit === fit
+                        ? 'bg-white shadow text-indigo-700'
+                        : 'text-gray-600 hover:text-gray-900'
                         }`}
                     >
-                      <span
-                        className="relative h-12 w-7 shrink-0 rounded-[8px] p-[3px] shadow-sm"
-                        style={{ background: `linear-gradient(145deg, ${frame.edge}, ${frame.shell})` }}
-                      >
-                        <span className="block h-full w-full rounded-[6px] bg-gradient-to-b from-slate-100 to-slate-300" />
-                        {frame.id !== 'minimal' && (
-                          <span className="absolute left-1/2 top-1 -translate-x-1/2 h-1 w-2.5 rounded-full" style={{ backgroundColor: frame.island }} />
-                        )}
-                      </span>
-                      <span className={`text-xs font-semibold ${selected ? 'text-indigo-800' : 'text-gray-700'}`}>
-                        {frame.name}
-                      </span>
-                      {selected && (
-                        <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-white">
-                          <Check size={10} strokeWidth={3} />
-                        </span>
-                      )}
+                      {fit}
                     </button>
-                  );
-                })}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { label: 'Frame', key: 'deviceFrameColor' as const },
-                  { label: 'Edge', key: 'deviceFrameEdgeColor' as const },
-                ].map(({ label, key }) => (
-                  <label key={key} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2.5">
-                    <input
-                      type="color"
-                      value={activeSettings[key]}
-                      onChange={(e) => updateSetting({ [key]: e.target.value })}
-                      className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent p-0"
-                      aria-label={`${label} color`}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
-                      <span className="block truncate font-mono text-[11px] text-gray-600">{activeSettings[key].toUpperCase()}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Scale ({activeSettings.deviceScale}%)
-              </span>
-              <input
-                type="range" min={40} max={100}
-                value={activeSettings.deviceScale}
-                onChange={(e) => updateSetting({ deviceScale: Number(e.target.value) })}
-                className="w-full"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Border ({activeSettings.deviceBorder}px)
-              </span>
-              <input
-                type="range" min={0} max={40}
-                value={activeSettings.deviceBorder}
-                onChange={(e) => updateSetting({ deviceBorder: Number(e.target.value) })}
-                className="w-full"
-                disabled={!activeSettings.deviceFrame}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Corner curve ({activeSettings.deviceCornerRadius}px)
-                </span>
-                <button
-                  onClick={() => updateSetting({ deviceCornerRadius: DEFAULT_SETTINGS.deviceCornerRadius })}
-                  className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700"
-                >
-                  Reset
-                </button>
-              </div>
-              <input
-                type="range" min={0} max={120}
-                value={activeSettings.deviceCornerRadius}
-                onChange={(e) => updateSetting({ deviceCornerRadius: Number(e.target.value) })}
-                className="w-full"
-              />
-              <div className="flex justify-between text-[10px] text-gray-400">
-                <span>Square</span>
-                <span>Extra round</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Rotation ({activeSettings.deviceRotation}°)
-              </span>
-              <input
-                type="range" min={-45} max={45}
-                value={activeSettings.deviceRotation}
-                onChange={(e) => updateSetting({ deviceRotation: Number(e.target.value) })}
-                className="w-full"
-              />
-              <div className="grid grid-cols-5 gap-1.5">
-                {[-45, -20, 0, 20, 45].map((angle) => (
-                  <button
-                    key={angle}
-                    onClick={() => updateSetting({ deviceRotation: angle })}
-                    className={`py-2 rounded-xl text-xs font-medium border transition-colors ${activeSettings.deviceRotation === angle
-                      ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
-                  >
-                    {angle}°
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Tilt X ({activeSettings.deviceTiltX}°)
-                </span>
-                <input
-                  type="range" min={-20} max={20}
-                  value={activeSettings.deviceTiltX}
-                  onChange={(e) => updateSetting({ deviceTiltX: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Tilt Y ({activeSettings.deviceTiltY}°)
-                </span>
-                <input
-                  type="range" min={-20} max={20}
-                  value={activeSettings.deviceTiltY}
-                  onChange={(e) => updateSetting({ deviceTiltY: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Shadow ({activeSettings.deviceShadow})
-              </span>
-              <input
-                type="range" min={0} max={80}
-                value={activeSettings.deviceShadow}
-                onChange={(e) => updateSetting({ deviceShadow: Number(e.target.value) })}
-                className="w-full"
-              />
-            </div>
-          </PanelSection>
-
-          {/* Typography */}
-          <PanelSection
-            id="section-typography"
-            title="Typography"
-            description="Tune title and subtitle fonts, sizes, weights, and colors."
-            open={openSections.typography}
-            onToggle={() => toggleSection('typography')}
-          >
-            <div className="space-y-3">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Type size={16} className="text-indigo-500" /> Colors
-              </label>
-              {[
-                { label: 'Title', key: 'titleColor' as const },
-                { label: 'Accent', key: 'accentColor' as const },
-                { label: 'Subtitle', key: 'subtitleColor' as const },
-              ].map(({ label, key }) => (
-                <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
-                  <span className="text-sm font-medium text-gray-700">{label} Color</span>
-                  <input
-                    type="color"
-                    value={activeSettings[key] as string}
-                    onChange={(e) => updateSetting({ [key]: e.target.value })}
-                    className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
-                  />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div className="space-y-4 pt-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Type size={16} className="text-indigo-500" /> Fonts
-              </label>
-              {[
-                { label: 'Title Font', key: 'titleFontFamily' as const },
-                { label: 'Subtitle Font', key: 'subtitleFontFamily' as const },
-              ].map(({ label, key }) => (
-                <div key={key} className="space-y-1">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
-                  <select
-                    value={activeSettings[key] as string}
-                    onChange={(e) => updateSetting({ [key]: e.target.value })}
-                    className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                  >
-                    {FONT_OPTIONS.map((f) => (
-                      <option key={`${key}-${f.value}`} value={f.value}>{f.label}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Title Size ({activeSettings.titleFontSize}px)
-                </span>
-                <input
-                  type="range" min={32} max={160}
-                  value={activeSettings.titleFontSize}
-                  onChange={(e) => updateSetting({ titleFontSize: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Subtitle Size ({activeSettings.subtitleFontSize}px)
-                </span>
-                <input
-                  type="range" min={16} max={80}
-                  value={activeSettings.subtitleFontSize}
-                  onChange={(e) => updateSetting({ subtitleFontSize: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Text Spacing ({activeSettings.textSpacing}px)
-                </span>
-                <input
-                  type="range" min={0} max={120}
-                  value={activeSettings.textSpacing}
-                  onChange={(e) => updateSetting({ textSpacing: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
               <details className="group rounded-xl border border-slate-200 bg-slate-50">
                 <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
-                  Advanced spacing
+                  Screenshot crop & adjustments
                   <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
                 </summary>
                 <div className="space-y-4 border-t border-slate-200 p-3">
                   {([
-                    { label: 'Title line height', key: 'titleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
-                    { label: 'Subtitle line height', key: 'subtitleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
-                    { label: 'Title tracking', key: 'titleLetterSpacing' as const, min: -8, max: 20, step: 0.5 },
-                    { label: 'Subtitle tracking', key: 'subtitleLetterSpacing' as const, min: -4, max: 20, step: 0.5 },
-                  ]).map(({ label, key, min, max, step }) => (
+                    { label: 'Zoom', key: 'screenshotScale' as const, min: 50, max: 200, suffix: '%' },
+                    { label: 'Horizontal', key: 'screenshotOffsetX' as const, min: -300, max: 300, suffix: 'px' },
+                    { label: 'Vertical', key: 'screenshotOffsetY' as const, min: -300, max: 300, suffix: 'px' },
+                    { label: 'Rotation', key: 'screenshotRotation' as const, min: -180, max: 180, suffix: '°' },
+                    { label: 'Brightness', key: 'screenshotBrightness' as const, min: 25, max: 175, suffix: '%' },
+                    { label: 'Contrast', key: 'screenshotContrast' as const, min: 25, max: 175, suffix: '%' },
+                    { label: 'Saturation', key: 'screenshotSaturation' as const, min: 0, max: 200, suffix: '%' },
+                  ]).map(({ label, key, min, max, suffix }) => (
                     <label key={key} className="block">
                       <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                        {label}<span className="font-mono text-slate-600">{activeSettings[key]}</span>
+                        {label}<span className="font-mono text-slate-600">{activeSettings[key]}{suffix}</span>
                       </span>
-                      <input type="range" min={min} max={max} step={step} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
+                      <input type="range" min={min} max={max} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
+                    </label>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => updateSetting({ screenshotScale: 100, screenshotOffsetX: 0, screenshotOffsetY: 0, screenshotRotation: 0, screenshotBrightness: 100, screenshotContrast: 100, screenshotSaturation: 100 })}
+                    className="w-full rounded-lg border border-slate-200 bg-white py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                  >
+                    Reset screenshot
+                  </button>
+                </div>
+              </details>
+            </PanelSection>
+
+            {/* Device */}
+            <PanelSection
+              id="section-device"
+              title="Device"
+              description="Scale, frame, rotate, tilt, and shadow for modern-looking mockups."
+              open={openSections.device}
+              onToggle={() => toggleSection('device')}
+            >
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">Device type</p>
+                  <p className="mt-0.5 text-xs text-slate-400">Choose the right presentation frame</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { id: 'iphone' as const, label: 'iPhone' },
+                    { id: 'android' as const, label: 'Android' },
+                    { id: 'tablet' as const, label: 'Tablet' },
+                    { id: 'laptop' as const, label: 'Laptop' },
+                    { id: 'browser' as const, label: 'Browser' },
+                  ]).map((device) => (
+                    <button
+                      key={device.id}
+                      type="button"
+                      onClick={() => updateSetting({ deviceType: device.id })}
+                      className={`rounded-xl border px-2 py-2.5 text-xs font-bold transition-all ${activeSettings.deviceType === device.id ? 'border-indigo-300 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
+                    >
+                      {device.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">Orientation</p>
+                  <p className="mt-0.5 text-xs text-slate-400">Rotate or mirror the device</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                  {(['portrait', 'landscape'] as const).map((orientation) => (
+                    <button
+                      key={orientation}
+                      type="button"
+                      onClick={() => updateSetting({ deviceOrientation: orientation })}
+                      disabled={activeSettings.deviceType === 'laptop' || activeSettings.deviceType === 'browser'}
+                      className={`rounded-lg py-2 text-xs font-bold capitalize transition-all disabled:cursor-not-allowed disabled:opacity-40 ${activeSettings.deviceOrientation === orientation ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}
+                    >
+                      {orientation}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => updateSetting({ deviceFlipX: !activeSettings.deviceFlipX })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipX ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                    Flip horizontal
+                  </button>
+                  <button type="button" onClick={() => updateSetting({ deviceFlipY: !activeSettings.deviceFlipY })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipY ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                    Flip vertical
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Quick poses</p>
+                    <p className="mt-0.5 text-xs text-slate-400">Professional angles in one click</p>
+                  </div>
+                  <span className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-violet-600">New</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {DEVICE_POSES.map((pose, index) => (
+                    <button
+                      key={pose.name}
+                      onClick={() => updateSetting(pose.settings)}
+                      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 text-left transition-all hover:border-indigo-300 hover:bg-indigo-50/50"
+                    >
+                      <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200">
+                        <span
+                          className="h-8 w-4 rounded-[4px] border-2 border-slate-700 bg-white shadow-sm transition-transform group-hover:scale-105"
+                          style={{ transform: `rotate(${[-0, -7, 7, -12][index]}deg)` }}
+                        />
+                      </span>
+                      <span className="text-xs font-bold text-slate-700">{pose.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">Frame style</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Choose a polished device finish</p>
+                  </div>
+                  <button
+                    onClick={() => updateSetting({ deviceFrame: !activeSettings.deviceFrame })}
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${activeSettings.deviceFrame
+                      ? 'bg-indigo-50 text-indigo-700'
+                      : 'bg-gray-100 text-gray-500'
+                      }`}
+                  >
+                    {activeSettings.deviceFrame ? 'Frame on' : 'Frame off'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {DEVICE_FRAMES.map((frame) => {
+                    const selected = activeSettings.deviceFrame && activeSettings.deviceFrameStyle === frame.id;
+                    return (
+                      <button
+                        key={frame.id}
+                        onClick={() => updateSetting({
+                          deviceFrame: true,
+                          deviceFrameStyle: frame.id,
+                          deviceFrameColor: frame.shell,
+                          deviceFrameEdgeColor: frame.edge,
+                        })}
+                        className={`group relative flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all ${selected
+                          ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-200'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                          }`}
+                      >
+                        <span
+                          className="relative h-12 w-7 shrink-0 rounded-[8px] p-[3px] shadow-sm"
+                          style={{ background: `linear-gradient(145deg, ${frame.edge}, ${frame.shell})` }}
+                        >
+                          <span className="block h-full w-full rounded-[6px] bg-gradient-to-b from-slate-100 to-slate-300" />
+                          {frame.id !== 'minimal' && (
+                            <span className="absolute left-1/2 top-1 -translate-x-1/2 h-1 w-2.5 rounded-full" style={{ backgroundColor: frame.island }} />
+                          )}
+                        </span>
+                        <span className={`text-xs font-semibold ${selected ? 'text-indigo-800' : 'text-gray-700'}`}>
+                          {frame.name}
+                        </span>
+                        {selected && (
+                          <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-white">
+                            <Check size={10} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: 'Frame', key: 'deviceFrameColor' as const },
+                    { label: 'Edge', key: 'deviceFrameEdgeColor' as const },
+                  ].map(({ label, key }) => (
+                    <label key={key} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2.5">
+                      <input
+                        type="color"
+                        value={activeSettings[key]}
+                        onChange={(e) => updateSetting({ [key]: e.target.value })}
+                        className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                        aria-label={`${label} color`}
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
+                        <span className="block truncate font-mono text-[11px] text-gray-600">{activeSettings[key].toUpperCase()}</span>
+                      </span>
                     </label>
                   ))}
                 </div>
-              </details>
+              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title Weight</span>
-                  <select
-                    value={activeSettings.titleFontWeight}
-                    onChange={(e) => updateSetting({ titleFontWeight: Number(e.target.value) })}
-                    className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white"
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Scale ({activeSettings.deviceScale}%)
+                </span>
+                <input
+                  type="range" min={40} max={100}
+                  value={activeSettings.deviceScale}
+                  onChange={(e) => updateSetting({ deviceScale: Number(e.target.value) })}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Border ({activeSettings.deviceBorder}px)
+                </span>
+                <input
+                  type="range" min={0} max={40}
+                  value={activeSettings.deviceBorder}
+                  onChange={(e) => updateSetting({ deviceBorder: Number(e.target.value) })}
+                  className="w-full"
+                  disabled={!activeSettings.deviceFrame}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Corner curve ({activeSettings.deviceCornerRadius}px)
+                  </span>
+                  <button
+                    onClick={() => updateSetting({ deviceCornerRadius: DEFAULT_SETTINGS.deviceCornerRadius })}
+                    className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700"
                   >
-                    {[500, 600, 700, 800, 900].map((w) => (
-                      <option key={`tw-${w}`} value={w}>{w}</option>
-                    ))}
-                  </select>
+                    Reset
+                  </button>
                 </div>
-                <div className="space-y-1">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Subtitle Weight</span>
-                  <select
-                    value={activeSettings.subtitleFontWeight}
-                    onChange={(e) => updateSetting({ subtitleFontWeight: Number(e.target.value) })}
-                    className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white"
-                  >
-                    {[400, 500, 600, 700].map((w) => (
-                      <option key={`sw-${w}`} value={w}>{w}</option>
-                    ))}
-                  </select>
+                <input
+                  type="range" min={0} max={120}
+                  value={activeSettings.deviceCornerRadius}
+                  onChange={(e) => updateSetting({ deviceCornerRadius: Number(e.target.value) })}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-[10px] text-gray-400">
+                  <span>Square</span>
+                  <span>Extra round</span>
                 </div>
               </div>
-            </div>
-          </PanelSection>
-        </div>
-      </aside>
+
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Rotation ({activeSettings.deviceRotation}°)
+                </span>
+                <input
+                  type="range" min={-45} max={45}
+                  value={activeSettings.deviceRotation}
+                  onChange={(e) => updateSetting({ deviceRotation: Number(e.target.value) })}
+                  className="w-full"
+                />
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[-45, -20, 0, 20, 45].map((angle) => (
+                    <button
+                      key={angle}
+                      onClick={() => updateSetting({ deviceRotation: angle })}
+                      className={`py-2 rounded-xl text-xs font-medium border transition-colors ${activeSettings.deviceRotation === angle
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                    >
+                      {angle}°
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Tilt X ({activeSettings.deviceTiltX}°)
+                  </span>
+                  <input
+                    type="range" min={-20} max={20}
+                    value={activeSettings.deviceTiltX}
+                    onChange={(e) => updateSetting({ deviceTiltX: Number(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Tilt Y ({activeSettings.deviceTiltY}°)
+                  </span>
+                  <input
+                    type="range" min={-20} max={20}
+                    value={activeSettings.deviceTiltY}
+                    onChange={(e) => updateSetting({ deviceTiltY: Number(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Shadow ({activeSettings.deviceShadow})
+                </span>
+                <input
+                  type="range" min={0} max={80}
+                  value={activeSettings.deviceShadow}
+                  onChange={(e) => updateSetting({ deviceShadow: Number(e.target.value) })}
+                  className="w-full"
+                />
+              </div>
+            </PanelSection>
+
+            {/* Typography */}
+            <PanelSection
+              id="section-typography"
+              title="Typography"
+              description="Tune title and subtitle fonts, sizes, weights, and colors."
+              open={openSections.typography}
+              onToggle={() => toggleSection('typography')}
+            >
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Type size={16} className="text-indigo-500" /> Colors
+                </label>
+                {[
+                  { label: 'Title', key: 'titleColor' as const },
+                  { label: 'Accent', key: 'accentColor' as const },
+                  { label: 'Subtitle', key: 'subtitleColor' as const },
+                ].map(({ label, key }) => (
+                  <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
+                    <span className="text-sm font-medium text-gray-700">{label} Color</span>
+                    <input
+                      type="color"
+                      value={activeSettings[key] as string}
+                      onChange={(e) => updateSetting({ [key]: e.target.value })}
+                      className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-4 pt-2">
+                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Type size={16} className="text-indigo-500" /> Fonts
+                </label>
+                {[
+                  { label: 'Title Font', key: 'titleFontFamily' as const },
+                  { label: 'Subtitle Font', key: 'subtitleFontFamily' as const },
+                ].map(({ label, key }) => (
+                  <div key={key} className="space-y-1">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
+                    <select
+                      value={activeSettings[key] as string}
+                      onChange={(e) => updateSetting({ [key]: e.target.value })}
+                      className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    >
+                      {FONT_OPTIONS.map((f) => (
+                        <option key={`${key}-${f.value}`} value={f.value}>{f.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Title Size ({activeSettings.titleFontSize}px)
+                  </span>
+                  <input
+                    type="range" min={32} max={160}
+                    value={activeSettings.titleFontSize}
+                    onChange={(e) => updateSetting({ titleFontSize: Number(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Subtitle Size ({activeSettings.subtitleFontSize}px)
+                  </span>
+                  <input
+                    type="range" min={16} max={80}
+                    value={activeSettings.subtitleFontSize}
+                    onChange={(e) => updateSetting({ subtitleFontSize: Number(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Text Spacing ({activeSettings.textSpacing}px)
+                  </span>
+                  <input
+                    type="range" min={0} max={120}
+                    value={activeSettings.textSpacing}
+                    onChange={(e) => updateSetting({ textSpacing: Number(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+                <details className="group rounded-xl border border-slate-200 bg-slate-50">
+                  <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
+                    Advanced spacing
+                    <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+                  </summary>
+                  <div className="space-y-4 border-t border-slate-200 p-3">
+                    {([
+                      { label: 'Title line height', key: 'titleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
+                      { label: 'Subtitle line height', key: 'subtitleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
+                      { label: 'Title tracking', key: 'titleLetterSpacing' as const, min: -8, max: 20, step: 0.5 },
+                      { label: 'Subtitle tracking', key: 'subtitleLetterSpacing' as const, min: -4, max: 20, step: 0.5 },
+                    ]).map(({ label, key, min, max, step }) => (
+                      <label key={key} className="block">
+                        <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                          {label}<span className="font-mono text-slate-600">{activeSettings[key]}</span>
+                        </span>
+                        <input type="range" min={min} max={max} step={step} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
+                      </label>
+                    ))}
+                  </div>
+                </details>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title Weight</span>
+                    <select
+                      value={activeSettings.titleFontWeight}
+                      onChange={(e) => updateSetting({ titleFontWeight: Number(e.target.value) })}
+                      className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white"
+                    >
+                      {[500, 600, 700, 800, 900].map((w) => (
+                        <option key={`tw-${w}`} value={w}>{w}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Subtitle Weight</span>
+                    <select
+                      value={activeSettings.subtitleFontWeight}
+                      onChange={(e) => updateSetting({ subtitleFontWeight: Number(e.target.value) })}
+                      className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white"
+                    >
+                      {[400, 500, 600, 700].map((w) => (
+                        <option key={`sw-${w}`} value={w}>{w}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </PanelSection>
+          </div>
+        </aside>
       )}
 
       {/* ── CENTER CANVAS ── */}
@@ -2916,19 +4362,19 @@ export default function App() {
               </button>
             </div>
             <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
-              <span>{selectedPreset.name}</span>
-              <ChevronRight size={12} />
-              <span>Slide {hasSlides ? activeIndex + 1 : 0}</span>
-            </div>
-            <div className="mt-0.5 flex items-center gap-2">
-              <h2 className="truncate text-base font-extrabold tracking-tight text-slate-900">
-                {activeScreenshot?.title.replace(/\[\/?accent\]/g, '') || 'Untitled mockup set'}
-              </h2>
-              <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-500">
-                {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
-              </span>
-            </div>
+              <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+                <span>{selectedPreset.name}</span>
+                <ChevronRight size={12} />
+                <span>Slide {hasSlides ? activeIndex + 1 : 0}</span>
+              </div>
+              <div className="mt-0.5 flex items-center gap-2">
+                <h2 className="truncate text-base font-extrabold tracking-tight text-slate-900">
+                  {activeScreenshot?.title.replace(/\[\/?accent\]/g, '') || 'Untitled mockup set'}
+                </h2>
+                <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-500">
+                  {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -3186,330 +4632,330 @@ export default function App() {
 
       {/* ── RIGHT PANEL ── */}
       {showRightPanel && (
-      <aside className="flex w-[272px] shrink-0 flex-col overflow-y-auto border-l border-slate-200 bg-white xl:w-[288px] 2xl:w-[320px]">
-        {hasSlides && activeScreenshot ? (
-          <div className="space-y-5 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Inspector</p>
-                <h2 className="mt-1 text-base font-extrabold tracking-tight text-slate-900">Slide {activeIndex + 1}</h2>
-              </div>
-              <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
-                {activeIndex + 1} / {screenshots.length}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
-              {([
-                { id: 'content' as const, label: 'Content', icon: Type },
-                { id: 'position' as const, label: 'Position', icon: MousePointer2 },
-                { id: 'export' as const, label: 'Export', icon: Download },
-              ]).map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setInspectorTab(id)}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition-all ${inspectorTab === id
-                    ? 'bg-white text-indigo-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                >
-                  <Icon size={13} /> {label}
-                </button>
-              ))}
-            </div>
-
-            {inspectorTab === 'content' && (
-              <>
-            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">Tip</p>
-              <p className="text-xs text-indigo-800 mt-1">
-                Editing here is per-slide. To make a change global, toggle <strong>Editing all slides</strong> in the left panel.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700">Title</label>
-              <textarea
-                value={localizedActiveScreenshot?.title ?? activeScreenshot.title}
-                onChange={(e) => updateCurrentCopy('title', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-                rows={3}
-                placeholder="Enter title... use [accent]word[/accent] for color"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700">Subtitle</label>
-              <textarea
-                value={localizedActiveScreenshot?.subtitle ?? activeScreenshot.subtitle}
-                onChange={(e) => updateCurrentCopy('subtitle', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-                rows={3}
-                placeholder="Enter subtitle..."
-              />
-            </div>
-
-            <div className="border-t border-gray-100 pt-4 space-y-3">
-              <label className="text-sm font-semibold text-gray-700">Slide Actions</label>
-              <div className="grid grid-cols-2 gap-2">
-                <label className="py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 cursor-pointer transition-colors">
-                  <ImageIcon size={14} /> Replace
-                  <input type="file" accept="image/*" className="hidden" onChange={handleScreenshotReplace} />
-                </label>
-                <button
-                  onClick={duplicateScreenshot}
-                  className="py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
-                >
-                  <Copy size={14} /> Duplicate
-                </button>
-              </div>
-            </div>
-              </>
-            )}
-
-            {inspectorTab === 'position' && (
-            <>
-              <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                <div className="flex items-center justify-between px-1">
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">Layers</p>
-                    <p className="mt-0.5 text-[11px] text-slate-400">Select, hide, or lock canvas elements</p>
-                  </div>
-                  <Layers size={16} className="text-indigo-500" />
+        <aside className="flex w-[272px] shrink-0 flex-col overflow-y-auto border-l border-slate-200 bg-white xl:w-[288px] 2xl:w-[320px]">
+          {hasSlides && activeScreenshot ? (
+            <div className="space-y-5 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Inspector</p>
+                  <h2 className="mt-1 text-base font-extrabold tracking-tight text-slate-900">Slide {activeIndex + 1}</h2>
                 </div>
+                <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
+                  {activeIndex + 1} / {screenshots.length}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
                 {([
-                  {
-                    id: 'text' as const,
-                    label: 'Headline & subtitle',
-                    icon: Type,
-                    visible: activeScreenshot.textVisible !== false,
-                    locked: activeScreenshot.textLocked === true,
-                  },
-                  {
-                    id: 'device' as const,
-                    label: 'Device mockup',
-                    icon: Smartphone,
-                    visible: activeScreenshot.deviceVisible !== false,
-                    locked: activeScreenshot.deviceLocked === true,
-                  },
-                ]).map((layer) => {
-                  const Icon = layer.icon;
-                  return (
-                    <div
-                      key={layer.id}
-                      className={`flex items-center gap-1 rounded-xl border p-1.5 transition-colors ${selectedLayer === layer.id
-                        ? 'border-indigo-200 bg-indigo-50'
-                        : 'border-slate-200 bg-slate-50/70 hover:bg-slate-50'
-                        }`}
-                    >
+                  { id: 'content' as const, label: 'Content', icon: Type },
+                  { id: 'position' as const, label: 'Position', icon: MousePointer2 },
+                  { id: 'export' as const, label: 'Export', icon: Download },
+                ]).map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setInspectorTab(id)}
+                    className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition-all ${inspectorTab === id
+                      ? 'bg-white text-indigo-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                  >
+                    <Icon size={13} /> {label}
+                  </button>
+                ))}
+              </div>
+
+              {inspectorTab === 'content' && (
+                <>
+                  <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">Tip</p>
+                    <p className="text-xs text-indigo-800 mt-1">
+                      Editing here is per-slide. To make a change global, toggle <strong>Editing all slides</strong> in the left panel.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Title</label>
+                    <textarea
+                      value={localizedActiveScreenshot?.title ?? activeScreenshot.title}
+                      onChange={(e) => updateCurrentCopy('title', e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                      rows={3}
+                      placeholder="Enter title... use [accent]word[/accent] for color"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Subtitle</label>
+                    <textarea
+                      value={localizedActiveScreenshot?.subtitle ?? activeScreenshot.subtitle}
+                      onChange={(e) => updateCurrentCopy('subtitle', e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                      rows={3}
+                      placeholder="Enter subtitle..."
+                    />
+                  </div>
+
+                  <div className="border-t border-gray-100 pt-4 space-y-3">
+                    <label className="text-sm font-semibold text-gray-700">Slide Actions</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                        <ImageIcon size={14} /> Replace
+                        <input type="file" accept="image/*" className="hidden" onChange={handleScreenshotReplace} />
+                      </label>
                       <button
-                        type="button"
-                        onClick={() => setSelectedLayer(layer.id)}
-                        className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left"
+                        onClick={duplicateScreenshot}
+                        className="py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
                       >
-                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${selectedLayer === layer.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 shadow-sm'}`}>
-                          <Icon size={14} />
-                        </span>
-                        <span className="truncate text-xs font-bold text-slate-700">{layer.label}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateCurrentScreenshot(layer.id === 'text'
-                            ? { textVisible: !layer.visible }
-                            : { deviceVisible: !layer.visible });
-                          if (!layer.visible) setSelectedLayer(layer.id);
-                        }}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700"
-                        title={layer.visible ? `Hide ${layer.label}` : `Show ${layer.label}`}
-                      >
-                        {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateCurrentScreenshot(layer.id === 'text'
-                          ? { textLocked: !layer.locked }
-                          : { deviceLocked: !layer.locked })}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700"
-                        title={layer.locked ? `Unlock ${layer.label}` : `Lock ${layer.label}`}
-                      >
-                        {layer.locked ? <LockKeyhole size={14} /> : <LockKeyholeOpen size={14} />}
+                        <Copy size={14} /> Duplicate
                       </button>
                     </div>
-                  );
-                })}
-              </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <Move size={16} className="text-indigo-500" /> Drag & Position
-                </label>
-                <button
-                  onClick={() => setDragMode((v) => !v)}
-                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${dragMode ? 'bg-indigo-600' : 'bg-gray-300'
-                    }`}
-                  title={dragMode ? 'Disable drag mode' : 'Enable drag mode'}
-                >
-                  <span
-                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${dragMode ? 'translate-x-4' : 'translate-x-0'
-                      }`}
-                  />
-                </button>
-              </div>
-              <p className="text-xs text-gray-400">
-                {dragMode
-                  ? 'Click & drag text or device on canvas to reposition.'
-                  : 'Enable drag mode to move elements on canvas.'}
-              </p>
-
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Text</p>
-                <div className="grid grid-cols-4 gap-1.5 text-xs">
-                  <button onClick={() => nudgeCurrent('text', 'x', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">← Left</button>
-                  <button onClick={() => nudgeCurrent('text', 'x', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Right →</button>
-                  <button onClick={() => nudgeCurrent('text', 'y', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">↑ Up</button>
-                  <button onClick={() => nudgeCurrent('text', 'y', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Down ↓</button>
-                </div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Device</p>
-                <div className="grid grid-cols-4 gap-1.5 text-xs">
-                  <button onClick={() => nudgeCurrent('device', 'x', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">← Left</button>
-                  <button onClick={() => nudgeCurrent('device', 'x', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Right →</button>
-                  <button onClick={() => nudgeCurrent('device', 'y', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">↑ Up</button>
-                  <button onClick={() => nudgeCurrent('device', 'y', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Down ↓</button>
-                </div>
-              </div>
-
-              <button
-                onClick={resetCurrentPosition}
-                className="w-full py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
-              >
-                <LocateFixed size={14} /> Reset Position
-              </button>
-            </div>
-            </>
-            )}
-
-            {inspectorTab === 'export' && (
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                    <Settings2 size={16} className="text-indigo-500" /> Export quality
                   </div>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500">Choose a web-ready format or exact store-ready output.</p>
-                  <div className="mt-4 grid grid-cols-3 gap-1 rounded-xl bg-slate-200/60 p-1">
-                    {(['png', 'jpeg', 'webp'] as const).map((format) => (
-                      <button key={format} type="button" onClick={() => setExportFormat(format)} className={`rounded-lg py-2 text-[10px] font-bold uppercase transition-all ${exportFormat === format ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>{format === 'jpeg' ? 'JPG' : format}</button>
-                    ))}
+                </>
+              )}
+
+              {inspectorTab === 'position' && (
+                <>
+                  <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <div className="flex items-center justify-between px-1">
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">Layers</p>
+                        <p className="mt-0.5 text-[11px] text-slate-400">Select, hide, or lock canvas elements</p>
+                      </div>
+                      <Layers size={16} className="text-indigo-500" />
+                    </div>
+                    {([
+                      {
+                        id: 'text' as const,
+                        label: 'Headline & subtitle',
+                        icon: Type,
+                        visible: activeScreenshot.textVisible !== false,
+                        locked: activeScreenshot.textLocked === true,
+                      },
+                      {
+                        id: 'device' as const,
+                        label: 'Device mockup',
+                        icon: Smartphone,
+                        visible: activeScreenshot.deviceVisible !== false,
+                        locked: activeScreenshot.deviceLocked === true,
+                      },
+                    ]).map((layer) => {
+                      const Icon = layer.icon;
+                      return (
+                        <div
+                          key={layer.id}
+                          className={`flex items-center gap-1 rounded-xl border p-1.5 transition-colors ${selectedLayer === layer.id
+                            ? 'border-indigo-200 bg-indigo-50'
+                            : 'border-slate-200 bg-slate-50/70 hover:bg-slate-50'
+                            }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLayer(layer.id)}
+                            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left"
+                          >
+                            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${selectedLayer === layer.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 shadow-sm'}`}>
+                              <Icon size={14} />
+                            </span>
+                            <span className="truncate text-xs font-bold text-slate-700">{layer.label}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateCurrentScreenshot(layer.id === 'text'
+                                ? { textVisible: !layer.visible }
+                                : { deviceVisible: !layer.visible });
+                              if (!layer.visible) setSelectedLayer(layer.id);
+                            }}
+                            className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700"
+                            title={layer.visible ? `Hide ${layer.label}` : `Show ${layer.label}`}
+                          >
+                            {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateCurrentScreenshot(layer.id === 'text'
+                              ? { textLocked: !layer.locked }
+                              : { deviceLocked: !layer.locked })}
+                            className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700"
+                            title={layer.locked ? `Unlock ${layer.label}` : `Lock ${layer.label}`}
+                          >
+                            {layer.locked ? <LockKeyhole size={14} /> : <LockKeyholeOpen size={14} />}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className="mt-2 grid grid-cols-3 gap-2 rounded-xl bg-slate-200/60 p-1">
-                    {([1, 2, 3] as const).map((scale) => (
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Move size={16} className="text-indigo-500" /> Drag & Position
+                      </label>
                       <button
-                        key={scale}
-                        onClick={() => setExportScale(scale)}
-                        className={`rounded-lg py-2 text-xs font-bold transition-all ${exportScale === scale
-                          ? 'bg-white text-indigo-700 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-800'
+                        onClick={() => setDragMode((v) => !v)}
+                        className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${dragMode ? 'bg-indigo-600' : 'bg-gray-300'
                           }`}
+                        title={dragMode ? 'Disable drag mode' : 'Enable drag mode'}
                       >
-                        {scale}× {scale === 1 ? 'Standard' : 'Retina'}
+                        <span
+                          className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${dragMode ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                        />
                       </button>
-                    ))}
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      {dragMode
+                        ? 'Click & drag text or device on canvas to reposition.'
+                        : 'Enable drag mode to move elements on canvas.'}
+                    </p>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Text</p>
+                      <div className="grid grid-cols-4 gap-1.5 text-xs">
+                        <button onClick={() => nudgeCurrent('text', 'x', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">← Left</button>
+                        <button onClick={() => nudgeCurrent('text', 'x', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Right →</button>
+                        <button onClick={() => nudgeCurrent('text', 'y', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">↑ Up</button>
+                        <button onClick={() => nudgeCurrent('text', 'y', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Down ↓</button>
+                      </div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Device</p>
+                      <div className="grid grid-cols-4 gap-1.5 text-xs">
+                        <button onClick={() => nudgeCurrent('device', 'x', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">← Left</button>
+                        <button onClick={() => nudgeCurrent('device', 'x', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Right →</button>
+                        <button onClick={() => nudgeCurrent('device', 'y', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">↑ Up</button>
+                        <button onClick={() => nudgeCurrent('device', 'y', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Down ↓</button>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={resetCurrentPosition}
+                      className="w-full py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
+                    >
+                      <LocateFixed size={14} /> Reset Position
+                    </button>
                   </div>
-                  {exportFormat !== 'png' && (
-                    <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Quality · {Math.round(exportQuality * 100)}%
-                      <input type="range" min="0.5" max="1" step="0.01" value={exportQuality} onChange={(event) => setExportQuality(Number(event.target.value))} className="mt-2 w-full" />
+                </>
+              )}
+
+              {inspectorTab === 'export' && (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                      <Settings2 size={16} className="text-indigo-500" /> Export quality
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-500">Choose a web-ready format or exact store-ready output.</p>
+                    <div className="mt-4 grid grid-cols-3 gap-1 rounded-xl bg-slate-200/60 p-1">
+                      {(['png', 'jpeg', 'webp'] as const).map((format) => (
+                        <button key={format} type="button" onClick={() => setExportFormat(format)} className={`rounded-lg py-2 text-[10px] font-bold uppercase transition-all ${exportFormat === format ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>{format === 'jpeg' ? 'JPG' : format}</button>
+                      ))}
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 rounded-xl bg-slate-200/60 p-1">
+                      {([1, 2, 3] as const).map((scale) => (
+                        <button
+                          key={scale}
+                          onClick={() => setExportScale(scale)}
+                          className={`rounded-lg py-2 text-xs font-bold transition-all ${exportScale === scale
+                            ? 'bg-white text-indigo-700 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                        >
+                          {scale}× {scale === 1 ? 'Standard' : 'Retina'}
+                        </button>
+                      ))}
+                    </div>
+                    {exportFormat !== 'png' && (
+                      <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Quality · {Math.round(exportQuality * 100)}%
+                        <input type="range" min="0.5" max="1" step="0.01" value={exportQuality} onChange={(event) => setExportQuality(Number(event.target.value))} className="mt-2 w-full" />
+                      </label>
+                    )}
+                    {exportFormat === 'png' && (
+                      <label className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600"><span>Transparent background</span><input type="checkbox" checked={transparentExport} onChange={(event) => setTransparentExport(event.target.checked)} className="h-4 w-4 accent-indigo-600" /></label>
+                    )}
+                    <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Filename template
+                      <input value={filenamePattern} onChange={(event) => setFilenamePattern(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 font-mono text-[10px] normal-case text-slate-600 outline-none focus:border-indigo-400" />
                     </label>
-                  )}
-                  {exportFormat === 'png' && (
-                    <label className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600"><span>Transparent background</span><input type="checkbox" checked={transparentExport} onChange={(event) => setTransparentExport(event.target.checked)} className="h-4 w-4 accent-indigo-600" /></label>
-                  )}
-                  <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Filename template
-                    <input value={filenamePattern} onChange={(event) => setFilenamePattern(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 font-mono text-[10px] normal-case text-slate-600 outline-none focus:border-indigo-400" />
-                  </label>
-                  <p className="mt-1 text-[9px] leading-relaxed text-slate-400">Tokens: {'{project}'} {'{locale}'} {'{index}'} {'{width}'} {'{height}'} {'{title}'}</p>
-                  <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                    <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500">Preview</span><span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-500">{activeLocale}</span></div>
-                    <p className="mt-2 truncate font-mono text-[10px] font-bold text-slate-700">{buildExportFilename(activeScreenshot, activeIndex, activeSettings)}</p>
-                    <p className="mt-1 font-mono text-[10px] text-slate-400">{activeSettings.canvasWidth * exportScale} × {activeSettings.canvasHeight * exportScale} · {exportFormat.toUpperCase()}</p>
+                    <p className="mt-1 text-[9px] leading-relaxed text-slate-400">Tokens: {'{project}'} {'{locale}'} {'{index}'} {'{width}'} {'{height}'} {'{title}'}</p>
+                    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                      <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500">Preview</span><span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-500">{activeLocale}</span></div>
+                      <p className="mt-2 truncate font-mono text-[10px] font-bold text-slate-700">{buildExportFilename(activeScreenshot, activeIndex, activeSettings)}</p>
+                      <p className="mt-1 font-mono text-[10px] text-slate-400">{activeSettings.canvasWidth * exportScale} × {activeSettings.canvasHeight * exportScale} · {exportFormat.toUpperCase()}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-bold text-slate-800"><ShieldCheck size={16} className="text-indigo-500" /> Readiness</span><span className={`text-[10px] font-bold ${exportChecks.every((check) => check.ok) ? 'text-emerald-600' : 'text-amber-600'}`}>{exportChecks.filter((check) => check.ok).length}/{exportChecks.length}</span></div>
-                  <div className="mt-3 space-y-2">{exportChecks.map((check) => <div key={check.label} className="flex items-center gap-2 text-[11px] font-medium text-slate-600">{check.ok ? <Check size={13} className="text-emerald-500" /> : <X size={13} className="text-amber-500" />} {check.label}</div>)}</div>
-                </div>
-                <button
-                  onClick={exportCurrent}
-                  disabled={isExporting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
-                >
-                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
-                  Export current slide
-                </button>
-                <button
-                  onClick={exportAll}
-                  disabled={isExporting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
-                >
-                  <Download size={16} /> Export all {exportFormat === 'jpeg' ? 'JPGs' : `${exportFormat.toUpperCase()}s`}
-                </button>
-                {selectedSlideIds.length > 0 && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-bold text-slate-800"><ShieldCheck size={16} className="text-indigo-500" /> Readiness</span><span className={`text-[10px] font-bold ${exportChecks.every((check) => check.ok) ? 'text-emerald-600' : 'text-amber-600'}`}>{exportChecks.filter((check) => check.ok).length}/{exportChecks.length}</span></div>
+                    <div className="mt-3 space-y-2">{exportChecks.map((check) => <div key={check.label} className="flex items-center gap-2 text-[11px] font-medium text-slate-600">{check.ok ? <Check size={13} className="text-emerald-500" /> : <X size={13} className="text-amber-500" />} {check.label}</div>)}</div>
+                  </div>
                   <button
-                    onClick={() => exportZip(true)}
+                    onClick={exportCurrent}
+                    disabled={isExporting}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
+                  >
+                    {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+                    Export current slide
+                  </button>
+                  <button
+                    onClick={exportAll}
                     disabled={isExporting}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                   >
-                    <Check size={16} /> Export {selectedSlideIds.length} selected
+                    <Download size={16} /> Export all {exportFormat === 'jpeg' ? 'JPGs' : `${exportFormat.toUpperCase()}s`}
                   </button>
-                )}
+                  {selectedSlideIds.length > 0 && (
+                    <button
+                      onClick={() => exportZip(true)}
+                      disabled={isExporting}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <Check size={16} /> Export {selectedSlideIds.length} selected
+                    </button>
+                  )}
+                  <button
+                    onClick={() => exportZip(false)}
+                    disabled={isExporting}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 py-3 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-50"
+                  >
+                    <Archive size={16} /> Download organized ZIP
+                  </button>
+                </div>
+              )}
+
+              <div className="border-t border-gray-100 pt-4 flex justify-between">
                 <button
-                  onClick={() => exportZip(false)}
-                  disabled={isExporting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 py-3 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-50"
+                  onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
+                  disabled={activeIndex === 0}
+                  className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Previous Slide"
                 >
-                  <Archive size={16} /> Download organized ZIP
+                  <ChevronLeft size={20} />
+                </button>
+                <span className="text-sm text-gray-500 self-center">
+                  Slide {activeIndex + 1} of {screenshots.length}
+                </span>
+                <button
+                  onClick={() => setActiveIndex(Math.min(screenshots.length - 1, activeIndex + 1))}
+                  disabled={activeIndex === screenshots.length - 1}
+                  className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Next Slide"
+                >
+                  <ChevronRight size={20} />
                 </button>
               </div>
-            )}
-
-            <div className="border-t border-gray-100 pt-4 flex justify-between">
-              <button
-                onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
-                disabled={activeIndex === 0}
-                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Previous Slide"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <span className="text-sm text-gray-500 self-center">
-                Slide {activeIndex + 1} of {screenshots.length}
-              </span>
-              <button
-                onClick={() => setActiveIndex(Math.min(screenshots.length - 1, activeIndex + 1))}
-                disabled={activeIndex === screenshots.length - 1}
-                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Next Slide"
-              >
-                <ChevronRight size={20} />
-              </button>
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-              <Layers size={28} className="text-gray-400" />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                <Layers size={28} className="text-gray-400" />
+              </div>
+              <p className="text-sm font-semibold text-gray-600">No slides yet</p>
+              <p className="text-xs text-gray-400">
+                Upload screenshots from the canvas or drop images anywhere to get started.
+              </p>
+              <label className="mt-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                <Plus size={16} /> Upload
+                <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </label>
             </div>
-            <p className="text-sm font-semibold text-gray-600">No slides yet</p>
-            <p className="text-xs text-gray-400">
-              Upload screenshots from the canvas or drop images anywhere to get started.
-            </p>
-            <label className="mt-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-indigo-700 transition-colors flex items-center gap-2">
-              <Plus size={16} /> Upload
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
-            </label>
-          </div>
-        )}
-      </aside>
+          )}
+        </aside>
       )}
 
       {toast && (
