@@ -45,6 +45,9 @@ import {
   Library,
   History,
   ShieldCheck,
+  Menu,
+  LayoutTemplate,
+  Square,
 } from 'lucide-react';
 import type { AppPresetFile, PresetSlide } from './presets/PresetSchema';
 
@@ -159,8 +162,6 @@ type AppPreset = {
   /** Optional per-slide copy from JSON. Indexed by slide number (0-based). */
   slides?: PresetSlide[];
 };
-
-type SectionKey = 'presets' | 'layout' | 'device' | 'typography';
 
 const CANVAS_PRESETS = [
   { id: 'app-store-67', label: 'App Store 6.7″', width: 1290, height: 2796 },
@@ -449,6 +450,12 @@ const ZERO_DEVICE_TRANSFORMS = {
   deviceTiltY: 0,
 } satisfies Partial<Settings>;
 
+const SLIDE_GAP = 48;
+const CHIP_ROW_HEIGHT = 44;
+const PANEL_WIDTH = 320;
+const MIN_ZOOM = 0.05;
+const MAX_ZOOM = 1.5;
+
 const makeId = () => Math.random().toString(36).slice(2, 11);
 
 const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
@@ -602,44 +609,6 @@ function validatePresetFile(obj: unknown): obj is AppPresetFile {
     typeof o.settings === 'object'
   );
 }
-
-const PanelSection = ({
-  id,
-  title,
-  description,
-  open,
-  onToggle,
-  children,
-}: {
-  id?: string;
-  title: string;
-  description: string;
-  open: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-}) => (
-  <section
-    id={id}
-    className={`scroll-mt-4 overflow-hidden rounded-2xl border bg-white transition-all ${open
-      ? 'border-slate-200 shadow-[0_8px_30px_rgba(15,23,42,0.06)]'
-      : 'border-slate-200/80 shadow-sm'
-      }`}
-  >
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={open}
-      className="flex w-full items-start justify-between px-4 py-4 text-left transition-colors hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500"
-    >
-      <div>
-        <h3 className="text-sm font-bold tracking-tight text-slate-900">{title}</h3>
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">{description}</p>
-      </div>
-      <ChevronRight size={18} className={`mt-0.5 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-90' : ''}`} />
-    </button>
-    {open && <div className="space-y-5 border-t border-slate-100 px-4 pb-5 pt-4">{children}</div>}
-  </section>
-);
 
 const DESIGNER_PATTERN_PRESETS = [
   {
@@ -1546,6 +1515,7 @@ const MockupTemplate = ({
   onStartDrag,
   onSelectLayer,
   showGuides = false,
+  outlineWidth = 3,
 }: {
   key?: React.Key;
   screenshot: Screenshot;
@@ -1556,6 +1526,7 @@ const MockupTemplate = ({
   onStartDrag?: (target: 'text' | 'device', e: React.PointerEvent) => void;
   onSelectLayer?: (target: 'text' | 'device') => void;
   showGuides?: boolean;
+  outlineWidth?: number;
 }) => {
   const { layout } = settings;
   const dragEnabled = Boolean(onStartDrag);
@@ -1617,8 +1588,8 @@ const MockupTemplate = ({
         className={`w-full flex flex-col px-16 ${getTextAlignClass()} ${interactiveClass(textLocked)}`}
         style={{
           transform: `translate(${screenshot.textOffset.x}px, ${screenshot.textOffset.y}px)`,
-          outline: interactive && selectedLayer === 'text' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
-          outlineOffset: interactive && selectedLayer === 'text' ? '10px' : undefined,
+          outline: interactive && selectedLayer === 'text' ? `${outlineWidth}px solid rgba(99, 102, 241, 0.9)` : undefined,
+          outlineOffset: interactive && selectedLayer === 'text' ? `${outlineWidth}px` : undefined,
         }}
         onPointerDown={interactive ? (e) => {
           onSelectLayer?.('text');
@@ -1716,8 +1687,8 @@ const MockupTemplate = ({
             aspectRatio: `${deviceAspectRatio}`,
             borderRadius: `${outerRadius}px`,
             ...shadowStyle,
-            outline: interactive && selectedLayer === 'device' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
-            outlineOffset: interactive && selectedLayer === 'device' ? '10px' : undefined,
+            outline: interactive && selectedLayer === 'device' ? `${outlineWidth}px solid rgba(99, 102, 241, 0.9)` : undefined,
+            outlineOffset: interactive && selectedLayer === 'device' ? `${outlineWidth}px` : undefined,
             transform: `${screenshotStyle.transform} scaleX(${settings.deviceFlipX ? -1 : 1}) scaleY(${settings.deviceFlipY ? -1 : 1})`,
             filter: screenshotStyle.filter,
           }}
@@ -1736,8 +1707,8 @@ const MockupTemplate = ({
           borderRadius: `${outerRadius}px`,
           background: `linear-gradient(145deg, ${edgeColor}, ${frameColor} 42%, ${edgeColor} 100%)`,
           boxShadow: `${shadowStyle.boxShadow}, inset 0 0 0 1px rgba(255,255,255,0.24)`,
-          outline: interactive && selectedLayer === 'device' ? '3px solid rgba(99, 102, 241, 0.72)' : undefined,
-          outlineOffset: interactive && selectedLayer === 'device' ? '10px' : undefined,
+          outline: interactive && selectedLayer === 'device' ? `${outlineWidth}px solid rgba(99, 102, 241, 0.9)` : undefined,
+          outlineOffset: interactive && selectedLayer === 'device' ? `${outlineWidth}px` : undefined,
         }}
       >
         <div
@@ -1869,30 +1840,6 @@ const MockupTemplate = ({
         </div>
       )}
 
-      {interactive && (
-        <div className="absolute top-6 right-6 flex gap-2 z-30 pointer-events-none">
-          {textVisible && (
-            <span
-              className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'text' || selectedLayer === 'text'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white/90 text-gray-700 border-gray-200'
-                }`}
-            >
-              Text{textLocked ? ' · Locked' : ''}
-            </span>
-          )}
-          {deviceVisible && (
-            <span
-              className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${draggingTarget === 'device' || selectedLayer === 'device'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white/90 text-gray-700 border-gray-200'
-                }`}
-            >
-              Device{deviceLocked ? ' · Locked' : ''}
-            </span>
-          )}
-        </div>
-      )}
     </div>
   );
 };
@@ -1913,7 +1860,6 @@ export default function App() {
   const [applyToAll, setApplyToAll] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [dragMode, setDragMode] = useState(true);
   const [draggingTarget, setDraggingTarget] = useState<'text' | 'device' | null>(null);
   const [draggedSlideId, setDraggedSlideId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
@@ -1924,12 +1870,6 @@ export default function App() {
     future: [],
   });
   const [hasPendingHistory, setHasPendingHistory] = useState(false);
-  const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
-    presets: true,
-    layout: true,
-    device: true,
-    typography: false,
-  });
   const [appPresets, setAppPresets] = useState<AppPreset[]>(() => {
     if (typeof window === 'undefined') return DEFAULT_PRESETS;
     try {
@@ -1972,7 +1912,6 @@ export default function App() {
   const isRestoringHistoryRef = useRef(false);
   const projectHydratedRef = useRef(false);
   const projectSaveTimerRef = useRef<number | null>(null);
-  const [fitScale, setFitScale] = useState(0.2);
   const [zoomScale, setZoomScale] = useState(0.2);
   const [exportScale, setExportScale] = useState<1 | 2 | 3>(1);
   const [exportFormat, setExportFormat] = useState<ExportFormat>('png');
@@ -1980,12 +1919,11 @@ export default function App() {
   const [transparentExport, setTransparentExport] = useState(false);
   const [filenamePattern, setFilenamePattern] = useState('{project}-{locale}-{index}-{width}x{height}');
   const [showGuides, setShowGuides] = useState(false);
-  const [activeTool, setActiveTool] = useState<SectionKey>('presets');
-  const [inspectorTab, setInspectorTab] = useState<'content' | 'position' | 'export'>('content');
-  const [selectedLayer, setSelectedLayer] = useState<'text' | 'device' | null>('device');
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+  const [selectedLayer, setSelectedLayer] = useState<'background' | 'text' | 'device' | null>(null);
+  const [editorMode, setEditorMode] = useState<'templates' | 'editor' | 'preview' | 'export'>('editor');
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [menuOpen, setMenuOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
-  const [focusMode, setFocusMode] = useState(false);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [toast, setToast] = useState<{ id: number; message: string; tone: 'success' | 'error' } | null>(null);
   const dragStateRef = useRef<{
@@ -2016,8 +1954,7 @@ export default function App() {
   const activeSettings = activeScreenshot
     ? { ...settings, ...activeScreenshot.settingsOverrides }
     : settings;
-  const showLeftPanel = leftPanelOpen && !focusMode;
-  const showRightPanel = rightPanelOpen && !focusMode;
+  const showRightPanel = rightPanelOpen && editorMode !== 'preview' && hasSlides;
   const activeCanvasPreset = CANVAS_PRESETS.find((preset) =>
     preset.width === activeSettings.canvasWidth && preset.height === activeSettings.canvasHeight
   );
@@ -2037,10 +1974,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (window.innerWidth < 1100) {
-      setLeftPanelOpen(false);
-      setRightPanelOpen(false);
-    }
+    if (window.innerWidth < 900) setRightPanelOpen(false);
   }, []);
 
   useEffect(() => {
@@ -2159,43 +2093,171 @@ export default function App() {
     };
   }, [settings, screenshots, activeIndex]);
 
-  const toggleSection = (key: SectionKey) => {
-    setActiveTool(key);
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const isPreview = editorMode === 'preview';
+  const slideSizes = screenshots.map((slide) => {
+    const slideSettings = { ...settings, ...slide.settingsOverrides };
+    return { width: slideSettings.canvasWidth, height: slideSettings.canvasHeight };
+  });
+  const maxSlideHeight = Math.max(1, ...slideSizes.map((size) => size.height));
+  const addTileWidth = (slideSizes[0]?.width ?? 1080) * 0.55;
 
-  const focusSection = (key: SectionKey) => {
-    setActiveTool(key);
-    setOpenSections((prev) => ({ ...prev, [key]: true }));
-    window.requestAnimationFrame(() => {
-      document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  };
+  const zoomRef = useRef(zoomScale);
+  const panRef = useRef(pan);
+  zoomRef.current = zoomScale;
+  panRef.current = pan;
 
-  const updateFitScale = useCallback(() => {
-    if (!containerRef.current) return;
+  // Pan/zoom always go through the refs so rapid wheel events never read a stale render.
+  const applyView = useCallback((nextZoom: number, nextPan: Point) => {
+    zoomRef.current = nextZoom;
+    panRef.current = nextPan;
+    setZoomScale(nextZoom);
+    setPan(nextPan);
+  }, []);
+
+  const zoomAround = useCallback((ratio: number, cx?: number, cy?: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const current = zoomRef.current;
+    const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, current * ratio));
+    const x = cx ?? rect.width / 2;
+    const y = cy ?? rect.height / 2;
+    const p = panRef.current;
+    applyView(next, { x: x - (x - p.x) * (next / current), y: y - (y - p.y) * (next / current) });
+  }, [applyView]);
+
+  const fitToView = useCallback(() => {
+    if (!containerRef.current || slideSizes.length === 0) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
-    const availableWidth = Math.max(0, width - 64);
-    const availableHeight = Math.max(0, height - 64);
-    const scaleX = availableWidth / activeSettings.canvasWidth;
-    const scaleY = availableHeight / activeSettings.canvasHeight;
-    setFitScale(Math.min(scaleX, scaleY));
-  }, [activeSettings.canvasHeight, activeSettings.canvasWidth]);
+    const panelWidth = showRightPanel ? PANEL_WIDTH + 32 : 0;
+    const visibleWidth = width - panelWidth;
+    const gaps = SLIDE_GAP * (slideSizes.length - (isPreview ? 1 : 0));
+    const rowWidth = slideSizes.reduce((sum, size) => sum + size.width, 0) + (isPreview ? 0 : addTileWidth);
+    const next = Math.max(MIN_ZOOM, Math.min(1,
+      (visibleWidth - 96 - gaps) / rowWidth,
+      (height - 180 - CHIP_ROW_HEIGHT) / maxSlideHeight,
+    ));
+    const rowScreenWidth = rowWidth * next + gaps;
+    const rowScreenHeight = maxSlideHeight * next + CHIP_ROW_HEIGHT;
+    applyView(next, {
+      x: Math.max(48, (visibleWidth - rowScreenWidth) / 2),
+      y: Math.max(72, (height - rowScreenHeight) / 2 - 12),
+    });
+  }, [addTileWidth, applyView, isPreview, maxSlideHeight, showRightPanel, slideSizes]);
+
+  const hadSlidesRef = useRef(false);
+  useEffect(() => {
+    if (screenshots.length > 0 && !hadSlidesRef.current) fitToView();
+    hadSlidesRef.current = screenshots.length > 0;
+  }, [fitToView, screenshots.length]);
 
   useEffect(() => {
-    updateFitScale();
-    const resizeObserver = new ResizeObserver(() => updateFitScale());
-    if (containerRef.current) resizeObserver.observe(containerRef.current);
-    window.addEventListener('resize', updateFitScale);
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', updateFitScale);
+    if (hasSlides) fitToView();
+    // Refit only when entering/leaving preview or toggling the panel, not on every edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPreview, showRightPanel]);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    const onWheel = (event: WheelEvent) => {
+      if ((event.target as HTMLElement).closest('[data-canvas-scrollable]')) return;
+      event.preventDefault();
+      if (event.ctrlKey || event.metaKey) {
+        const rect = node.getBoundingClientRect();
+        zoomAround(Math.exp(-event.deltaY * 0.01), event.clientX - rect.left, event.clientY - rect.top);
+      } else {
+        const p = panRef.current;
+        applyView(zoomRef.current, { x: p.x - event.deltaX, y: p.y - event.deltaY });
+      }
     };
-  }, [screenshots.length, updateFitScale]);
+    node.addEventListener('wheel', onWheel, { passive: false });
+    return () => node.removeEventListener('wheel', onWheel);
+  }, [applyView, zoomAround]);
 
   useEffect(() => {
-    setZoomScale(fitScale);
-  }, [fitScale]);
+    if (!menuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!(event.target as HTMLElement).closest('[data-project-menu]')) setMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
+  const [spaceHeld, setSpaceHeld] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const panDragRef = useRef<{ pointerId: number; startX: number; startY: number; origin: Point; moved: boolean; deselect: boolean } | null>(null);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.tagName === 'SELECT' || target?.isContentEditable;
+      if (event.code !== 'Space' || isTyping) return;
+      event.preventDefault();
+      setSpaceHeld(true);
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code === 'Space') setSpaceHeld(false);
+    };
+    const onBlur = () => setSpaceHeld(false);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, []);
+
+  // Capture phase: Space/middle-drag pans even over a slide; left-drag on empty canvas pans too.
+  const handleCanvasPointerDownCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+    const onBackground = (event.target as HTMLElement).dataset.canvasBackground === 'true';
+    const forcePan = event.button === 1 || (event.button === 0 && spaceHeld);
+    if (!forcePan && !(event.button === 0 && onBackground)) return;
+    if (forcePan) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    panDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      origin: panRef.current,
+      moved: false,
+      deselect: !forcePan,
+    };
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Synthetic or already-released pointers can't be captured; panning still works without it.
+    }
+    setIsPanning(true);
+  };
+
+  const handleCanvasPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = panDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+    drag.moved = true;
+    applyView(zoomRef.current, { x: drag.origin.x + dx, y: drag.origin.y + dy });
+  };
+
+  const handleCanvasPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = panDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    panDragRef.current = null;
+    setIsPanning(false);
+    if (!drag.moved && drag.deselect) setSelectedLayer(null);
+  };
 
   // Removed faulty useEffect that was revoking blob URLs on every screenshots change
 
@@ -2471,12 +2533,12 @@ export default function App() {
     e.target.value = '';
   };
 
-  const handleScreenshotReplace = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0] || !activeScreenshot) return;
+  const handleScreenshotReplace = async (e: React.ChangeEvent<HTMLInputElement>, slideIndex = activeIndex) => {
+    if (!e.target.files || !e.target.files[0] || !screenshots[slideIndex]) return;
     const file = e.target.files[0];
     try {
       const newUrl = await readFileAsDataUrl(file);
-      setScreenshots((prev) => prev.map((s, i) => (i === activeIndex ? { ...s, url: newUrl } : s)));
+      setScreenshots((prev) => prev.map((s, i) => (i === slideIndex ? { ...s, url: newUrl } : s)));
       notify('Screenshot replaced');
     } catch {
       notify('Unable to read that image', 'error');
@@ -2568,8 +2630,8 @@ export default function App() {
     });
   };
 
-  const duplicateScreenshot = () => {
-    const active = screenshots[activeIndex];
+  const duplicateScreenshot = (slideIndex = activeIndex) => {
+    const active = screenshots[slideIndex];
     if (!active) return;
     const duplicated: Screenshot = {
       ...active,
@@ -2580,10 +2642,10 @@ export default function App() {
     };
     setScreenshots((prev) => {
       const newArr = [...prev];
-      newArr.splice(activeIndex + 1, 0, duplicated);
+      newArr.splice(slideIndex + 1, 0, duplicated);
       return newArr;
     });
-    setActiveIndex(activeIndex + 1);
+    setActiveIndex(slideIndex + 1);
   };
 
   const toggleSlideSelection = (id: string) => {
@@ -2703,8 +2765,15 @@ export default function App() {
     );
   };
 
-  const handleStartDrag = (target: 'text' | 'device', e: React.PointerEvent) => {
-    if (!dragMode || !activeScreenshot) return;
+  const handleStartDrag = (slideIndex: number, target: 'text' | 'device', e: React.PointerEvent) => {
+    const slide = screenshots[slideIndex];
+    if (!slide) return;
+    setActiveIndex(slideIndex);
+    setSelectedLayer(target);
+    if ((target === 'text' && slide.textLocked) || (target === 'device' && slide.deviceLocked)) {
+      e.stopPropagation();
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     dragStateRef.current = {
@@ -2712,9 +2781,9 @@ export default function App() {
       startX: e.clientX,
       startY: e.clientY,
       startOffset:
-        target === 'text' ? activeScreenshot.textOffset : activeScreenshot.deviceOffset,
+        target === 'text' ? slide.textOffset : slide.deviceOffset,
       target,
-      activeId: activeScreenshot.id,
+      activeId: slide.id,
     };
     setDraggingTarget(target);
     if (e.currentTarget instanceof HTMLElement) {
@@ -2733,7 +2802,7 @@ export default function App() {
       const next = { x: clamp(drag.startOffset.x + dx), y: clamp(drag.startOffset.y + dy) };
       setScreenshots((prev) =>
         prev.map((s, i) => {
-          if (i !== activeIndex || s.id !== drag.activeId) return s;
+          if (s.id !== drag.activeId) return s;
           if (drag.target === 'text') return { ...s, textOffset: next };
           return { ...s, deviceOffset: next };
         })
@@ -2753,7 +2822,7 @@ export default function App() {
       window.removeEventListener('pointerup', onPointerEnd);
       window.removeEventListener('pointercancel', onPointerEnd);
     };
-  }, [activeIndex, zoomScale]);
+  }, [zoomScale]);
 
   const resetCurrentPosition = () => {
     setScreenshots((prev) =>
@@ -2855,25 +2924,45 @@ export default function App() {
         return;
       }
 
-      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedLayer) {
+      if (event.shiftKey && event.key === '!') {
+        event.preventDefault();
+        fitToView();
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key === '0') {
+        event.preventDefault();
+        fitToView();
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && (event.key === '=' || event.key === '-')) {
+        event.preventDefault();
+        zoomAround(event.key === '=' ? 1.2 : 1 / 1.2);
+        return;
+      }
+
+      if ((event.key === 'Delete' || event.key === 'Backspace') && (selectedLayer === 'text' || selectedLayer === 'device')) {
         event.preventDefault();
         updateCurrentScreenshot(selectedLayer === 'text' ? { textVisible: false } : { deviceVisible: false });
         notify(`${selectedLayer === 'text' ? 'Text' : 'Device'} layer hidden`);
         return;
       }
 
-      if (event.key.startsWith('Arrow') && selectedLayer) {
+      if (event.key.startsWith('Arrow') && (selectedLayer === 'text' || selectedLayer === 'device')) {
         event.preventDefault();
         const amount = event.shiftKey ? 10 : 1;
         if (event.key === 'ArrowLeft') nudgeCurrent(selectedLayer, 'x', -amount);
         if (event.key === 'ArrowRight') nudgeCurrent(selectedLayer, 'x', amount);
         if (event.key === 'ArrowUp') nudgeCurrent(selectedLayer, 'y', -amount);
         if (event.key === 'ArrowDown') nudgeCurrent(selectedLayer, 'y', amount);
+      } else if (event.key === 'ArrowLeft' && (selectedLayer === null || selectedLayer === 'background')) {
+        setActiveIndex((index) => Math.max(0, index - 1));
+      } else if (event.key === 'ArrowRight' && (selectedLayer === null || selectedLayer === 'background')) {
+        setActiveIndex((index) => Math.min(screenshots.length - 1, index + 1));
       }
     };
     window.addEventListener('keydown', handleEditorShortcuts);
     return () => window.removeEventListener('keydown', handleEditorShortcuts);
-  }, [activeScreenshot, notify, selectedLayer]);
+  }, [activeScreenshot, fitToView, notify, screenshots.length, selectedLayer, zoomAround]);
 
   const buildExportFilename = (slide: Screenshot, index: number, slideSettings: Settings) => {
     const extension = exportFormat === 'jpeg' ? 'jpg' : exportFormat;
@@ -2998,1864 +3087,532 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell flex h-dvh min-w-0 bg-slate-100 font-sans text-slate-900">
-      {/* ── LEFT CONTROL RAIL ── */}
-      {showLeftPanel && (
-        <aside className="flex w-[300px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/95 xl:w-[320px] 2xl:w-[360px]">
-          <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 px-4 py-4 backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-200">
-                  <MonitorSmartphone size={18} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-base font-extrabold tracking-tight text-slate-950">Frameflow</h1>
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-600">Studio</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500">App-store mockups, without the busywork</p>
-                </div>
-              </div>
-              <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Saved
-              </span>
-            </div>
-
-            <nav className="mt-4 grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1" aria-label="Editor tools">
-              {[
-                { key: 'presets' as const, label: 'Presets', icon: Save },
-                { key: 'layout' as const, label: 'Canvas', icon: Layout },
-                { key: 'device' as const, label: 'Device', icon: Smartphone },
-                { key: 'typography' as const, label: 'Type', icon: Type },
-              ].map(({ key, label, icon: Icon }) => (
-                <button
-                  key={key}
-                  onClick={() => focusSection(key)}
-                  className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-[10px] font-semibold transition-all ${activeTool === key
-                    ? 'bg-white text-indigo-700 shadow-sm'
-                    : 'text-slate-500 hover:bg-white/70 hover:text-slate-800'
-                    }`}
-                >
-                  <Icon size={15} />
-                  {label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          <div className="flex-1 space-y-4 overflow-y-auto p-4">
-            {/* Editing scope */}
-            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <div className="app-shell studio relative flex h-dvh w-full overflow-hidden bg-[#0c0c0e] font-sans text-zinc-100">
+      <div data-project-menu className="absolute left-4 top-4 z-40 flex items-center gap-1 rounded-xl border border-white/10 bg-zinc-900/90 p-1 shadow-2xl backdrop-blur">
+        <button type="button" onClick={() => setMenuOpen((value) => !value)} className="rounded-lg p-2 text-zinc-300 hover:bg-white/5" title="Project menu"><Menu size={16} /></button>
+        <span className="h-5 w-px bg-white/10" />
+        <input value={projectName} onChange={(event) => setProjectName(event.target.value)} className="w-44 bg-transparent px-2 text-sm font-semibold text-zinc-100 outline-none" aria-label="Project name" />
+        <span className="h-5 w-px bg-white/10" />
+        <button onClick={undo} disabled={history.past.length === 0 && !hasPendingHistory} className="rounded-lg p-2 text-zinc-300 hover:bg-white/5 disabled:opacity-30" title="Undo"><Undo2 size={15} /></button>
+        <button onClick={redo} disabled={history.future.length === 0 || hasPendingHistory} className="rounded-lg p-2 text-zinc-300 hover:bg-white/5 disabled:opacity-30" title="Redo"><Redo2 size={15} /></button>
+      </div>
+      {menuOpen && <div data-project-menu className="absolute left-4 top-[64px] z-50 max-h-[calc(100dvh-96px)] w-[320px] overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900/95 p-4 text-zinc-200 shadow-2xl backdrop-blur">
+        <div className="grid grid-cols-2 gap-2"><label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs"><Upload size={14} /> Import project<input type="file" accept=".json,.frameflow.json,application/json" className="hidden" onChange={handleProjectImport} /></label><button onClick={handleExportProject} className="rounded-lg bg-white/5 px-3 py-2 text-xs">Export project</button></div>
+        <p className="mt-2 text-[11px] text-zinc-500">Autosaved locally. Project files include slides, images, and settings.</p>
+        <div className="mt-4">
+          <details className="group rounded-xl border border-white/10 bg-zinc-800">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-zinc-200">
+              <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-indigo-400" /> Project tools</span>
+              <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="space-y-4 border-t border-white/[0.06] p-3">
               <div>
-                <p className="text-xs font-bold text-slate-800">Editing scope</p>
-                <p className={`mt-0.5 text-[11px] font-medium ${applyToAll ? 'text-indigo-600' : 'text-amber-600'}`}>
-                  {applyToAll ? 'All slides' : `Slide ${activeIndex + 1} only`}
-                </p>
-              </div>
-              <button
-                onClick={() => setApplyToAll((value) => !value)}
-                aria-pressed={applyToAll}
-                className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${applyToAll ? 'bg-indigo-600' : 'bg-amber-400'}`}
-                title="Toggle whether changes apply to every slide"
-              >
-                <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${applyToAll ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
-            </div>
-
-            {/* Brand Presets */}
-            <PanelSection
-              id="section-presets"
-              title="Brand Presets"
-              description="Switching preset instantly previews that look. Import a JSON file to load a per-app preset."
-              open={openSections.presets}
-              onToggle={() => toggleSection('presets')}
-            >
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Project name</label>
-                <input
-                  value={projectName}
-                  onChange={(event) => setProjectName(event.target.value)}
-                  className="mt-1 w-full bg-transparent text-sm font-bold text-slate-800 outline-none"
-                  placeholder="Untitled project"
-                />
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
-                    <Upload size={13} /> Import project
-                    <input type="file" accept=".json,.frameflow.json,application/json" className="hidden" onChange={handleProjectImport} />
-                  </label>
-                  <button type="button" onClick={handleExportProject} className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-2 py-2 text-xs font-bold text-white hover:bg-indigo-600">
-                    <FileDown size={13} /> Export project
-                  </button>
+                <div className="flex items-center gap-2 text-xs font-bold text-zinc-200"><Palette size={14} /> Brand kit</div>
+                <input value={brandKit.name} onChange={(event) => setBrandKit((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-lg border border-white/10 px-2.5 py-2 text-xs font-semibold outline-none focus:border-indigo-400" aria-label="Brand name" />
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <label className="flex items-center gap-2 rounded-lg border border-white/10 p-2 text-[10px] font-bold text-zinc-400"><input type="color" value={brandKit.primary} onChange={(event) => setBrandKit((current) => ({ ...current, primary: event.target.value }))} className="h-6 w-6" /> Accent</label>
+                  <label className="flex items-center gap-2 rounded-lg border border-white/10 p-2 text-[10px] font-bold text-zinc-400"><input type="color" value={brandKit.secondary} onChange={(event) => setBrandKit((current) => ({ ...current, secondary: event.target.value }))} className="h-6 w-6" /> Text</label>
                 </div>
-                <p className="mt-2 text-[10px] leading-relaxed text-slate-400">Autosaved locally. Project files include slides, images, and settings.</p>
-              </div>
-
-              <details className="group rounded-xl border border-slate-200 bg-white">
-                <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
-                  <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-indigo-500" /> Project tools</span>
-                  <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
-                </summary>
-                <div className="space-y-4 border-t border-slate-100 p-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-700"><Palette size={14} /> Brand kit</div>
-                    <input value={brandKit.name} onChange={(event) => setBrandKit((current) => ({ ...current, name: event.target.value }))} className="mt-2 w-full rounded-lg border border-slate-200 px-2.5 py-2 text-xs font-semibold outline-none focus:border-indigo-400" aria-label="Brand name" />
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-[10px] font-bold text-slate-500"><input type="color" value={brandKit.primary} onChange={(event) => setBrandKit((current) => ({ ...current, primary: event.target.value }))} className="h-6 w-6" /> Accent</label>
-                      <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-[10px] font-bold text-slate-500"><input type="color" value={brandKit.secondary} onChange={(event) => setBrandKit((current) => ({ ...current, secondary: event.target.value }))} className="h-6 w-6" /> Text</label>
-                    </div>
-                    <select value={brandKit.fontFamily} onChange={(event) => setBrandKit((current) => ({ ...current, fontFamily: event.target.value }))} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold">
-                      {FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
-                    </select>
-                    <button type="button" onClick={applyBrandKit} className="mt-2 w-full rounded-lg bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100">Apply brand to editing scope</button>
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-3">
-                    <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-700"><Library size={14} /> Media library</span><span className="text-[10px] font-semibold text-slate-400">{mediaLibrary.length} assets</span></div>
-                    {mediaLibrary.length > 0 ? (
-                      <div className="mt-2 grid grid-cols-5 gap-1.5">
-                        {mediaLibrary.slice(0, 10).map((asset) => <button key={asset.url} type="button" onClick={() => updateCurrentScreenshot({ url: asset.url })} className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100 hover:ring-2 hover:ring-indigo-300" title="Use this image"><img src={asset.url} alt="Reusable project asset" className="h-full w-full object-cover" /></button>)}
-                      </div>
-                    ) : <p className="mt-2 text-[11px] text-slate-400">Uploaded screenshots appear here for quick reuse.</p>}
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-3">
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-700"><Languages size={14} /> Localization</div>
-                    <select value={activeLocale} onChange={(event) => setActiveLocale(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold">
-                      <option value="en-US">English (source)</option><option value="fr-FR">French</option><option value="de-DE">German</option><option value="es-ES">Spanish</option><option value="pt-BR">Portuguese (Brazil)</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option>
-                    </select>
-                    <p className="mt-1.5 text-[10px] leading-relaxed text-slate-400">Switch locale, then edit copy in the inspector. Source copy is used until a translation changes.</p>
-                  </div>
-
-                  <div className="border-t border-slate-100 pt-3">
-                    <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-700"><History size={14} /> Versions</span><button type="button" onClick={saveVersion} className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-slate-200">Save version</button></div>
-                    {versions.length > 0 ? <div className="mt-2 space-y-1.5">{versions.slice(0, 4).map((version) => <button type="button" key={version.id} onClick={() => restoreVersion(version)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-2.5 py-2 text-left hover:bg-slate-50"><span className="text-[11px] font-bold text-slate-600">{version.name}</span><span className="text-[9px] text-slate-400">{new Date(version.createdAt).toLocaleDateString()}</span></button>)}</div> : <p className="mt-2 text-[11px] text-slate-400">Save a checkpoint before a major edit.</p>}
-                  </div>
-                </div>
-              </details>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active Preset</label>
-                <select
-                  value={selectedPreset.id}
-                  onChange={(e) => setSelectedPresetId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl p-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                >
-                  {appPresets.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
+                <select value={brandKit.fontFamily} onChange={(event) => setBrandKit((current) => ({ ...current, fontFamily: event.target.value }))} className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-800 px-2.5 py-2 text-xs font-semibold">
+                  {FONT_OPTIONS.map((font) => <option key={font.value} value={font.value}>{font.label}</option>)}
                 </select>
-                <p className="text-xs text-indigo-600 font-medium">↑ Switching preset instantly applies its look to the canvas.</p>
+                <button type="button" onClick={applyBrandKit} className="mt-2 w-full rounded-lg bg-indigo-500/15 px-3 py-2 text-xs font-bold text-indigo-200 hover:bg-indigo-500/25">Apply brand to editing scope</button>
               </div>
 
-              {/* JSON import / export row */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preset Files (.json)</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-semibold cursor-pointer hover:bg-indigo-100 transition-colors">
-                    <Upload size={14} /> Import JSON
-                    <input
-                      type="file"
-                      accept=".json,application/json"
-                      className="hidden"
-                      onChange={handleJsonImport}
-                    />
-                  </label>
-                  <button
-                    onClick={handleExportCurrentPreset}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-indigo-200 bg-white text-indigo-700 text-xs font-semibold hover:bg-indigo-50 transition-colors shadow-2xs"
-                    title="Download the active preset as a standalone .json file"
-                  >
-                    <FileDown size={14} /> Export Preset
-                  </button>
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleExportPresetsJson}
-                    className="text-[10px] text-slate-500 hover:text-indigo-600 underline transition-colors"
-                    title="Export all presets as a single bundle file"
-                  >
-                    Export all presets bundle
-                  </button>
-                </div>
-                {jsonImportError && (
-                  <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{jsonImportError}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Preset Name</label>
-                <input
-                  value={presetDraft.name}
-                  onChange={(e) => setPresetDraft((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                  placeholder="e.g. Fitness App Launch"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Default Title</label>
-                <textarea
-                  value={presetDraft.title}
-                  onChange={(e) => setPresetDraft((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
-                  rows={2}
-                  placeholder="Headline (supports [accent]word[/accent])"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Default Subtitle</label>
-                <textarea
-                  value={presetDraft.subtitle}
-                  onChange={(e) => setPresetDraft((prev) => ({ ...prev, subtitle: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
-                  rows={2}
-                  placeholder="Supporting description copy"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={savePresetChanges}
-                  className="px-3 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
-                  title="Save current canvas settings and copy into this preset"
-                >
-                  <Check size={14} /> Update Preset
-                </button>
-                <button
-                  onClick={createPreset}
-                  className="px-3 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/80 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors flex items-center justify-center gap-1.5"
-                  title="Save this design as a brand new preset"
-                >
-                  <Plus size={14} /> Save as New
-                </button>
-                <button
-                  onClick={syncPresetDraftFromCanvas}
-                  className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                  title="Pull title & subtitle from active slide into this draft"
-                >
-                  Use Slide Copy
-                </button>
-                <button
-                  onClick={deletePreset}
-                  disabled={appPresets.length <= 1}
-                  className="px-3 py-2 rounded-xl border border-red-200 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                >
-                  <Trash2 size={13} /> Delete
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                <button
-                  onClick={() => applyPresetToSlides('current')}
-                  disabled={!hasSlides}
-                  className="px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Apply to Current
-                </button>
-                <button
-                  onClick={() => applyPresetToSlides('all')}
-                  disabled={!hasSlides}
-                  className="px-3 py-2.5 rounded-xl bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Apply to All Slides
-                </button>
-              </div>
-            </PanelSection>
-
-            {/* Layout */}
-            <PanelSection
-              id="section-layout"
-              title="Canvas & Layout"
-              description="Control canvas background, content flow, text and device alignment."
-              open={openSections.layout}
-              onToggle={() => toggleSection('layout')}
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                    <MonitorSmartphone size={16} className="text-indigo-500" /> Output size
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateSetting({ canvasWidth: activeSettings.canvasHeight, canvasHeight: activeSettings.canvasWidth })}
-                      className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50"
-                      title="Swap canvas orientation"
-                    >
-                      Rotate
-                    </button>
-                    <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] text-slate-500">
-                      {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
-                    </span>
+              <div className="border-t border-white/[0.06] pt-3">
+                <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-zinc-200"><Library size={14} /> Media library</span><span className="text-[10px] font-semibold text-zinc-500">{mediaLibrary.length} assets</span></div>
+                {mediaLibrary.length > 0 ? (
+                  <div className="mt-2 grid grid-cols-5 gap-1.5">
+                    {mediaLibrary.slice(0, 10).map((asset) => <button key={asset.url} type="button" onClick={() => updateCurrentScreenshot({ url: asset.url })} className="aspect-square overflow-hidden rounded-lg border border-white/10 bg-zinc-950/60 hover:ring-2 hover:ring-indigo-300" title="Use this image"><img src={asset.url} alt="Reusable project asset" className="h-full w-full object-cover" /></button>)}
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {CANVAS_PRESETS.map((preset) => {
-                    const selected = activeSettings.canvasWidth === preset.width && activeSettings.canvasHeight === preset.height;
-                    return (
-                      <button
-                        key={preset.id}
-                        onClick={() => updateSetting({ canvasWidth: preset.width, canvasHeight: preset.height })}
-                        className={`rounded-xl border px-3 py-2.5 text-left transition-all ${selected
-                          ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-100'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                          }`}
-                      >
-                        <span className={`block text-xs font-bold ${selected ? 'text-indigo-700' : 'text-slate-700'}`}>{preset.label}</span>
-                        <span className="mt-0.5 block font-mono text-[10px] text-slate-400">{preset.width} × {preset.height}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Width</span>
-                    <input
-                      type="number"
-                      min={320}
-                      max={4096}
-                      value={activeSettings.canvasWidth}
-                      onChange={(e) => updateSetting({ canvasWidth: Math.max(320, Number(e.target.value)) })}
-                      className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
-                    />
-                  </label>
-                  <label className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Height</span>
-                    <input
-                      type="number"
-                      min={320}
-                      max={4096}
-                      value={activeSettings.canvasHeight}
-                      onChange={(e) => updateSetting({ canvasHeight: Math.max(320, Number(e.target.value)) })}
-                      className="mt-1 w-full bg-transparent text-sm font-semibold text-slate-700 outline-none"
-                    />
-                  </label>
-                </div>
+                ) : <p className="mt-2 text-[11px] text-zinc-500">Uploaded screenshots appear here for quick reuse.</p>}
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Palette size={16} className="text-indigo-500" /> Background
-                  </label>
-                  {(() => {
-                    const activePatternId =
-                      activeSettings.backgroundPattern === 'wave-ribbons'
-                        ? 'emerald-wave'
-                        : activeSettings.backgroundPattern ||
-                        (typeof activeSettings.background === 'string' && activeSettings.background.includes('#057a44') ? 'emerald-wave' : 'none');
-                    return activePatternId !== 'none' ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-200 shadow-2xs">
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: activeSettings.backgroundPatternColor || '#078249' }} />
-                        {DESIGNER_PATTERNS.find(p => p.id === activePatternId)?.name || 'Pattern'} Active
-                      </span>
-                    ) : null;
-                  })()}
-                </div>
-
-                {/* Designer Background Pattern Selector */}
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                      Designer Patterns
-                    </span>
-                    <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                      {DESIGNER_PATTERNS.length - 1} Pro Styles
-                    </span>
-                  </div>
-
-                  {(() => {
-                    const activePatternId =
-                      activeSettings.backgroundPattern === 'wave-ribbons'
-                        ? 'emerald-wave'
-                        : activeSettings.backgroundPattern ||
-                        (typeof activeSettings.background === 'string' && activeSettings.background.includes('#057a44') ? 'emerald-wave' : 'none');
-                    const isAnyPatternActive = activePatternId !== 'none';
-
-                    return (
-                      <>
-                        <div className="grid grid-cols-2 gap-2">
-                          {DESIGNER_PATTERNS.map((pat) => {
-                            const isSelected = activePatternId === pat.id;
-                            return (
-                              <button
-                                key={pat.id}
-                                type="button"
-                                onClick={() => {
-                                  if (pat.id === 'none') {
-                                    updateSetting({ backgroundPattern: 'none' });
-                                  } else {
-                                    const baseColor = activeSettings.backgroundPatternColor || '#078249';
-                                    const cornerStart = activeSettings.backgroundPatternCornerStart || '#10b981';
-                                    const cornerEnd = activeSettings.backgroundPatternCornerEnd || '#02381e';
-                                    const waveColor = activeSettings.backgroundPatternWaveColor || '#34d399';
-                                    const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
-                                    updateSetting({
-                                      backgroundPattern: pat.id,
-                                      backgroundPatternColor: baseColor,
-                                      backgroundPatternCornerStart: cornerStart,
-                                      backgroundPatternCornerEnd: cornerEnd,
-                                      backgroundPatternWaveColor: waveColor,
-                                      background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
-                                      titleColor: '#FFFFFF',
-                                      subtitleColor: tones.subtitleColor,
-                                      accentColor: tones.accentColor,
-                                    });
-                                  }
-                                }}
-                                className={`relative overflow-hidden rounded-xl border p-2 text-left transition-all ${isSelected
-                                  ? 'border-indigo-600 bg-indigo-50/40 ring-2 ring-indigo-500/20 shadow-sm'
-                                  : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm'
-                                  }`}
-                              >
-                                <div
-                                  className="relative h-14 w-full rounded-lg overflow-hidden mb-1.5 shadow-inner border border-slate-200/60"
-                                  style={{
-                                    backgroundColor:
-                                      pat.id === 'none'
-                                        ? undefined
-                                        : activeSettings.backgroundPatternColor || '#078249',
-                                    background:
-                                      pat.id === 'none'
-                                        ? isSelected
-                                          ? activeSettings.background
-                                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                                        : undefined,
-                                  }}
-                                >
-                                  {pat.id === 'emerald-wave' && (
-                                    <EmeraldWaveBackground
-                                      idPrefix="thumb-wave"
-                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
-                                      cornerStart={activeSettings.backgroundPatternCornerStart}
-                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
-                                      waveColor={activeSettings.backgroundPatternWaveColor}
-                                    />
-                                  )}
-                                  {pat.id === 'aurora-mesh' && (
-                                    <AuroraMeshBackground
-                                      idPrefix="thumb-aurora"
-                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
-                                      cornerStart={activeSettings.backgroundPatternCornerStart}
-                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
-                                      waveColor={activeSettings.backgroundPatternWaveColor}
-                                    />
-                                  )}
-                                  {pat.id === 'cyber-grid' && (
-                                    <CyberGridBackground
-                                      idPrefix="thumb-grid"
-                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
-                                      cornerStart={activeSettings.backgroundPatternCornerStart}
-                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
-                                      waveColor={activeSettings.backgroundPatternWaveColor}
-                                    />
-                                  )}
-                                  {pat.id === 'glass-spheres' && (
-                                    <GlassSpheresBackground
-                                      idPrefix="thumb-spheres"
-                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
-                                      cornerStart={activeSettings.backgroundPatternCornerStart}
-                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
-                                      waveColor={activeSettings.backgroundPatternWaveColor}
-                                    />
-                                  )}
-                                  {pat.id === 'topography-contour' && (
-                                    <TopographyBackground
-                                      idPrefix="thumb-topo"
-                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
-                                      cornerStart={activeSettings.backgroundPatternCornerStart}
-                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
-                                      waveColor={activeSettings.backgroundPatternWaveColor}
-                                    />
-                                  )}
-                                  {pat.id === 'crystal-prism' && (
-                                    <CrystalPrismBackground
-                                      idPrefix="thumb-prism"
-                                      baseColor={activeSettings.backgroundPatternColor || '#078249'}
-                                      cornerStart={activeSettings.backgroundPatternCornerStart}
-                                      cornerEnd={activeSettings.backgroundPatternCornerEnd}
-                                      waveColor={activeSettings.backgroundPatternWaveColor}
-                                    />
-                                  )}
-                                  <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider backdrop-blur-xs">
-                                    {pat.badge}
-                                  </span>
-                                </div>
-                                <span className="block text-xs font-bold text-slate-800 leading-tight">{pat.name}</span>
-                                <span className="block text-[10px] text-slate-500 leading-tight truncate">{pat.desc}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {isAnyPatternActive && (
-                          <div className="pt-3 border-t border-slate-200/80 space-y-3">
-                            {/* 1. Duo-Tone & Multi-Color Presets */}
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                  Designer Duo-Tone Palettes
-                                </span>
-                                <span className="text-[10px] text-slate-400">Pre-harmonized</span>
-                              </div>
-
-                              <div className="grid grid-cols-4 gap-1.5">
-                                {DESIGNER_PATTERN_PRESETS.map((p) => {
-                                  const isCurrent =
-                                    (activeSettings.backgroundPatternColor || '#078249').toLowerCase() === p.base.toLowerCase() &&
-                                    (activeSettings.backgroundPatternCornerStart || '').toLowerCase() === p.cornerStart.toLowerCase();
-                                  return (
-                                    <button
-                                      key={p.id}
-                                      type="button"
-                                      onClick={() => {
-                                        const tones = computePatternTones(p.base, p.cornerStart, p.cornerEnd, p.wave);
-                                        updateSetting({
-                                          backgroundPatternColor: p.base,
-                                          backgroundPatternCornerStart: p.cornerStart,
-                                          backgroundPatternCornerEnd: p.cornerEnd,
-                                          backgroundPatternWaveColor: p.wave,
-                                          background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
-                                          titleColor: '#FFFFFF',
-                                          subtitleColor: tones.subtitleColor,
-                                          accentColor: tones.accentColor,
-                                        });
-                                      }}
-                                      className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${isCurrent
-                                        ? 'border-slate-800 bg-white shadow-xs ring-1 ring-slate-800'
-                                        : 'border-slate-200 bg-white/70 hover:bg-white hover:border-slate-300'
-                                        }`}
-                                      title={`${p.name} (${p.badge})`}
-                                    >
-                                      <span className="relative w-4 h-4 rounded-full flex-shrink-0 overflow-hidden shadow-2xs border border-black/10">
-                                        <span className="absolute inset-0 w-1/2" style={{ backgroundColor: p.cornerStart }} />
-                                        <span className="absolute inset-0 left-1/2 w-1/2" style={{ backgroundColor: p.base }} />
-                                        <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white" style={{ backgroundColor: p.wave }} />
-                                      </span>
-                                      <span className="text-[10px] font-semibold text-slate-700 truncate">{p.name}</span>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* 2. Direct Corner & Wave Gradient Customizer */}
-                            <div className="rounded-xl border border-slate-200 bg-white p-2.5 space-y-2.5 shadow-2xs">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                                  Corner & Wave Gradient Colors
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const base = activeSettings.backgroundPatternColor || '#009e52';
-                                    const tones = computePatternTones(base);
-                                    updateSetting({
-                                      backgroundPatternCornerStart: tones.ribbonTop0,
-                                      backgroundPatternCornerEnd: tones.ribbonBottom100,
-                                      backgroundPatternWaveColor: tones.waveBody0,
-                                      subtitleColor: tones.subtitleColor,
-                                      accentColor: tones.accentColor,
-                                    });
-                                  }}
-                                  className="text-[10px] font-semibold text-indigo-600 hover:underline"
-                                  title="Recalculate corner gradient colors from the base background"
-                                >
-                                  Auto-Match Base
-                                </button>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-2">
-                                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-1.5 hover:bg-slate-50 cursor-pointer">
-                                  <input
-                                    type="color"
-                                    value={activeSettings.backgroundPatternCornerStart || '#05c065'}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      updateSetting({ backgroundPatternCornerStart: val });
-                                    }}
-                                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
-                                  />
-                                  <div className="min-w-0 flex-1">
-                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-tight">Corner Start</span>
-                                    <span className="block text-[11px] font-mono text-slate-700 truncate">
-                                      {activeSettings.backgroundPatternCornerStart || '#05c065'}
-                                    </span>
-                                  </div>
-                                </label>
-
-                                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-1.5 hover:bg-slate-50 cursor-pointer">
-                                  <input
-                                    type="color"
-                                    value={activeSettings.backgroundPatternCornerEnd || '#00783d'}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      updateSetting({ backgroundPatternCornerEnd: val });
-                                    }}
-                                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
-                                  />
-                                  <div className="min-w-0 flex-1">
-                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-tight">Corner End</span>
-                                    <span className="block text-[11px] font-mono text-slate-700 truncate">
-                                      {activeSettings.backgroundPatternCornerEnd || '#00783d'}
-                                    </span>
-                                  </div>
-                                </label>
-
-                                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-1.5 hover:bg-slate-50 cursor-pointer">
-                                  <input
-                                    type="color"
-                                    value={activeSettings.backgroundPatternWaveColor || '#008e49'}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      updateSetting({ backgroundPatternWaveColor: val });
-                                    }}
-                                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
-                                  />
-                                  <div className="min-w-0 flex-1">
-                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-tight">3D Wave Accent</span>
-                                    <span className="block text-[11px] font-mono text-slate-700 truncate">
-                                      {activeSettings.backgroundPatternWaveColor || '#008e49'}
-                                    </span>
-                                  </div>
-                                </label>
-
-                                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-1.5 hover:bg-slate-50 cursor-pointer">
-                                  <input
-                                    type="color"
-                                    value={activeSettings.backgroundPatternColor || '#009e52'}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      const tones = computePatternTones(
-                                        val,
-                                        activeSettings.backgroundPatternCornerStart,
-                                        activeSettings.backgroundPatternCornerEnd,
-                                        activeSettings.backgroundPatternWaveColor
-                                      );
-                                      updateSetting({
-                                        backgroundPatternColor: val,
-                                        background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
-                                      });
-                                    }}
-                                    className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
-                                  />
-                                  <div className="min-w-0 flex-1">
-                                    <span className="block text-[9px] font-bold text-slate-500 uppercase tracking-tight">Base Backdrop</span>
-                                    <span className="block text-[11px] font-mono text-slate-700 truncate">
-                                      {activeSettings.backgroundPatternColor || '#009e52'}
-                                    </span>
-                                  </div>
-                                </label>
-                              </div>
-                            </div>
-
-                            <div className="pt-1 flex items-center justify-between text-[10px] text-slate-500">
-                              <span>Typography automatically harmonizes to corner accents</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const tones = computePatternTones(
-                                    activeSettings.backgroundPatternColor || '#078249',
-                                    activeSettings.backgroundPatternCornerStart,
-                                    activeSettings.backgroundPatternCornerEnd,
-                                    activeSettings.backgroundPatternWaveColor
-                                  );
-                                  updateSetting({
-                                    titleColor: '#FFFFFF',
-                                    subtitleColor: tones.subtitleColor,
-                                    accentColor: tones.accentColor,
-                                  });
-                                }}
-                                className="font-bold text-indigo-600 hover:underline"
-                              >
-                                Harmonize text
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-
-                <div className="grid grid-cols-6 gap-2 mb-3">
-                  {BACKGROUNDS.map((bg, i) => (
-                    <button
-                      key={i}
-                      onClick={() => updateSetting({
-                        background: bg,
-                        backgroundPattern: bg.includes('#057a44') ? 'emerald-wave' : 'none',
-                      })}
-                      className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${activeSettings.background === bg
-                        ? 'border-indigo-600 scale-110 shadow-md'
-                        : 'border-transparent shadow-sm'
-                        }`}
-                      style={{ background: bg }}
-                      title={bg}
-                    />
-                  ))}
-                </div>
-                <details className="group rounded-xl border border-slate-200 bg-slate-50">
-                  <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-xs font-bold text-slate-600">
-                    Gradient builder
-                    <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
-                  </summary>
-                  <div className="space-y-3 border-t border-slate-200 p-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      {([
-                        { label: 'Start', key: 'backgroundGradientStart' as const },
-                        { label: 'End', key: 'backgroundGradientEnd' as const },
-                      ]).map(({ label, key }) => (
-                        <label key={key} className="flex items-center gap-2 rounded-lg bg-white p-2 shadow-sm">
-                          <input
-                            type="color"
-                            value={activeSettings[key]}
-                            onChange={(e) => {
-                              const next = e.target.value;
-                              const start = key === 'backgroundGradientStart' ? next : activeSettings.backgroundGradientStart;
-                              const end = key === 'backgroundGradientEnd' ? next : activeSettings.backgroundGradientEnd;
-                              updateSetting({ [key]: next, background: `linear-gradient(${activeSettings.backgroundGradientAngle}deg, ${start} 0%, ${end} 100%)` });
-                            }}
-                            className="h-7 w-7 rounded-md border-0 bg-transparent p-0"
-                          />
-                          <span className="text-[11px] font-bold text-slate-500">{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                      Angle · {activeSettings.backgroundGradientAngle}°
-                      <input
-                        type="range"
-                        min={0}
-                        max={360}
-                        value={activeSettings.backgroundGradientAngle}
-                        onChange={(e) => {
-                          const angle = Number(e.target.value);
-                          updateSetting({
-                            backgroundGradientAngle: angle,
-                            background: `linear-gradient(${angle}deg, ${activeSettings.backgroundGradientStart} 0%, ${activeSettings.backgroundGradientEnd} 100%)`,
-                          });
-                        }}
-                        className="mt-2 w-full"
-                      />
-                    </label>
-                  </div>
-                </details>
-                <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl bg-gray-50 shadow-sm">
-                  <span className="text-sm font-medium text-gray-700">Custom</span>
-                  <input
-                    type="color"
-                    value={
-                      activeSettings.background.startsWith('#')
-                        ? activeSettings.background.slice(0, 7)
-                        : '#ffffff'
-                    }
-                    onChange={(e) => updateSetting({ background: e.target.value })}
-                    className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
-                    title="Solid Color"
-                  />
-                  <input
-                    type="text"
-                    placeholder="linear-gradient(...)"
-                    value={activeSettings.background}
-                    onChange={(e) => updateSetting({ background: e.target.value })}
-                    className="flex-1 min-w-0 border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
-                  />
-                </div>
+              <div className="border-t border-white/[0.06] pt-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-zinc-200"><Languages size={14} /> Localization</div>
+                <select value={activeLocale} onChange={(event) => setActiveLocale(event.target.value)} className="mt-2 w-full rounded-lg border border-white/10 bg-zinc-800 px-2.5 py-2 text-xs font-semibold">
+                  <option value="en-US">English (source)</option><option value="fr-FR">French</option><option value="de-DE">German</option><option value="es-ES">Spanish</option><option value="pt-BR">Portuguese (Brazil)</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option>
+                </select>
+                <p className="mt-1.5 text-[10px] leading-relaxed text-zinc-500">Switch locale, then edit copy in the inspector. Source copy is used until a translation changes.</p>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <Layout size={16} className="text-indigo-500" /> Layout
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['text-top', 'text-bottom', 'centered'] as const).map((l) => (
-                    <button
-                      key={l}
-                      onClick={() =>
-                        updateSetting({
-                          layout: l,
-                          ...(l === 'text-bottom' && activeSettings.phonePositionMode !== 'half-up'
-                            ? { phonePositionMode: 'half-up' }
-                            : l === 'text-top' && activeSettings.phonePositionMode === 'half-up'
-                              ? { phonePositionMode: 'half-down' }
-                              : {}),
-                        })
-                      }
-                      className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.layout === l
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold shadow-2xs'
-                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                      {l === 'text-top' ? 'Text Top' : l === 'text-bottom' ? 'Text Bottom' : 'Centered'}
-                    </button>
-                  ))}
-                </div>
+              <div className="border-t border-white/[0.06] pt-3">
+                <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-zinc-200"><History size={14} /> Versions</span><button type="button" onClick={saveVersion} className="rounded-md bg-zinc-950/60 px-2 py-1 text-[10px] font-bold text-zinc-300 hover:bg-white/10">Save version</button></div>
+                {versions.length > 0 ? <div className="mt-2 space-y-1.5">{versions.slice(0, 4).map((version) => <button type="button" key={version.id} onClick={() => restoreVersion(version)} className="flex w-full items-center justify-between rounded-lg border border-white/10 px-2.5 py-2 text-left hover:bg-white/[0.06]"><span className="text-[11px] font-bold text-zinc-300">{version.name}</span><span className="text-[9px] text-zinc-500">{new Date(version.createdAt).toLocaleDateString()}</span></button>)}</div> : <p className="mt-2 text-[11px] text-zinc-500">Save a checkpoint before a major edit.</p>}
               </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Text Align</label>
-                <div className="flex bg-gray-100 p-1 rounded-xl">
-                  {(['left', 'center', 'right'] as const).map((align) => (
-                    <button
-                      key={align}
-                      onClick={() => {
-                        updateSetting({ textAlign: align });
-                        if (activeScreenshot)
-                          updateCurrentScreenshot({ textOffset: { x: 0, y: activeScreenshot.textOffset.y } });
-                      }}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.textAlign === align
-                        ? 'bg-white shadow text-indigo-700'
-                        : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                    >
-                      {align}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Smartphone size={16} className="text-indigo-500" /> Phone Position
-                  </label>
-                  <span className="text-[10px] text-slate-400">Bleed & Alignment</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'half-up' as const, label: 'Top Bleed', desc: 'Device at top (bleeds off top)' },
-                    { id: 'centered' as const, label: 'Centered', desc: 'In-frame device' },
-                    { id: 'half-down' as const, label: 'Bottom Bleed', desc: 'Device at bottom (bleeds off bottom)' },
-                  ].map((mode) => (
-                    <button
-                      key={mode.id}
-                      onClick={() => updateSetting({ phonePositionMode: mode.id })}
-                      className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.phonePositionMode === mode.id
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-bold shadow-2xs'
-                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      title={mode.desc}
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Device Align</label>
-                  <div className="flex bg-gray-100 p-1 rounded-xl">
-                    {(['left', 'center', 'right'] as const).map((align) => (
-                      <button
-                        key={align}
-                        onClick={() => {
-                          updateSetting({ deviceAlign: align });
-                          if (activeScreenshot)
-                            updateCurrentScreenshot({ deviceOffset: { x: 0, y: activeScreenshot.deviceOffset.y } });
-                        }}
-                        className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.deviceAlign === align
-                          ? 'bg-white shadow text-indigo-700'
-                          : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                      >
-                        {align}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Image Fit</label>
-                <div className="flex bg-gray-100 p-1 rounded-xl">
-                  {(['cover', 'contain'] as const).map((fit) => (
-                    <button
-                      key={fit}
-                      onClick={() => updateSetting({ imageFit: fit })}
-                      className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${activeSettings.imageFit === fit
-                        ? 'bg-white shadow text-indigo-700'
-                        : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                    >
-                      {fit}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <details className="group rounded-xl border border-slate-200 bg-slate-50">
-                <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
-                  Screenshot crop & adjustments
-                  <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
-                </summary>
-                <div className="space-y-4 border-t border-slate-200 p-3">
-                  {([
-                    { label: 'Zoom', key: 'screenshotScale' as const, min: 50, max: 200, suffix: '%' },
-                    { label: 'Horizontal', key: 'screenshotOffsetX' as const, min: -300, max: 300, suffix: 'px' },
-                    { label: 'Vertical', key: 'screenshotOffsetY' as const, min: -300, max: 300, suffix: 'px' },
-                    { label: 'Rotation', key: 'screenshotRotation' as const, min: -180, max: 180, suffix: '°' },
-                    { label: 'Brightness', key: 'screenshotBrightness' as const, min: 25, max: 175, suffix: '%' },
-                    { label: 'Contrast', key: 'screenshotContrast' as const, min: 25, max: 175, suffix: '%' },
-                    { label: 'Saturation', key: 'screenshotSaturation' as const, min: 0, max: 200, suffix: '%' },
-                  ]).map(({ label, key, min, max, suffix }) => (
-                    <label key={key} className="block">
-                      <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                        {label}<span className="font-mono text-slate-600">{activeSettings[key]}{suffix}</span>
-                      </span>
-                      <input type="range" min={min} max={max} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
-                    </label>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => updateSetting({ screenshotScale: 100, screenshotOffsetX: 0, screenshotOffsetY: 0, screenshotRotation: 0, screenshotBrightness: 100, screenshotContrast: 100, screenshotSaturation: 100 })}
-                    className="w-full rounded-lg border border-slate-200 bg-white py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
-                  >
-                    Reset screenshot
-                  </button>
-                </div>
-              </details>
-            </PanelSection>
-
-            {/* Device */}
-            <PanelSection
-              id="section-device"
-              title="Device"
-              description="Scale, frame, rotate, tilt, and shadow for modern-looking mockups."
-              open={openSections.device}
-              onToggle={() => toggleSection('device')}
-            >
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">Device type</p>
-                  <p className="mt-0.5 text-xs text-slate-400">Choose the right presentation frame</p>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {([
-                    { id: 'iphone' as const, label: 'iPhone' },
-                    { id: 'android' as const, label: 'Android' },
-                    { id: 'tablet' as const, label: 'Tablet' },
-                    { id: 'laptop' as const, label: 'Laptop' },
-                    { id: 'browser' as const, label: 'Browser' },
-                  ]).map((device) => (
-                    <button
-                      key={device.id}
-                      type="button"
-                      onClick={() => updateSetting({ deviceType: device.id })}
-                      className={`rounded-xl border px-2 py-2.5 text-xs font-bold transition-all ${activeSettings.deviceType === device.id ? 'border-indigo-300 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
-                    >
-                      {device.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">Orientation</p>
-                  <p className="mt-0.5 text-xs text-slate-400">Rotate or mirror the device</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
-                  {(['portrait', 'landscape'] as const).map((orientation) => (
-                    <button
-                      key={orientation}
-                      type="button"
-                      onClick={() => updateSetting({ deviceOrientation: orientation })}
-                      disabled={activeSettings.deviceType === 'laptop' || activeSettings.deviceType === 'browser'}
-                      className={`rounded-lg py-2 text-xs font-bold capitalize transition-all disabled:cursor-not-allowed disabled:opacity-40 ${activeSettings.deviceOrientation === orientation ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}
-                    >
-                      {orientation}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => updateSetting({ deviceFlipX: !activeSettings.deviceFlipX })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipX ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                    Flip horizontal
-                  </button>
-                  <button type="button" onClick={() => updateSetting({ deviceFlipY: !activeSettings.deviceFlipY })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipY ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                    Flip vertical
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-700">Quick poses</p>
-                    <p className="mt-0.5 text-xs text-slate-400">Professional angles in one click</p>
-                  </div>
-                  <span className="rounded-full bg-violet-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-violet-600">New</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {DEVICE_POSES.map((pose, index) => (
-                    <button
-                      key={pose.name}
-                      onClick={() => updateSetting(pose.settings)}
-                      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2.5 text-left transition-all hover:border-indigo-300 hover:bg-indigo-50/50"
-                    >
-                      <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200">
-                        <span
-                          className="h-8 w-4 rounded-[4px] border-2 border-slate-700 bg-white shadow-sm transition-transform group-hover:scale-105"
-                          style={{ transform: `rotate(${[-0, -7, 7, -12][index]}deg)` }}
-                        />
-                      </span>
-                      <span className="text-xs font-bold text-slate-700">{pose.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Frame style</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Choose a polished device finish</p>
-                  </div>
-                  <button
-                    onClick={() => updateSetting({ deviceFrame: !activeSettings.deviceFrame })}
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${activeSettings.deviceFrame
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'bg-gray-100 text-gray-500'
-                      }`}
-                  >
-                    {activeSettings.deviceFrame ? 'Frame on' : 'Frame off'}
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {DEVICE_FRAMES.map((frame) => {
-                    const selected = activeSettings.deviceFrame && activeSettings.deviceFrameStyle === frame.id;
-                    return (
-                      <button
-                        key={frame.id}
-                        onClick={() => updateSetting({
-                          deviceFrame: true,
-                          deviceFrameStyle: frame.id,
-                          deviceFrameColor: frame.shell,
-                          deviceFrameEdgeColor: frame.edge,
-                        })}
-                        className={`group relative flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all ${selected
-                          ? 'border-indigo-400 bg-indigo-50 ring-1 ring-indigo-200'
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                          }`}
-                      >
-                        <span
-                          className="relative h-12 w-7 shrink-0 rounded-[8px] p-[3px] shadow-sm"
-                          style={{ background: `linear-gradient(145deg, ${frame.edge}, ${frame.shell})` }}
-                        >
-                          <span className="block h-full w-full rounded-[6px] bg-gradient-to-b from-slate-100 to-slate-300" />
-                          {frame.id !== 'minimal' && (
-                            <span className="absolute left-1/2 top-1 -translate-x-1/2 h-1 w-2.5 rounded-full" style={{ backgroundColor: frame.island }} />
-                          )}
-                        </span>
-                        <span className={`text-xs font-semibold ${selected ? 'text-indigo-800' : 'text-gray-700'}`}>
-                          {frame.name}
-                        </span>
-                        {selected && (
-                          <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-white">
-                            <Check size={10} strokeWidth={3} />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: 'Frame', key: 'deviceFrameColor' as const },
-                    { label: 'Edge', key: 'deviceFrameEdgeColor' as const },
-                  ].map(({ label, key }) => (
-                    <label key={key} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-2.5">
-                      <input
-                        type="color"
-                        value={activeSettings[key]}
-                        onChange={(e) => updateSetting({ [key]: e.target.value })}
-                        className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent p-0"
-                        aria-label={`${label} color`}
-                      />
-                      <span className="min-w-0">
-                        <span className="block text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
-                        <span className="block truncate font-mono text-[11px] text-gray-600">{activeSettings[key].toUpperCase()}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Scale ({activeSettings.deviceScale}%)
-                </span>
-                <input
-                  type="range" min={40} max={100}
-                  value={activeSettings.deviceScale}
-                  onChange={(e) => updateSetting({ deviceScale: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Border ({activeSettings.deviceBorder}px)
-                </span>
-                <input
-                  type="range" min={0} max={40}
-                  value={activeSettings.deviceBorder}
-                  onChange={(e) => updateSetting({ deviceBorder: Number(e.target.value) })}
-                  className="w-full"
-                  disabled={!activeSettings.deviceFrame}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Corner curve ({activeSettings.deviceCornerRadius}px)
-                  </span>
-                  <button
-                    onClick={() => updateSetting({ deviceCornerRadius: DEFAULT_SETTINGS.deviceCornerRadius })}
-                    className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700"
-                  >
-                    Reset
-                  </button>
-                </div>
-                <input
-                  type="range" min={0} max={120}
-                  value={activeSettings.deviceCornerRadius}
-                  onChange={(e) => updateSetting({ deviceCornerRadius: Number(e.target.value) })}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-[10px] text-gray-400">
-                  <span>Square</span>
-                  <span>Extra round</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Rotation ({activeSettings.deviceRotation}°)
-                </span>
-                <input
-                  type="range" min={-45} max={45}
-                  value={activeSettings.deviceRotation}
-                  onChange={(e) => updateSetting({ deviceRotation: Number(e.target.value) })}
-                  className="w-full"
-                />
-                <div className="grid grid-cols-5 gap-1.5">
-                  {[-45, -20, 0, 20, 45].map((angle) => (
-                    <button
-                      key={angle}
-                      onClick={() => updateSetting({ deviceRotation: angle })}
-                      className={`py-2 rounded-xl text-xs font-medium border transition-colors ${activeSettings.deviceRotation === angle
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                      {angle}°
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Tilt X ({activeSettings.deviceTiltX}°)
-                  </span>
-                  <input
-                    type="range" min={-20} max={20}
-                    value={activeSettings.deviceTiltX}
-                    onChange={(e) => updateSetting({ deviceTiltX: Number(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Tilt Y ({activeSettings.deviceTiltY}°)
-                  </span>
-                  <input
-                    type="range" min={-20} max={20}
-                    value={activeSettings.deviceTiltY}
-                    onChange={(e) => updateSetting({ deviceTiltY: Number(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Shadow ({activeSettings.deviceShadow})
-                </span>
-                <input
-                  type="range" min={0} max={80}
-                  value={activeSettings.deviceShadow}
-                  onChange={(e) => updateSetting({ deviceShadow: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-            </PanelSection>
-
-            {/* Typography */}
-            <PanelSection
-              id="section-typography"
-              title="Typography"
-              description="Tune title and subtitle fonts, sizes, weights, and colors."
-              open={openSections.typography}
-              onToggle={() => toggleSection('typography')}
-            >
-              <div className="space-y-3">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <Type size={16} className="text-indigo-500" /> Colors
-                </label>
-                {[
-                  { label: 'Title', key: 'titleColor' as const },
-                  { label: 'Accent', key: 'accentColor' as const },
-                  { label: 'Subtitle', key: 'subtitleColor' as const },
-                ].map(({ label, key }) => (
-                  <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
-                    <span className="text-sm font-medium text-gray-700">{label} Color</span>
-                    <input
-                      type="color"
-                      value={activeSettings[key] as string}
-                      onChange={(e) => updateSetting({ [key]: e.target.value })}
-                      className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <Type size={16} className="text-indigo-500" /> Fonts
-                </label>
-                {[
-                  { label: 'Title Font', key: 'titleFontFamily' as const },
-                  { label: 'Subtitle Font', key: 'subtitleFontFamily' as const },
-                ].map(({ label, key }) => (
-                  <div key={key} className="space-y-1">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
-                    <select
-                      value={activeSettings[key] as string}
-                      onChange={(e) => updateSetting({ [key]: e.target.value })}
-                      className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                    >
-                      {FONT_OPTIONS.map((f) => (
-                        <option key={`${key}-${f.value}`} value={f.value}>{f.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Title Size ({activeSettings.titleFontSize}px)
-                  </span>
-                  <input
-                    type="range" min={32} max={160}
-                    value={activeSettings.titleFontSize}
-                    onChange={(e) => updateSetting({ titleFontSize: Number(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Subtitle Size ({activeSettings.subtitleFontSize}px)
-                  </span>
-                  <input
-                    type="range" min={16} max={80}
-                    value={activeSettings.subtitleFontSize}
-                    onChange={(e) => updateSetting({ subtitleFontSize: Number(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Text Spacing ({activeSettings.textSpacing}px)
-                  </span>
-                  <input
-                    type="range" min={0} max={120}
-                    value={activeSettings.textSpacing}
-                    onChange={(e) => updateSetting({ textSpacing: Number(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-                <details className="group rounded-xl border border-slate-200 bg-slate-50">
-                  <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-slate-700">
-                    Advanced spacing
-                    <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
-                  </summary>
-                  <div className="space-y-4 border-t border-slate-200 p-3">
-                    {([
-                      { label: 'Title line height', key: 'titleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
-                      { label: 'Subtitle line height', key: 'subtitleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
-                      { label: 'Title tracking', key: 'titleLetterSpacing' as const, min: -8, max: 20, step: 0.5 },
-                      { label: 'Subtitle tracking', key: 'subtitleLetterSpacing' as const, min: -4, max: 20, step: 0.5 },
-                    ]).map(({ label, key, min, max, step }) => (
-                      <label key={key} className="block">
-                        <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                          {label}<span className="font-mono text-slate-600">{activeSettings[key]}</span>
-                        </span>
-                        <input type="range" min={min} max={max} step={step} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
-                      </label>
-                    ))}
-                  </div>
-                </details>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Title Weight</span>
-                    <select
-                      value={activeSettings.titleFontWeight}
-                      onChange={(e) => updateSetting({ titleFontWeight: Number(e.target.value) })}
-                      className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white"
-                    >
-                      {[500, 600, 700, 800, 900].map((w) => (
-                        <option key={`tw-${w}`} value={w}>{w}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Subtitle Weight</span>
-                    <select
-                      value={activeSettings.subtitleFontWeight}
-                      onChange={(e) => updateSetting({ subtitleFontWeight: Number(e.target.value) })}
-                      className="w-full border border-gray-300 rounded-xl p-2.5 text-sm bg-white"
-                    >
-                      {[400, 500, 600, 700].map((w) => (
-                        <option key={`sw-${w}`} value={w}>{w}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </PanelSection>
+            </div>
+          </details>
+        </div>
+        <button onClick={() => { setConfirmClearOpen(true); setMenuOpen(false); }} className="mt-4 w-full rounded-lg border border-red-400/20 px-3 py-2 text-left text-xs font-semibold text-red-300 hover:bg-red-500/10">Clear project</button>
+      </div>}
+      {hasSlides && (
+        <div
+          style={{ left: showRightPanel ? `calc((100% - ${PANEL_WIDTH + 32}px) / 2)` : '50%' }}
+          className="absolute bottom-5 z-40 flex -translate-x-1/2 items-center gap-2"
+        >
+          <div className="flex gap-1 rounded-xl border border-white/10 bg-zinc-900/90 p-1 shadow-2xl backdrop-blur">
+            {([
+              { mode: 'templates' as const, label: 'Templates', icon: LayoutTemplate },
+              { mode: 'editor' as const, label: 'Editor', icon: MousePointer2 },
+              { mode: 'preview' as const, label: 'Preview', icon: Eye },
+              { mode: 'export' as const, label: 'Export', icon: Download },
+            ]).map(({ mode, label, icon: Icon }) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => {
+                  setEditorMode(mode);
+                  if (mode === 'export') setRightPanelOpen(true);
+                }}
+                title={label}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors lg:px-3.5 ${editorMode === mode ? 'bg-indigo-600 text-white' : 'text-zinc-300 hover:bg-white/5 hover:text-zinc-100'}`}
+              >
+                <Icon size={14} /> <span className="hidden lg:inline">{label}</span>
+              </button>
+            ))}
           </div>
-        </aside>
-      )}
-
-      {/* ── CENTER CANVAS ── */}
-      <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="z-10 flex h-[72px] shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 px-5 backdrop-blur-xl">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
-              <button
-                type="button"
-                onClick={() => setLeftPanelOpen((value) => !value)}
-                className={`rounded-lg p-1.5 transition-colors ${showLeftPanel ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
-                title={showLeftPanel ? 'Hide tools panel' : 'Show tools panel'}
-              >
-                <PanelLeft size={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setRightPanelOpen((value) => !value)}
-                className={`rounded-lg p-1.5 transition-colors ${showRightPanel ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
-                title={showRightPanel ? 'Hide inspector' : 'Show inspector'}
-              >
-                <PanelRight size={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setFocusMode((value) => !value)}
-                className={`rounded-lg p-1.5 transition-colors ${focusMode ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-400 hover:text-slate-700'}`}
-                title={focusMode ? 'Exit focus mode' : 'Focus on canvas'}
-              >
-                {focusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-              </button>
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
-                <span>{selectedPreset.name}</span>
-                <ChevronRight size={12} />
-                <span>Slide {hasSlides ? activeIndex + 1 : 0}</span>
-              </div>
-              <div className="mt-0.5 flex items-center gap-2">
-                <h2 className="truncate text-base font-extrabold tracking-tight text-slate-900">
-                  {activeScreenshot?.title.replace(/\[\/?accent\]/g, '') || 'Untitled mockup set'}
-                </h2>
-                <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-500">
-                  {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
-              <button
-                onClick={undo}
-                disabled={history.past.length === 0 && !hasPendingHistory}
-                className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-white hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-30"
-                title="Undo (Ctrl/Cmd + Z)"
-              >
-                <Undo2 size={16} />
-              </button>
-              <button
-                onClick={redo}
-                disabled={history.future.length === 0 || hasPendingHistory}
-                className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-white hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-30"
-                title="Redo (Ctrl/Cmd + Shift + Z)"
-              >
-                <Redo2 size={16} />
-              </button>
-            </div>
-
-            {hasSlides && (
-              <>
-                <button
-                  onClick={() => setShowGuides((value) => !value)}
-                  aria-pressed={showGuides}
-                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${showGuides
-                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                    }`}
-                  title="Toggle safe-area and center guides"
-                >
-                  <Grid3X3 size={15} /> Guides
-                </button>
-                <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1">
-                  <button onClick={() => setZoomScale((z) => Math.max(0.08, z - 0.03))} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100" title="Zoom out">
-                    <ZoomOut size={15} />
-                  </button>
-                  <span className="w-12 text-center text-[11px] font-bold tabular-nums text-slate-600">{Math.round(zoomScale * 100)}%</span>
-                  <button onClick={() => setZoomScale((z) => Math.min(1.1, z + 0.03))} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100" title="Zoom in">
-                    <ZoomIn size={15} />
-                  </button>
-                  <button onClick={() => setZoomScale(fitScale)} className="rounded-lg px-2 py-1.5 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50" title="Fit to viewport">Fit</button>
-                </div>
-              </>
-            )}
-
-            <button
-              onClick={exportCurrent}
-              disabled={!hasSlides || isExporting}
-              className="flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-300 transition-all hover:bg-indigo-600 hover:shadow-indigo-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-            >
-              {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              Export
+          <div className="flex items-center gap-0.5 rounded-xl border border-white/10 bg-zinc-900/90 p-1 shadow-2xl backdrop-blur">
+            <button type="button" onClick={() => zoomAround(1 / 1.2)} className="rounded-lg p-2 text-zinc-300 hover:bg-white/5 hover:text-zinc-100" title="Zoom out (Cmd -)">
+              <ZoomOut size={15} />
+            </button>
+            <button type="button" onClick={fitToView} className="w-12 rounded-lg py-1.5 text-center text-[11px] font-semibold tabular-nums text-zinc-200 hover:bg-white/5" title="Fit all (Shift 1)">
+              {Math.round(zoomScale * 100)}%
+            </button>
+            <button type="button" onClick={() => zoomAround(1.2)} className="rounded-lg p-2 text-zinc-300 hover:bg-white/5 hover:text-zinc-100" title="Zoom in (Cmd +)">
+              <ZoomIn size={15} />
+            </button>
+            <span className="mx-1 h-5 w-px bg-white/10" />
+            <button type="button" onClick={() => setShowGuides((value) => !value)} aria-pressed={showGuides} className={`rounded-lg p-2 ${showGuides ? 'bg-indigo-500/15 text-indigo-300' : 'text-zinc-300 hover:bg-white/5 hover:text-zinc-100'}`} title="Safe-area guides">
+              <Grid3X3 size={15} />
             </button>
           </div>
-        </header>
-
-        <div
-          className={`canvas-workspace relative flex-1 overflow-auto p-8 transition-colors ${isFileDragging ? 'is-dragging' : ''}`}
-          ref={containerRef}
-          onDragOver={(e) => { e.preventDefault(); setIsFileDragging(true); }}
-          onDragLeave={() => setIsFileDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setIsFileDragging(false);
-            if (e.dataTransfer.files) {
-              const arr = Array.from(e.dataTransfer.files as FileList);
-              addImages(arr.filter((f) => f.type.startsWith('image/')));
-            }
-          }}
-        >
-          {hasSlides && (
-            <div className="absolute left-4 top-4 z-20 flex items-center gap-1 rounded-xl border border-slate-200 bg-white/90 p-1 shadow-lg shadow-slate-300/40 backdrop-blur-xl">
-              <button
-                onClick={() => setDragMode(true)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold transition-colors ${dragMode
-                  ? 'bg-slate-950 text-white'
-                  : 'text-slate-500 hover:bg-slate-100'
-                  }`}
-                title="Move text and device directly on the canvas"
-              >
-                <Move size={14} /> Move
-              </button>
-              <button
-                onClick={() => setDragMode(false)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold transition-colors ${!dragMode
-                  ? 'bg-slate-950 text-white'
-                  : 'text-slate-500 hover:bg-slate-100'
-                  }`}
-                title="Lock canvas elements"
-              >
-                <MousePointer2 size={14} /> Select
-              </button>
-            </div>
-          )}
-          <div className="min-h-full min-w-full flex items-center justify-center">
-            {hasSlides && activeScreenshot ? (
-              <div
-                className="shrink-0 overflow-hidden rounded-md shadow-[0_24px_80px_rgba(15,23,42,0.20)] ring-1 ring-slate-900/5"
-                style={{
-                  width: activeSettings.canvasWidth * zoomScale,
-                  height: activeSettings.canvasHeight * zoomScale,
-                }}
-              >
-                <div
-                  style={{
-                    transform: `scale(${zoomScale})`,
-                    transformOrigin: 'top left',
-                    width: activeSettings.canvasWidth,
-                    height: activeSettings.canvasHeight,
-                  }}
-                >
-                  <MockupTemplate
-                    screenshot={localizedActiveScreenshot ?? activeScreenshot}
-                    settings={activeSettings}
-                    draggingTarget={draggingTarget}
-                    selectedLayer={selectedLayer}
-                    onSelectLayer={setSelectedLayer}
-                    onStartDrag={dragMode ? handleStartDrag : undefined}
-                    showGuides={showGuides}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="pointer-events-none flex max-w-lg flex-col items-center text-center">
-                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-indigo-600 shadow-xl shadow-slate-200 ring-1 ring-slate-200">
-                  <ImageIcon size={32} />
-                </div>
-                <span className="mb-3 rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-600">Start a project</span>
-                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Turn screenshots into launch-ready stories</h2>
-                <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-500">
-                  Drop your app screens here. Frameflow will build editable slides with your active brand preset.
-                </p>
-                <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-                  <label className="pointer-events-auto flex cursor-pointer items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-indigo-600">
-                    <Plus size={17} /> Upload screenshots
-                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={createDemoProject}
-                    className="pointer-events-auto flex items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
-                  >
-                    <Sparkles size={16} /> Explore demo
-                  </button>
-                </div>
-                <p className="mt-4 text-xs font-medium text-slate-400">You can also drag and drop PNG, JPG, or WebP files anywhere.</p>
-              </div>
-            )}
-            {isFileDragging && (
-              <div className="pointer-events-none absolute inset-5 z-30 flex items-center justify-center rounded-3xl border-2 border-dashed border-indigo-400 bg-indigo-50/90 backdrop-blur-sm">
-                <div className="text-center">
-                  <Upload size={32} className="mx-auto text-indigo-600" />
-                  <p className="mt-3 text-lg font-extrabold text-indigo-900">Drop screenshots to add slides</p>
-                  <p className="mt-1 text-sm text-indigo-600">PNG, JPG, and WebP are supported</p>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
-
-        {hasSlides && !focusMode && (
-          <div className="z-10 h-40 shrink-0 border-t border-slate-200 bg-white/95 shadow-[0_-8px_30px_rgba(15,23,42,0.04)] backdrop-blur-xl">
-            <div className="flex h-9 items-center justify-between px-6 text-[11px] font-semibold text-slate-400">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-2"><GripVertical size={13} /> Scenes · drag to reorder</span>
-                {selectedSlideIds.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-indigo-50 px-2 py-1 text-[10px] font-bold text-indigo-600">{selectedSlideIds.length} selected</span>
-                    <button type="button" onClick={applyStyleToSelectedSlides} className="rounded-md px-2 py-1 text-[10px] font-bold text-indigo-600 hover:bg-indigo-50">Apply style</button>
-                    <button type="button" onClick={duplicateSelectedSlides} className="rounded-md px-2 py-1 text-[10px] font-bold text-slate-500 hover:bg-slate-100">Duplicate</button>
-                    <button type="button" onClick={removeSelectedSlides} className="rounded-md px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-50">Remove</button>
-                    <button type="button" onClick={() => setSelectedSlideIds([])} className="rounded-md px-2 py-1 text-[10px] font-bold text-slate-400 hover:bg-slate-100">Clear</button>
-                  </div>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setConfirmClearOpen(true)}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
-              >
-                <X size={12} /> Clear all
-              </button>
-            </div>
-            <div className="flex h-[124px] items-start gap-3 overflow-x-auto px-6 pb-4">
-              {screenshots.map((s, i) => (
-                <div
-                  key={s.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', s.id);
-                    setDraggedSlideId(s.id);
-                    setDropTargetId(null);
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    if (draggedSlideId && draggedSlideId !== s.id) setDropTargetId(s.id);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const draggedId = e.dataTransfer.getData('text/plain') || draggedSlideId;
-                    if (draggedId) moveScreenshot(draggedId, s.id);
-                    setDraggedSlideId(null);
-                    setDropTargetId(null);
-                  }}
-                  onDragEnd={() => {
-                    setDraggedSlideId(null);
-                    setDropTargetId(null);
-                  }}
-                  onClick={() => setActiveIndex(i)}
-                  className={`group relative h-24 w-16 flex-shrink-0 cursor-grab rounded-xl border-2 bg-white p-1 shadow-sm transition-all active:cursor-grabbing ${i === activeIndex
-                    ? 'border-indigo-600 shadow-md -translate-y-0.5'
-                    : 'border-gray-200 opacity-75 hover:border-gray-300 hover:opacity-100'
-                    } ${draggedSlideId === s.id ? 'opacity-30 scale-95' : ''} ${dropTargetId === s.id ? 'translate-x-2 ring-2 ring-indigo-200' : ''}`}
-                >
-                  <div className="relative h-full w-full overflow-hidden rounded-lg bg-gray-100">
-                    <img src={s.url} className="w-full h-full object-cover pointer-events-none" alt={`Slide ${i + 1}`} />
-                    <button
-                      type="button"
-                      onClick={(event) => { event.stopPropagation(); toggleSlideSelection(s.id); }}
-                      className={`absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full border transition-all ${selectedSlideIds.includes(s.id) ? 'border-indigo-600 bg-indigo-600 text-white opacity-100' : 'border-white/80 bg-slate-950/40 text-transparent opacity-0 group-hover:opacity-100'}`}
-                      title={selectedSlideIds.includes(s.id) ? 'Remove from selection' : 'Select slide'}
-                      draggable={false}
-                    >
-                      <Check size={10} strokeWidth={3} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); removeScreenshot(s.id); }}
-                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                      title="Remove"
-                      draggable={false}
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 to-transparent pt-4 pb-1 text-white text-[10px] font-bold text-center">
-                      {i + 1}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <label className="flex h-24 w-16 flex-shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 text-slate-400 transition-colors hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-600">
-                <Plus size={22} className="mb-1" />
-                <span className="text-[10px] font-bold">Add scene</span>
-                <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
-              </label>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* ── RIGHT PANEL ── */}
-      {showRightPanel && (
-        <aside className="flex w-[272px] shrink-0 flex-col overflow-y-auto border-l border-slate-200 bg-white xl:w-[288px] 2xl:w-[320px]">
+      )}
+      {/* ── CANVAS ── */}
+      <div
+        className={`canvas-workspace absolute inset-0 overflow-hidden ${isFileDragging ? 'is-dragging' : ''} ${isPanning ? 'cursor-grabbing' : spaceHeld ? 'cursor-grab' : ''}`}
+        ref={containerRef}
+        onPointerDownCapture={hasSlides ? handleCanvasPointerDownCapture : undefined}
+        onPointerMove={handleCanvasPointerMove}
+        onPointerUp={handleCanvasPointerUp}
+        onPointerCancel={handleCanvasPointerUp}
+        onDragOver={(e) => { e.preventDefault(); setIsFileDragging(true); }}
+        onDragLeave={() => setIsFileDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsFileDragging(false);
+          if (e.dataTransfer.files) {
+            const arr = Array.from(e.dataTransfer.files as FileList);
+            addImages(arr.filter((f) => f.type.startsWith('image/')));
+          }
+        }}
+      >
+        <div className="absolute inset-0 overflow-hidden" data-canvas-background="true">
           {hasSlides && activeScreenshot ? (
-            <div className="space-y-5 p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Inspector</p>
-                  <h2 className="mt-1 text-base font-extrabold tracking-tight text-slate-900">Slide {activeIndex + 1}</h2>
-                </div>
-                <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
-                  {activeIndex + 1} / {screenshots.length}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
-                {([
-                  { id: 'content' as const, label: 'Content', icon: Type },
-                  { id: 'position' as const, label: 'Position', icon: MousePointer2 },
-                  { id: 'export' as const, label: 'Export', icon: Download },
-                ]).map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setInspectorTab(id)}
-                    className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-bold transition-all ${inspectorTab === id
-                      ? 'bg-white text-indigo-700 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                  >
-                    <Icon size={13} /> {label}
-                  </button>
-                ))}
-              </div>
-
-              {inspectorTab === 'content' && (
-                <>
-                  <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">Tip</p>
-                    <p className="text-xs text-indigo-800 mt-1">
-                      Editing here is per-slide. To make a change global, toggle <strong>Editing all slides</strong> in the left panel.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700">Title</label>
-                    <textarea
-                      value={localizedActiveScreenshot?.title ?? activeScreenshot.title}
-                      onChange={(e) => updateCurrentCopy('title', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-                      rows={3}
-                      placeholder="Enter title... use [accent]word[/accent] for color"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700">Subtitle</label>
-                    <textarea
-                      value={localizedActiveScreenshot?.subtitle ?? activeScreenshot.subtitle}
-                      onChange={(e) => updateCurrentCopy('subtitle', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-                      rows={3}
-                      placeholder="Enter subtitle..."
-                    />
-                  </div>
-
-                  <div className="border-t border-gray-100 pt-4 space-y-3">
-                    <label className="text-sm font-semibold text-gray-700">Slide Actions</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <label className="py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 cursor-pointer transition-colors">
-                        <ImageIcon size={14} /> Replace
-                        <input type="file" accept="image/*" className="hidden" onChange={handleScreenshotReplace} />
-                      </label>
+            <div
+              className="absolute left-0 top-0 flex items-start gap-12"
+              data-canvas-background="true"
+              style={{ transform: `translate(${pan.x}px, ${pan.y}px)`, transformOrigin: '0 0' }}
+            >
+              {screenshots.map((slide, i) => {
+                const slideSettings = { ...settings, ...slide.settingsOverrides };
+                const slideCopy = activeLocale !== 'en-US'
+                  ? { ...slide, ...(slide.translations?.[activeLocale] ?? { title: slide.title, subtitle: slide.subtitle }) }
+                  : slide;
+                const isActive = i === activeIndex && !isPreview;
+                return (
+                  <div key={slide.id} className="shrink-0" style={{ width: slideSettings.canvasWidth * zoomScale }}>
+                    <div
+                      className="group mb-3 flex h-8 items-center gap-1.5"
+                      draggable={!isPreview}
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', slide.id);
+                        setDraggedSlideId(slide.id);
+                        setDropTargetId(null);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (draggedSlideId && draggedSlideId !== slide.id) setDropTargetId(slide.id);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const id = e.dataTransfer.getData('text/plain') || draggedSlideId;
+                        if (id) moveScreenshot(id, slide.id);
+                        setDraggedSlideId(null);
+                        setDropTargetId(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedSlideId(null);
+                        setDropTargetId(null);
+                      }}
+                    >
                       <button
-                        onClick={duplicateScreenshot}
-                        className="py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
+                        type="button"
+                        onClick={() => { setActiveIndex(i); setSelectedLayer(null); }}
+                        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${isActive ? 'bg-indigo-600 text-white' : 'bg-white/[0.06] text-zinc-300 hover:bg-white/10'} ${dropTargetId === slide.id ? 'ring-2 ring-indigo-400' : ''} ${draggedSlideId === slide.id ? 'opacity-40' : ''} ${isPreview ? 'pointer-events-none' : 'cursor-grab active:cursor-grabbing'}`}
                       >
-                        <Copy size={14} /> Duplicate
+                        {slideSettings.canvasWidth * zoomScale < 260 ? i + 1 : `Screenshot ${i + 1}`}
                       </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {inspectorTab === 'position' && (
-                <>
-                  <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                    <div className="flex items-center justify-between px-1">
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">Layers</p>
-                        <p className="mt-0.5 text-[11px] text-slate-400">Select, hide, or lock canvas elements</p>
-                      </div>
-                      <Layers size={16} className="text-indigo-500" />
-                    </div>
-                    {([
-                      {
-                        id: 'text' as const,
-                        label: 'Headline & subtitle',
-                        icon: Type,
-                        visible: activeScreenshot.textVisible !== false,
-                        locked: activeScreenshot.textLocked === true,
-                      },
-                      {
-                        id: 'device' as const,
-                        label: 'Device mockup',
-                        icon: Smartphone,
-                        visible: activeScreenshot.deviceVisible !== false,
-                        locked: activeScreenshot.deviceLocked === true,
-                      },
-                    ]).map((layer) => {
-                      const Icon = layer.icon;
-                      return (
-                        <div
-                          key={layer.id}
-                          className={`flex items-center gap-1 rounded-xl border p-1.5 transition-colors ${selectedLayer === layer.id
-                            ? 'border-indigo-200 bg-indigo-50'
-                            : 'border-slate-200 bg-slate-50/70 hover:bg-slate-50'
-                            }`}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setSelectedLayer(layer.id)}
-                            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left"
-                          >
-                            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${selectedLayer === layer.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 shadow-sm'}`}>
-                              <Icon size={14} />
-                            </span>
-                            <span className="truncate text-xs font-bold text-slate-700">{layer.label}</span>
+                      {!isPreview && slideSettings.canvasWidth * zoomScale >= 150 && (
+                        <div className={`flex shrink-0 items-center gap-0.5 rounded-lg bg-zinc-900/95 p-0.5 ring-1 ring-white/10 transition-opacity focus-within:opacity-100 group-hover:opacity-100 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
+                          <button type="button" title={selectedSlideIds.includes(slide.id) ? 'Remove from selection' : 'Add to selection'} onClick={() => toggleSlideSelection(slide.id)} className={`rounded-md p-1.5 hover:bg-white/10 ${selectedSlideIds.includes(slide.id) ? 'text-indigo-300' : 'text-zinc-400 hover:text-zinc-100'}`}>
+                            {selectedSlideIds.includes(slide.id) ? <Check size={14} /> : <Square size={14} />}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              updateCurrentScreenshot(layer.id === 'text'
-                                ? { textVisible: !layer.visible }
-                                : { deviceVisible: !layer.visible });
-                              if (!layer.visible) setSelectedLayer(layer.id);
-                            }}
-                            className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700"
-                            title={layer.visible ? `Hide ${layer.label}` : `Show ${layer.label}`}
-                          >
-                            {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                          <button type="button" title="Duplicate" onClick={() => duplicateScreenshot(i)} className="rounded-md p-1.5 text-zinc-400 hover:bg-white/10 hover:text-zinc-100">
+                            <Copy size={14} />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => updateCurrentScreenshot(layer.id === 'text'
-                              ? { textLocked: !layer.locked }
-                              : { deviceLocked: !layer.locked })}
-                            className="rounded-lg p-2 text-slate-400 hover:bg-white hover:text-slate-700"
-                            title={layer.locked ? `Unlock ${layer.label}` : `Lock ${layer.label}`}
-                          >
-                            {layer.locked ? <LockKeyhole size={14} /> : <LockKeyholeOpen size={14} />}
+                          <label title="Replace image" className="cursor-pointer rounded-md p-1.5 text-zinc-400 hover:bg-white/10 hover:text-zinc-100">
+                            <ImageIcon size={14} />
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => { setActiveIndex(i); handleScreenshotReplace(e, i); }} />
+                          </label>
+                          <button type="button" title="Delete" onClick={() => removeScreenshot(slide.id)} className="rounded-md p-1.5 text-zinc-400 hover:bg-red-500/15 hover:text-red-300">
+                            <Trash2 size={14} />
                           </button>
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                        <Move size={16} className="text-indigo-500" /> Drag & Position
-                      </label>
-                      <button
-                        onClick={() => setDragMode((v) => !v)}
-                        className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${dragMode ? 'bg-indigo-600' : 'bg-gray-300'
-                          }`}
-                        title={dragMode ? 'Disable drag mode' : 'Enable drag mode'}
-                      >
-                        <span
-                          className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow transition-transform ${dragMode ? 'translate-x-4' : 'translate-x-0'
-                            }`}
-                        />
-                      </button>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-400">
-                      {dragMode
-                        ? 'Click & drag text or device on canvas to reposition.'
-                        : 'Enable drag mode to move elements on canvas.'}
-                    </p>
-
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Text</p>
-                      <div className="grid grid-cols-4 gap-1.5 text-xs">
-                        <button onClick={() => nudgeCurrent('text', 'x', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">← Left</button>
-                        <button onClick={() => nudgeCurrent('text', 'x', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Right →</button>
-                        <button onClick={() => nudgeCurrent('text', 'y', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">↑ Up</button>
-                        <button onClick={() => nudgeCurrent('text', 'y', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Down ↓</button>
-                      </div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nudge Device</p>
-                      <div className="grid grid-cols-4 gap-1.5 text-xs">
-                        <button onClick={() => nudgeCurrent('device', 'x', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">← Left</button>
-                        <button onClick={() => nudgeCurrent('device', 'x', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Right →</button>
-                        <button onClick={() => nudgeCurrent('device', 'y', -10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">↑ Up</button>
-                        <button onClick={() => nudgeCurrent('device', 'y', 10)} className="py-2 rounded border border-gray-200 hover:bg-gray-50">Down ↓</button>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={resetCurrentPosition}
-                      className="w-full py-2 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
+                    <div
+                      onPointerDown={isPreview ? undefined : () => { setActiveIndex(i); setSelectedLayer('background'); }}
+                      className={`shrink-0 overflow-hidden rounded-[6px] shadow-2xl shadow-black/50 ${isActive ? 'ring-2 ring-indigo-500 ring-offset-4 ring-offset-[#111114]' : !isPreview && selectedSlideIds.includes(slide.id) ? 'ring-2 ring-indigo-300/70' : 'ring-1 ring-white/10'}`}
+                      style={{ width: slideSettings.canvasWidth * zoomScale, height: slideSettings.canvasHeight * zoomScale }}
                     >
-                      <LocateFixed size={14} /> Reset Position
+                      <div style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top left', width: slideSettings.canvasWidth, height: slideSettings.canvasHeight }}>
+                        {isPreview ? (
+                          <MockupTemplate screenshot={slideCopy} settings={slideSettings} />
+                        ) : (
+                          <MockupTemplate
+                            screenshot={slideCopy}
+                            settings={slideSettings}
+                            draggingTarget={isActive ? draggingTarget : null}
+                            selectedLayer={isActive && (selectedLayer === 'text' || selectedLayer === 'device') ? selectedLayer : null}
+                            onSelectLayer={(target) => { setActiveIndex(i); setSelectedLayer(target); }}
+                            onStartDrag={(target, event) => handleStartDrag(i, target, event)}
+                            outlineWidth={Math.max(3, 2 / zoomScale)}
+                            showGuides={showGuides}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {!isPreview && (
+                <label
+                  className="mt-11 flex shrink-0 cursor-pointer flex-col items-center justify-center gap-2 rounded-[6px] border-2 border-dashed border-white/15 text-zinc-400 transition-colors hover:border-indigo-400 hover:bg-indigo-500/5 hover:text-indigo-300"
+                  style={{ width: addTileWidth * zoomScale, height: maxSlideHeight * zoomScale }}
+                >
+                  <Plus size={20} />
+                  <span className="px-2 text-center text-[11px] font-semibold leading-tight">Add screenshot</span>
+                  <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
+                </label>
+              )}
+            </div>
+          ) : (
+            <div className="pointer-events-none flex max-w-lg flex-col items-center text-center">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-zinc-800 text-indigo-300 shadow-xl shadow-black/40 ring-1 ring-white/10">
+                <ImageIcon size={32} />
+              </div>
+              <span className="mb-3 rounded-full bg-indigo-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-300">Start a project</span>
+              <h2 className="text-3xl font-extrabold tracking-tight text-zinc-100">Turn screenshots into launch-ready stories</h2>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-zinc-400">
+                Drop your app screens here. Frameflow will build editable slides with your active brand preset.
+              </p>
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                <label className="pointer-events-auto flex cursor-pointer items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-indigo-500">
+                  <Plus size={17} /> Upload screenshots
+                  <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
+                </label>
+                <button
+                  type="button"
+                  onClick={createDemoProject}
+                  className="pointer-events-auto flex items-center gap-2 rounded-xl border border-white/10 bg-zinc-900/90 px-5 py-3 text-sm font-bold text-zinc-200 shadow-sm transition-all hover:border-indigo-400/50 hover:bg-indigo-500/15 hover:text-indigo-200"
+                >
+                  <Sparkles size={16} /> Explore demo
+                </button>
+              </div>
+              <p className="mt-4 text-xs font-medium text-zinc-500">You can also drag and drop PNG, JPG, or WebP files anywhere.</p>
+            </div>
+          )}
+          {isFileDragging && (
+            <div className="pointer-events-none absolute inset-5 z-30 flex items-center justify-center rounded-3xl border-2 border-dashed border-indigo-400 bg-indigo-500/10 backdrop-blur-sm">
+              <div className="text-center">
+                <Upload size={32} className="mx-auto text-indigo-300" />
+                <p className="mt-3 text-lg font-extrabold text-indigo-100">Drop screenshots to add slides</p>
+                <p className="mt-1 text-sm text-indigo-300">PNG, JPG, and WebP are supported</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── TEMPLATES OVERLAY ── */}
+      {editorMode === 'templates' && hasSlides && (
+        <div className={`absolute bottom-24 left-4 top-20 z-40 overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900/95 p-6 shadow-2xl backdrop-blur ${showRightPanel ? 'right-[calc(320px+2rem)]' : 'right-4'}`}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100">Templates</h2>
+              <p className="mt-1 text-xs text-zinc-400">Apply a brand preset to your screenshots.</p>
+            </div>
+            <button type="button" onClick={() => setEditorMode('editor')} className="rounded-lg p-2 text-zinc-400 hover:bg-white/5 hover:text-zinc-100" title="Close templates">
+              <X size={16} />
+            </button>
+          </div>
+          <div className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4">
+            {appPresets.map((preset) => {
+              const previewSettings = { ...DEFAULT_SETTINGS, ...preset.settings };
+              const previewScale = 240 / previewSettings.canvasHeight;
+              const sample = activeScreenshot ?? screenshots[0];
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setSelectedPresetId(preset.id)}
+                  className="group flex flex-col items-center gap-2 text-left"
+                >
+                  <div
+                    className={`overflow-hidden rounded-lg transition-all ${preset.id === selectedPreset.id ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-zinc-900' : 'ring-1 ring-white/10 group-hover:ring-white/30'}`}
+                    style={{ width: previewSettings.canvasWidth * previewScale, height: 240 }}
+                  >
+                    <div style={{ transform: `scale(${previewScale})`, transformOrigin: 'top left', width: previewSettings.canvasWidth, height: previewSettings.canvasHeight }}>
+                      <MockupTemplate
+                        screenshot={{ ...sample, title: preset.title || sample.title, subtitle: preset.subtitle || sample.subtitle, textOffset: { x: 0, y: 0 }, deviceOffset: { x: 0, y: 0 } }}
+                        settings={previewSettings}
+                      />
+                    </div>
+                  </div>
+                  <span className={`text-xs font-semibold ${preset.id === selectedPreset.id ? 'text-indigo-300' : 'text-zinc-300'}`}>{preset.name}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-8 border-t border-white/[0.06] pt-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Manage presets</h3>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            {/* JSON import / export row */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Preset Files (.json)</label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-indigo-400/50 bg-indigo-500/15 text-indigo-200 text-xs font-semibold cursor-pointer hover:bg-indigo-500/25 transition-colors">
+                  <Upload size={14} /> Import JSON
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={handleJsonImport}
+                  />
+                </label>
+                <button
+                  onClick={handleExportCurrentPreset}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-indigo-500/40 bg-zinc-800 text-indigo-200 text-xs font-semibold hover:bg-indigo-500/15 transition-colors shadow-2xs"
+                  title="Download the active preset as a standalone .json file"
+                >
+                  <FileDown size={14} /> Export Preset
+                </button>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleExportPresetsJson}
+                  className="text-[10px] text-zinc-400 hover:text-indigo-200 underline transition-colors"
+                  title="Export all presets as a single bundle file"
+                >
+                  Export all presets bundle
+                </button>
+              </div>
+              {jsonImportError && (
+                <p className="text-xs text-red-300 bg-red-500/10 rounded-lg px-3 py-2">{jsonImportError}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Preset Name</label>
+              <input
+                value={presetDraft.name}
+                onChange={(e) => setPresetDraft((prev) => ({ ...prev, name: e.target.value }))}
+                className="w-full border border-white/15 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                placeholder="e.g. Fitness App Launch"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Default Title</label>
+              <textarea
+                value={presetDraft.title}
+                onChange={(e) => setPresetDraft((prev) => ({ ...prev, title: e.target.value }))}
+                className="w-full border border-white/15 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                rows={2}
+                placeholder="Headline (supports [accent]word[/accent])"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Default Subtitle</label>
+              <textarea
+                value={presetDraft.subtitle}
+                onChange={(e) => setPresetDraft((prev) => ({ ...prev, subtitle: e.target.value }))}
+                className="w-full border border-white/15 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                rows={2}
+                placeholder="Supporting description copy"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={savePresetChanges}
+                className="px-3 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                title="Save current canvas settings and copy into this preset"
+              >
+                <Check size={14} /> Update Preset
+              </button>
+              <button
+                onClick={createPreset}
+                className="px-3 py-2.5 rounded-xl border border-indigo-500/40 bg-indigo-500/15 text-xs font-bold text-indigo-200 hover:bg-indigo-500/25 transition-colors flex items-center justify-center gap-1.5"
+                title="Save this design as a brand new preset"
+              >
+                <Plus size={14} /> Save as New
+              </button>
+              <button
+                onClick={syncPresetDraftFromCanvas}
+                className="px-3 py-2 rounded-xl border border-white/10 text-xs font-medium text-zinc-200 hover:bg-white/[0.06] transition-colors"
+                title="Pull title & subtitle from active slide into this draft"
+              >
+                Use Slide Copy
+              </button>
+              <button
+                onClick={deletePreset}
+                disabled={appPresets.length <= 1}
+                className="px-3 py-2 rounded-xl border border-red-500/30 text-xs font-medium text-red-300 hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              >
+                <Trash2 size={13} /> Delete
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/[0.06]">
+              <button
+                onClick={() => applyPresetToSlides('current')}
+                disabled={!hasSlides}
+                className="px-3 py-2.5 rounded-xl border border-white/10 text-xs font-semibold text-zinc-200 hover:bg-white/[0.06] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Apply to Current
+              </button>
+              <button
+                onClick={() => applyPresetToSlides('all')}
+                disabled={!hasSlides}
+                className="px-3 py-2.5 rounded-xl bg-zinc-800 text-white text-xs font-semibold hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Apply to All Slides
+              </button>
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RIGHT PANEL: layers + inspector ── */}
+      {showRightPanel && activeScreenshot && (
+        <div className="absolute bottom-4 right-4 top-4 z-30 flex w-[320px] flex-col gap-3">
+            <div className="shrink-0 rounded-2xl border border-white/10 bg-zinc-900/95 p-2 shadow-2xl backdrop-blur">
+              <div className="flex items-center gap-2 px-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLayer(null)}
+                  className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-semibold ${selectedLayer === null && editorMode !== 'export' ? 'bg-indigo-600 text-white' : 'text-zinc-200 hover:bg-white/5'}`}
+                >
+                  <Smartphone size={14} />
+                  <span className="truncate">Screenshot {activeIndex + 1}</span>
+                </button>
+                <span className="text-[11px] tabular-nums text-zinc-500">{activeIndex + 1} / {screenshots.length}</span>
+                <button type="button" onClick={() => setRightPanelOpen(false)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-white/5 hover:text-zinc-100" title="Hide panel">
+                  <PanelRight size={14} />
+                </button>
+              </div>
+              <div className="px-3 pb-1 pt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Layers</div>
+              {([
+                { id: 'background' as const, label: 'Background', icon: Palette, visible: true, locked: false, toggles: false },
+                { id: 'text' as const, label: 'Title & subtitle', icon: Type, visible: activeScreenshot.textVisible !== false, locked: activeScreenshot.textLocked === true, toggles: true },
+                { id: 'device' as const, label: 'Device', icon: Smartphone, visible: activeScreenshot.deviceVisible !== false, locked: activeScreenshot.deviceLocked === true, toggles: true },
+              ]).map((layer) => {
+                const Icon = layer.icon;
+                const selected = selectedLayer === layer.id && editorMode !== 'export';
+                return (
+                  <div
+                    key={layer.id}
+                    className={`group flex h-8 items-center gap-1 rounded-lg pr-1 text-xs ${selected ? 'bg-indigo-600 text-white' : 'text-zinc-300 hover:bg-white/5'}`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedLayer(layer.id); if (editorMode === 'export') setEditorMode('editor'); }}
+                      className={`flex h-full min-w-0 flex-1 items-center gap-2 px-2 text-left font-medium ${layer.visible ? '' : 'opacity-40'}`}
+                    >
+                      <Icon size={14} />
+                      <span className="truncate">{layer.label}</span>
+                    </button>
+                    {layer.toggles && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateCurrentScreenshot(layer.id === 'text' ? { textVisible: !layer.visible } : { deviceVisible: !layer.visible });
+                            if (!layer.visible) setSelectedLayer(layer.id);
+                          }}
+                          className={`rounded-md p-1 ${selected ? 'text-white/80 hover:bg-white/15' : 'text-zinc-500 hover:bg-white/10 hover:text-zinc-100'} ${layer.visible ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                          title={layer.visible ? `Hide ${layer.label}` : `Show ${layer.label}`}
+                        >
+                          {layer.visible ? <Eye size={13} /> : <EyeOff size={13} />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateCurrentScreenshot(layer.id === 'text' ? { textLocked: !layer.locked } : { deviceLocked: !layer.locked })}
+                          className={`rounded-md p-1 ${selected ? 'text-white/80 hover:bg-white/15' : 'text-zinc-500 hover:bg-white/10 hover:text-zinc-100'} ${layer.locked ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                          title={layer.locked ? `Unlock ${layer.label}` : `Lock ${layer.label}`}
+                        >
+                          {layer.locked ? <LockKeyhole size={13} /> : <LockKeyholeOpen size={13} />}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900/95 shadow-2xl backdrop-blur">
+              <div className="px-4 pt-4 pb-3 text-sm font-semibold text-zinc-100">
+                {editorMode === 'export' ? 'Export' : selectedLayer === 'background' ? 'Background' : selectedLayer === 'text' ? 'Text' : selectedLayer === 'device' ? 'Device' : `Screenshot ${activeIndex + 1}`}
+              </div>
+              {editorMode === 'export' ? (
+                <>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Export</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={exportAll}
+                      disabled={isExporting}
+                      className="col-span-2 flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-500 disabled:opacity-50"
+                    >
+                      {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                      Export all ({screenshots.length})
                     </button>
                   </div>
-                </>
-              )}
-
-              {inspectorTab === 'export' && (
-                <div className="space-y-4">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                      <Settings2 size={16} className="text-indigo-500" /> Export quality
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="flex items-center gap-2 text-sm font-bold text-zinc-100">
+                      <Settings2 size={16} className="text-indigo-400" /> Export quality
                     </div>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-500">Choose a web-ready format or exact store-ready output.</p>
-                    <div className="mt-4 grid grid-cols-3 gap-1 rounded-xl bg-slate-200/60 p-1">
+                    <p className="mt-1 text-xs leading-relaxed text-zinc-400">Choose a web-ready format or exact store-ready output.</p>
+                    <div className="mt-4 grid grid-cols-3 gap-1 rounded-xl bg-zinc-700/60 p-1">
                       {(['png', 'jpeg', 'webp'] as const).map((format) => (
-                        <button key={format} type="button" onClick={() => setExportFormat(format)} className={`rounded-lg py-2 text-[10px] font-bold uppercase transition-all ${exportFormat === format ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>{format === 'jpeg' ? 'JPG' : format}</button>
+                        <button key={format} type="button" onClick={() => setExportFormat(format)} className={`rounded-lg py-2 text-[10px] font-bold uppercase transition-all ${exportFormat === format ? 'bg-zinc-800 text-indigo-200 shadow-sm' : 'text-zinc-400 hover:text-zinc-100'}`}>{format === 'jpeg' ? 'JPG' : format}</button>
                       ))}
                     </div>
-                    <div className="mt-2 grid grid-cols-3 gap-2 rounded-xl bg-slate-200/60 p-1">
+                    <div className="mt-2 grid grid-cols-3 gap-2 rounded-xl bg-zinc-700/60 p-1">
                       {([1, 2, 3] as const).map((scale) => (
                         <button
                           key={scale}
                           onClick={() => setExportScale(scale)}
                           className={`rounded-lg py-2 text-xs font-bold transition-all ${exportScale === scale
-                            ? 'bg-white text-indigo-700 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-zinc-800 text-indigo-200 shadow-sm'
+                            : 'text-zinc-400 hover:text-zinc-100'
                             }`}
                         >
                           {scale}× {scale === 1 ? 'Standard' : 'Retina'}
@@ -4863,31 +3620,31 @@ export default function App() {
                       ))}
                     </div>
                     {exportFormat !== 'png' && (
-                      <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Quality · {Math.round(exportQuality * 100)}%
+                      <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-zinc-500">Quality · {Math.round(exportQuality * 100)}%
                         <input type="range" min="0.5" max="1" step="0.01" value={exportQuality} onChange={(event) => setExportQuality(Number(event.target.value))} className="mt-2 w-full" />
                       </label>
                     )}
                     {exportFormat === 'png' && (
-                      <label className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600"><span>Transparent background</span><input type="checkbox" checked={transparentExport} onChange={(event) => setTransparentExport(event.target.checked)} className="h-4 w-4 accent-indigo-600" /></label>
+                      <label className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-zinc-800 px-3 py-2.5 text-xs font-semibold text-zinc-300"><span>Transparent background</span><input type="checkbox" checked={transparentExport} onChange={(event) => setTransparentExport(event.target.checked)} className="h-4 w-4 accent-indigo-600" /></label>
                     )}
-                    <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-400">Filename template
-                      <input value={filenamePattern} onChange={(event) => setFilenamePattern(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 font-mono text-[10px] normal-case text-slate-600 outline-none focus:border-indigo-400" />
+                    <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-zinc-500">Filename template
+                      <input value={filenamePattern} onChange={(event) => setFilenamePattern(event.target.value)} className="mt-1.5 w-full rounded-lg border border-white/10 bg-zinc-800 px-2.5 py-2 font-mono text-[10px] normal-case text-zinc-300 outline-none focus:border-indigo-400" />
                     </label>
-                    <p className="mt-1 text-[9px] leading-relaxed text-slate-400">Tokens: {'{project}'} {'{locale}'} {'{index}'} {'{width}'} {'{height}'} {'{title}'}</p>
-                    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                      <div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-500">Preview</span><span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-500">{activeLocale}</span></div>
-                      <p className="mt-2 truncate font-mono text-[10px] font-bold text-slate-700">{buildExportFilename(activeScreenshot, activeIndex, activeSettings)}</p>
-                      <p className="mt-1 font-mono text-[10px] text-slate-400">{activeSettings.canvasWidth * exportScale} × {activeSettings.canvasHeight * exportScale} · {exportFormat.toUpperCase()}</p>
+                    <p className="mt-1 text-[9px] leading-relaxed text-zinc-500">Tokens: {'{project}'} {'{locale}'} {'{index}'} {'{width}'} {'{height}'} {'{title}'}</p>
+                    <div className="mt-3 rounded-xl border border-white/10 bg-zinc-800 p-3">
+                      <div className="flex items-center justify-between"><span className="text-xs font-semibold text-zinc-400">Preview</span><span className="rounded-md bg-zinc-950/60 px-1.5 py-0.5 text-[9px] font-bold uppercase text-zinc-400">{activeLocale}</span></div>
+                      <p className="mt-2 truncate font-mono text-[10px] font-bold text-zinc-200">{buildExportFilename(activeScreenshot, activeIndex, activeSettings)}</p>
+                      <p className="mt-1 font-mono text-[10px] text-zinc-500">{activeSettings.canvasWidth * exportScale} × {activeSettings.canvasHeight * exportScale} · {exportFormat.toUpperCase()}</p>
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-bold text-slate-800"><ShieldCheck size={16} className="text-indigo-500" /> Readiness</span><span className={`text-[10px] font-bold ${exportChecks.every((check) => check.ok) ? 'text-emerald-600' : 'text-amber-600'}`}>{exportChecks.filter((check) => check.ok).length}/{exportChecks.length}</span></div>
-                    <div className="mt-3 space-y-2">{exportChecks.map((check) => <div key={check.label} className="flex items-center gap-2 text-[11px] font-medium text-slate-600">{check.ok ? <Check size={13} className="text-emerald-500" /> : <X size={13} className="text-amber-500" />} {check.label}</div>)}</div>
+                  <div className="rounded-2xl border border-white/10 bg-zinc-800 p-4">
+                    <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-sm font-bold text-zinc-100"><ShieldCheck size={16} className="text-indigo-400" /> Readiness</span><span className={`text-[10px] font-bold ${exportChecks.every((check) => check.ok) ? 'text-emerald-300' : 'text-amber-300'}`}>{exportChecks.filter((check) => check.ok).length}/{exportChecks.length}</span></div>
+                    <div className="mt-3 space-y-2">{exportChecks.map((check) => <div key={check.label} className="flex items-center gap-2 text-[11px] font-medium text-zinc-300">{check.ok ? <Check size={13} className="text-emerald-500" /> : <X size={13} className="text-amber-500" />} {check.label}</div>)}</div>
                   </div>
                   <button
                     onClick={exportCurrent}
                     disabled={isExporting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
                   >
                     {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
                     Export current slide
@@ -4895,7 +3652,7 @@ export default function App() {
                   <button
                     onClick={exportAll}
                     disabled={isExporting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-zinc-800 py-3 text-sm font-bold text-zinc-200 transition-colors hover:bg-white/[0.06] disabled:opacity-50"
                   >
                     <Download size={16} /> Export all {exportFormat === 'jpeg' ? 'JPGs' : `${exportFormat.toUpperCase()}s`}
                   </button>
@@ -4903,7 +3660,7 @@ export default function App() {
                     <button
                       onClick={() => exportZip(true)}
                       disabled={isExporting}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-zinc-800 py-3 text-sm font-bold text-zinc-200 transition-colors hover:bg-white/[0.06] disabled:opacity-50"
                     >
                       <Check size={16} /> Export {selectedSlideIds.length} selected
                     </button>
@@ -4911,59 +3668,1224 @@ export default function App() {
                   <button
                     onClick={() => exportZip(false)}
                     disabled={isExporting}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 py-3 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/15 py-3 text-sm font-bold text-indigo-200 transition-colors hover:bg-indigo-500/25 disabled:opacity-50"
                   >
                     <Archive size={16} /> Download organized ZIP
                   </button>
                 </div>
-              )}
+              </div>
+                </>
+              ) : selectedLayer === 'background' ? (
+                <>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Background</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                        <Palette size={16} className="text-indigo-400" /> Background
+                      </label>
+                      {(() => {
+                        const activePatternId =
+                          activeSettings.backgroundPattern === 'wave-ribbons'
+                            ? 'emerald-wave'
+                            : activeSettings.backgroundPattern ||
+                            (typeof activeSettings.background === 'string' && activeSettings.background.includes('#057a44') ? 'emerald-wave' : 'none');
+                        return activePatternId !== 'none' ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950/60 px-2.5 py-0.5 text-[10px] font-bold text-zinc-200 border border-white/10 shadow-2xs">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: activeSettings.backgroundPatternColor || '#078249' }} />
+                            {DESIGNER_PATTERNS.find(p => p.id === activePatternId)?.name || 'Pattern'} Active
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
 
-              <div className="border-t border-gray-100 pt-4 flex justify-between">
-                <button
-                  onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
-                  disabled={activeIndex === 0}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Previous Slide"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <span className="text-sm text-gray-500 self-center">
-                  Slide {activeIndex + 1} of {screenshots.length}
-                </span>
-                <button
-                  onClick={() => setActiveIndex(Math.min(screenshots.length - 1, activeIndex + 1))}
-                  disabled={activeIndex === screenshots.length - 1}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Next Slide"
-                >
-                  <ChevronRight size={20} />
-                </button>
+                    {/* Designer Background Pattern Selector */}
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                          Designer Patterns
+                        </span>
+                        <span className="text-[10px] font-medium text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                          {DESIGNER_PATTERNS.length - 1} Pro Styles
+                        </span>
+                      </div>
+
+                      {(() => {
+                        const activePatternId =
+                          activeSettings.backgroundPattern === 'wave-ribbons'
+                            ? 'emerald-wave'
+                            : activeSettings.backgroundPattern ||
+                            (typeof activeSettings.background === 'string' && activeSettings.background.includes('#057a44') ? 'emerald-wave' : 'none');
+                        const isAnyPatternActive = activePatternId !== 'none';
+
+                        return (
+                          <>
+                            <div className="grid grid-cols-2 gap-2">
+                              {DESIGNER_PATTERNS.map((pat) => {
+                                const isSelected = activePatternId === pat.id;
+                                return (
+                                  <button
+                                    key={pat.id}
+                                    type="button"
+                                    onClick={() => {
+                                      if (pat.id === 'none') {
+                                        updateSetting({ backgroundPattern: 'none' });
+                                      } else {
+                                        const baseColor = activeSettings.backgroundPatternColor || '#078249';
+                                        const cornerStart = activeSettings.backgroundPatternCornerStart || '#10b981';
+                                        const cornerEnd = activeSettings.backgroundPatternCornerEnd || '#02381e';
+                                        const waveColor = activeSettings.backgroundPatternWaveColor || '#34d399';
+                                        const tones = computePatternTones(baseColor, cornerStart, cornerEnd, waveColor);
+                                        updateSetting({
+                                          backgroundPattern: pat.id,
+                                          backgroundPatternColor: baseColor,
+                                          backgroundPatternCornerStart: cornerStart,
+                                          backgroundPatternCornerEnd: cornerEnd,
+                                          backgroundPatternWaveColor: waveColor,
+                                          background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
+                                          titleColor: '#FFFFFF',
+                                          subtitleColor: tones.subtitleColor,
+                                          accentColor: tones.accentColor,
+                                        });
+                                      }
+                                    }}
+                                    className={`relative overflow-hidden rounded-xl border p-2 text-left transition-all ${isSelected
+                                      ? 'border-indigo-600 bg-indigo-500/10 ring-2 ring-indigo-500/20 shadow-sm'
+                                      : 'border-white/10 bg-zinc-800 hover:border-indigo-400/50 hover:shadow-sm'
+                                      }`}
+                                  >
+                                    <div
+                                      className="relative h-14 w-full rounded-lg overflow-hidden mb-1.5 shadow-inner border border-white/10"
+                                      style={{
+                                        backgroundColor:
+                                          pat.id === 'none'
+                                            ? undefined
+                                            : activeSettings.backgroundPatternColor || '#078249',
+                                        background:
+                                          pat.id === 'none'
+                                            ? isSelected
+                                              ? activeSettings.background
+                                              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                            : undefined,
+                                      }}
+                                    >
+                                      {pat.id === 'emerald-wave' && (
+                                        <EmeraldWaveBackground
+                                          idPrefix="thumb-wave"
+                                          baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                          cornerStart={activeSettings.backgroundPatternCornerStart}
+                                          cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                          waveColor={activeSettings.backgroundPatternWaveColor}
+                                        />
+                                      )}
+                                      {pat.id === 'aurora-mesh' && (
+                                        <AuroraMeshBackground
+                                          idPrefix="thumb-aurora"
+                                          baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                          cornerStart={activeSettings.backgroundPatternCornerStart}
+                                          cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                          waveColor={activeSettings.backgroundPatternWaveColor}
+                                        />
+                                      )}
+                                      {pat.id === 'cyber-grid' && (
+                                        <CyberGridBackground
+                                          idPrefix="thumb-grid"
+                                          baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                          cornerStart={activeSettings.backgroundPatternCornerStart}
+                                          cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                          waveColor={activeSettings.backgroundPatternWaveColor}
+                                        />
+                                      )}
+                                      {pat.id === 'glass-spheres' && (
+                                        <GlassSpheresBackground
+                                          idPrefix="thumb-spheres"
+                                          baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                          cornerStart={activeSettings.backgroundPatternCornerStart}
+                                          cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                          waveColor={activeSettings.backgroundPatternWaveColor}
+                                        />
+                                      )}
+                                      {pat.id === 'topography-contour' && (
+                                        <TopographyBackground
+                                          idPrefix="thumb-topo"
+                                          baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                          cornerStart={activeSettings.backgroundPatternCornerStart}
+                                          cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                          waveColor={activeSettings.backgroundPatternWaveColor}
+                                        />
+                                      )}
+                                      {pat.id === 'crystal-prism' && (
+                                        <CrystalPrismBackground
+                                          idPrefix="thumb-prism"
+                                          baseColor={activeSettings.backgroundPatternColor || '#078249'}
+                                          cornerStart={activeSettings.backgroundPatternCornerStart}
+                                          cornerEnd={activeSettings.backgroundPatternCornerEnd}
+                                          waveColor={activeSettings.backgroundPatternWaveColor}
+                                        />
+                                      )}
+                                      <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider backdrop-blur-xs">
+                                        {pat.badge}
+                                      </span>
+                                    </div>
+                                    <span className="block text-xs font-bold text-zinc-100 leading-tight">{pat.name}</span>
+                                    <span className="block text-[10px] text-zinc-400 leading-tight truncate">{pat.desc}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {isAnyPatternActive && (
+                              <div className="pt-3 border-t border-white/10 space-y-3">
+                                {/* 1. Duo-Tone & Multi-Color Presets */}
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-300">
+                                      Designer Duo-Tone Palettes
+                                    </span>
+                                    <span className="text-[10px] text-zinc-500">Pre-harmonized</span>
+                                  </div>
+
+                                  <div className="grid grid-cols-4 gap-1.5">
+                                    {DESIGNER_PATTERN_PRESETS.map((p) => {
+                                      const isCurrent =
+                                        (activeSettings.backgroundPatternColor || '#078249').toLowerCase() === p.base.toLowerCase() &&
+                                        (activeSettings.backgroundPatternCornerStart || '').toLowerCase() === p.cornerStart.toLowerCase();
+                                      return (
+                                        <button
+                                          key={p.id}
+                                          type="button"
+                                          onClick={() => {
+                                            const tones = computePatternTones(p.base, p.cornerStart, p.cornerEnd, p.wave);
+                                            updateSetting({
+                                              backgroundPatternColor: p.base,
+                                              backgroundPatternCornerStart: p.cornerStart,
+                                              backgroundPatternCornerEnd: p.cornerEnd,
+                                              backgroundPatternWaveColor: p.wave,
+                                              background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
+                                              titleColor: '#FFFFFF',
+                                              subtitleColor: tones.subtitleColor,
+                                              accentColor: tones.accentColor,
+                                            });
+                                          }}
+                                          className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${isCurrent
+                                            ? 'border-slate-800 bg-zinc-800 shadow-xs ring-1 ring-slate-800'
+                                            : 'border-white/10 bg-zinc-800/70 hover:bg-white/[0.06] hover:border-white/20'
+                                            }`}
+                                          title={`${p.name} (${p.badge})`}
+                                        >
+                                          <span className="relative w-4 h-4 rounded-full flex-shrink-0 overflow-hidden shadow-2xs border border-black/10">
+                                            <span className="absolute inset-0 w-1/2" style={{ backgroundColor: p.cornerStart }} />
+                                            <span className="absolute inset-0 left-1/2 w-1/2" style={{ backgroundColor: p.base }} />
+                                            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white" style={{ backgroundColor: p.wave }} />
+                                          </span>
+                                          <span className="text-[10px] font-semibold text-zinc-200 truncate">{p.name}</span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* 2. Direct Corner & Wave Gradient Customizer */}
+                                <div className="rounded-xl border border-white/10 bg-zinc-800 p-2.5 space-y-2.5 shadow-2xs">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-200">
+                                      Corner & Wave Gradient Colors
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const base = activeSettings.backgroundPatternColor || '#009e52';
+                                        const tones = computePatternTones(base);
+                                        updateSetting({
+                                          backgroundPatternCornerStart: tones.ribbonTop0,
+                                          backgroundPatternCornerEnd: tones.ribbonBottom100,
+                                          backgroundPatternWaveColor: tones.waveBody0,
+                                          subtitleColor: tones.subtitleColor,
+                                          accentColor: tones.accentColor,
+                                        });
+                                      }}
+                                      className="text-[10px] font-semibold text-indigo-300 hover:underline"
+                                      title="Recalculate corner gradient colors from the base background"
+                                    >
+                                      Auto-Match Base
+                                    </button>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-1.5 hover:bg-white/[0.06] cursor-pointer">
+                                      <input
+                                        type="color"
+                                        value={activeSettings.backgroundPatternCornerStart || '#05c065'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          updateSetting({ backgroundPatternCornerStart: val });
+                                        }}
+                                        className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <span className="block text-[9px] font-bold text-zinc-400 uppercase tracking-tight">Corner Start</span>
+                                        <span className="block text-[11px] font-mono text-zinc-200 truncate">
+                                          {activeSettings.backgroundPatternCornerStart || '#05c065'}
+                                        </span>
+                                      </div>
+                                    </label>
+
+                                    <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-1.5 hover:bg-white/[0.06] cursor-pointer">
+                                      <input
+                                        type="color"
+                                        value={activeSettings.backgroundPatternCornerEnd || '#00783d'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          updateSetting({ backgroundPatternCornerEnd: val });
+                                        }}
+                                        className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <span className="block text-[9px] font-bold text-zinc-400 uppercase tracking-tight">Corner End</span>
+                                        <span className="block text-[11px] font-mono text-zinc-200 truncate">
+                                          {activeSettings.backgroundPatternCornerEnd || '#00783d'}
+                                        </span>
+                                      </div>
+                                    </label>
+
+                                    <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-1.5 hover:bg-white/[0.06] cursor-pointer">
+                                      <input
+                                        type="color"
+                                        value={activeSettings.backgroundPatternWaveColor || '#008e49'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          updateSetting({ backgroundPatternWaveColor: val });
+                                        }}
+                                        className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <span className="block text-[9px] font-bold text-zinc-400 uppercase tracking-tight">3D Wave Accent</span>
+                                        <span className="block text-[11px] font-mono text-zinc-200 truncate">
+                                          {activeSettings.backgroundPatternWaveColor || '#008e49'}
+                                        </span>
+                                      </div>
+                                    </label>
+
+                                    <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-1.5 hover:bg-white/[0.06] cursor-pointer">
+                                      <input
+                                        type="color"
+                                        value={activeSettings.backgroundPatternColor || '#009e52'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          const tones = computePatternTones(
+                                            val,
+                                            activeSettings.backgroundPatternCornerStart,
+                                            activeSettings.backgroundPatternCornerEnd,
+                                            activeSettings.backgroundPatternWaveColor
+                                          );
+                                          updateSetting({
+                                            backgroundPatternColor: val,
+                                            background: `linear-gradient(160deg, ${tones.baseGrad0} 0%, ${tones.baseGrad30} 45%, ${tones.baseGrad100} 100%)`,
+                                          });
+                                        }}
+                                        className="h-6 w-6 rounded cursor-pointer border-0 bg-transparent p-0 flex-shrink-0"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <span className="block text-[9px] font-bold text-zinc-400 uppercase tracking-tight">Base Backdrop</span>
+                                        <span className="block text-[11px] font-mono text-zinc-200 truncate">
+                                          {activeSettings.backgroundPatternColor || '#009e52'}
+                                        </span>
+                                      </div>
+                                    </label>
+                                  </div>
+                                </div>
+
+                                <div className="pt-1 flex items-center justify-between text-[10px] text-zinc-400">
+                                  <span>Typography automatically harmonizes to corner accents</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const tones = computePatternTones(
+                                        activeSettings.backgroundPatternColor || '#078249',
+                                        activeSettings.backgroundPatternCornerStart,
+                                        activeSettings.backgroundPatternCornerEnd,
+                                        activeSettings.backgroundPatternWaveColor
+                                      );
+                                      updateSetting({
+                                        titleColor: '#FFFFFF',
+                                        subtitleColor: tones.subtitleColor,
+                                        accentColor: tones.accentColor,
+                                      });
+                                    }}
+                                    className="font-bold text-indigo-300 hover:underline"
+                                  >
+                                    Harmonize text
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="grid grid-cols-6 gap-2 mb-3">
+                      {BACKGROUNDS.map((bg, i) => (
+                        <button
+                          key={i}
+                          onClick={() => updateSetting({
+                            background: bg,
+                            backgroundPattern: bg.includes('#057a44') ? 'emerald-wave' : 'none',
+                          })}
+                          className={`w-9 h-9 rounded-full border-2 transition-all hover:scale-110 ${activeSettings.background === bg
+                            ? 'border-indigo-600 scale-110 shadow-md'
+                            : 'border-transparent shadow-sm'
+                            }`}
+                          style={{ background: bg }}
+                          title={bg}
+                        />
+                      ))}
+                    </div>
+                    <details className="group rounded-xl border border-white/10 bg-white/[0.03]">
+                      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 text-xs font-bold text-zinc-300">
+                        Gradient builder
+                        <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+                      </summary>
+                      <div className="space-y-3 border-t border-white/10 p-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          {([
+                            { label: 'Start', key: 'backgroundGradientStart' as const },
+                            { label: 'End', key: 'backgroundGradientEnd' as const },
+                          ]).map(({ label, key }) => (
+                            <label key={key} className="flex items-center gap-2 rounded-lg bg-zinc-800 p-2 shadow-sm">
+                              <input
+                                type="color"
+                                value={activeSettings[key]}
+                                onChange={(e) => {
+                                  const next = e.target.value;
+                                  const start = key === 'backgroundGradientStart' ? next : activeSettings.backgroundGradientStart;
+                                  const end = key === 'backgroundGradientEnd' ? next : activeSettings.backgroundGradientEnd;
+                                  updateSetting({ [key]: next, background: `linear-gradient(${activeSettings.backgroundGradientAngle}deg, ${start} 0%, ${end} 100%)` });
+                                }}
+                                className="h-7 w-7 rounded-md border-0 bg-transparent p-0"
+                              />
+                              <span className="text-[11px] font-bold text-zinc-400">{label}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                          Angle · {activeSettings.backgroundGradientAngle}°
+                          <input
+                            type="range"
+                            min={0}
+                            max={360}
+                            value={activeSettings.backgroundGradientAngle}
+                            onChange={(e) => {
+                              const angle = Number(e.target.value);
+                              updateSetting({
+                                backgroundGradientAngle: angle,
+                                background: `linear-gradient(${angle}deg, ${activeSettings.backgroundGradientStart} 0%, ${activeSettings.backgroundGradientEnd} 100%)`,
+                              });
+                            }}
+                            className="mt-2 w-full"
+                          />
+                        </label>
+                      </div>
+                    </details>
+                    <div className="flex items-center gap-3 p-3 border border-white/10 rounded-xl bg-white/[0.03] shadow-sm">
+                      <span className="text-sm font-medium text-zinc-200">Custom</span>
+                      <input
+                        type="color"
+                        value={
+                          activeSettings.background.startsWith('#')
+                            ? activeSettings.background.slice(0, 7)
+                            : '#ffffff'
+                        }
+                        onChange={(e) => updateSetting({ background: e.target.value })}
+                        className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
+                        title="Solid Color"
+                      />
+                      <input
+                        type="text"
+                        placeholder="linear-gradient(...)"
+                        value={activeSettings.background}
+                        onChange={(e) => updateSetting({ background: e.target.value })}
+                        className="flex-1 min-w-0 border border-white/15 rounded-lg p-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                <Layers size={28} className="text-gray-400" />
+                </>
+              ) : selectedLayer === 'text' ? (
+                <>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Content</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-zinc-200">Title</label>
+                    <textarea
+                      value={localizedActiveScreenshot?.title ?? activeScreenshot.title}
+                      onChange={(e) => updateCurrentCopy('title', e.target.value)}
+                      className="w-full border border-white/15 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                      rows={3}
+                      placeholder="Enter title... use [accent]word[/accent] for color"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-zinc-200">Subtitle</label>
+                    <textarea
+                      value={localizedActiveScreenshot?.subtitle ?? activeScreenshot.subtitle}
+                      onChange={(e) => updateCurrentCopy('subtitle', e.target.value)}
+                      className="w-full border border-white/15 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                      rows={3}
+                      placeholder="Enter subtitle..."
+                    />
+                  </div>
+                </div>
               </div>
-              <p className="text-sm font-semibold text-gray-600">No slides yet</p>
-              <p className="text-xs text-gray-400">
-                Upload screenshots from the canvas or drop images anywhere to get started.
-              </p>
-              <label className="mt-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                <Plus size={16} /> Upload
-                <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} />
-              </label>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Typography</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                      <Type size={16} className="text-indigo-400" /> Colors
+                    </label>
+                    {[
+                      { label: 'Title', key: 'titleColor' as const },
+                      { label: 'Accent', key: 'accentColor' as const },
+                      { label: 'Subtitle', key: 'subtitleColor' as const },
+                    ].map(({ label, key }) => (
+                      <div key={key} className="flex items-center justify-between p-3 border border-white/10 rounded-xl bg-white/[0.03]">
+                        <span className="text-sm font-medium text-zinc-200">{label} Color</span>
+                        <input
+                          type="color"
+                          value={activeSettings[key] as string}
+                          onChange={(e) => updateSetting({ [key]: e.target.value })}
+                          className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-4 pt-2">
+                    <label className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                      <Type size={16} className="text-indigo-400" /> Fonts
+                    </label>
+                    {[
+                      { label: 'Title Font', key: 'titleFontFamily' as const },
+                      { label: 'Subtitle Font', key: 'subtitleFontFamily' as const },
+                    ].map(({ label, key }) => (
+                      <div key={key} className="space-y-1">
+                        <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{label}</span>
+                        <select
+                          value={activeSettings[key] as string}
+                          onChange={(e) => updateSetting({ [key]: e.target.value })}
+                          className="w-full border border-white/15 rounded-xl p-2.5 text-sm bg-zinc-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                        >
+                          {FONT_OPTIONS.map((f) => (
+                            <option key={`${key}-${f.value}`} value={f.value}>{f.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Title Size ({activeSettings.titleFontSize}px)
+                      </span>
+                      <input
+                        type="range" min={32} max={160}
+                        value={activeSettings.titleFontSize}
+                        onChange={(e) => updateSetting({ titleFontSize: Number(e.target.value) })}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Subtitle Size ({activeSettings.subtitleFontSize}px)
+                      </span>
+                      <input
+                        type="range" min={16} max={80}
+                        value={activeSettings.subtitleFontSize}
+                        onChange={(e) => updateSetting({ subtitleFontSize: Number(e.target.value) })}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Text Spacing ({activeSettings.textSpacing}px)
+                      </span>
+                      <input
+                        type="range" min={0} max={120}
+                        value={activeSettings.textSpacing}
+                        onChange={(e) => updateSetting({ textSpacing: Number(e.target.value) })}
+                        className="w-full"
+                      />
+                    </div>
+                    <details className="group rounded-xl border border-white/10 bg-white/[0.03]">
+                      <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-zinc-200">
+                        Advanced spacing
+                        <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+                      </summary>
+                      <div className="space-y-4 border-t border-white/10 p-3">
+                        {([
+                          { label: 'Title line height', key: 'titleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
+                          { label: 'Subtitle line height', key: 'subtitleLineHeight' as const, min: 0.8, max: 2, step: 0.05 },
+                          { label: 'Title tracking', key: 'titleLetterSpacing' as const, min: -8, max: 20, step: 0.5 },
+                          { label: 'Subtitle tracking', key: 'subtitleLetterSpacing' as const, min: -4, max: 20, step: 0.5 },
+                        ]).map(({ label, key, min, max, step }) => (
+                          <label key={key} className="block">
+                            <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                              {label}<span className="font-mono text-zinc-300">{activeSettings[key]}</span>
+                            </span>
+                            <input type="range" min={min} max={max} step={step} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
+                          </label>
+                        ))}
+                      </div>
+                    </details>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Title Weight</span>
+                        <select
+                          value={activeSettings.titleFontWeight}
+                          onChange={(e) => updateSetting({ titleFontWeight: Number(e.target.value) })}
+                          className="w-full border border-white/15 rounded-xl p-2.5 text-sm bg-zinc-800"
+                        >
+                          {[500, 600, 700, 800, 900].map((w) => (
+                            <option key={`tw-${w}`} value={w}>{w}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Subtitle Weight</span>
+                        <select
+                          value={activeSettings.subtitleFontWeight}
+                          onChange={(e) => updateSetting({ subtitleFontWeight: Number(e.target.value) })}
+                          className="w-full border border-white/15 rounded-xl p-2.5 text-sm bg-zinc-800"
+                        >
+                          {[400, 500, 600, 700].map((w) => (
+                            <option key={`sw-${w}`} value={w}>{w}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Position</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Nudge Text</p>
+                  <div className="grid grid-cols-4 gap-1.5 text-xs">
+                    <button onClick={() => nudgeCurrent('text', 'x', -10)} className="py-2 rounded border border-white/10 hover:bg-white/[0.06]">← Left</button>
+                    <button onClick={() => nudgeCurrent('text', 'x', 10)} className="py-2 rounded border border-white/10 hover:bg-white/[0.06]">Right →</button>
+                    <button onClick={() => nudgeCurrent('text', 'y', -10)} className="py-2 rounded border border-white/10 hover:bg-white/[0.06]">↑ Up</button>
+                    <button onClick={() => nudgeCurrent('text', 'y', 10)} className="py-2 rounded border border-white/10 hover:bg-white/[0.06]">Down ↓</button>
+                  </div>
+                </div>
+              </div>
+                </>
+              ) : selectedLayer === 'device' ? (
+                <>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Device</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-200">Device type</p>
+                      <p className="mt-0.5 text-xs text-zinc-500">Choose the right presentation frame</p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {([
+                        { id: 'iphone' as const, label: 'iPhone' },
+                        { id: 'android' as const, label: 'Android' },
+                        { id: 'tablet' as const, label: 'Tablet' },
+                        { id: 'laptop' as const, label: 'Laptop' },
+                        { id: 'browser' as const, label: 'Browser' },
+                      ]).map((device) => (
+                        <button
+                          key={device.id}
+                          type="button"
+                          onClick={() => updateSetting({ deviceType: device.id })}
+                          className={`rounded-xl border px-2 py-2.5 text-xs font-bold transition-all ${activeSettings.deviceType === device.id ? 'border-indigo-400/50 bg-indigo-500/15 text-indigo-200 ring-1 ring-indigo-500/30' : 'border-white/10 bg-zinc-800 text-zinc-400 hover:border-white/20'}`}
+                        >
+                          {device.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-200">Orientation</p>
+                      <p className="mt-0.5 text-xs text-zinc-500">Rotate or mirror the device</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 rounded-xl bg-zinc-950/60 p-1">
+                      {(['portrait', 'landscape'] as const).map((orientation) => (
+                        <button
+                          key={orientation}
+                          type="button"
+                          onClick={() => updateSetting({ deviceOrientation: orientation })}
+                          disabled={activeSettings.deviceType === 'laptop' || activeSettings.deviceType === 'browser'}
+                          className={`rounded-lg py-2 text-xs font-bold capitalize transition-all disabled:cursor-not-allowed disabled:opacity-40 ${activeSettings.deviceOrientation === orientation ? 'bg-zinc-800 text-indigo-200 shadow-sm' : 'text-zinc-400'}`}
+                        >
+                          {orientation}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button type="button" onClick={() => updateSetting({ deviceFlipX: !activeSettings.deviceFlipX })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipX ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-200' : 'border-white/10 text-zinc-300 hover:bg-white/[0.06]'}`}>
+                        Flip horizontal
+                      </button>
+                      <button type="button" onClick={() => updateSetting({ deviceFlipY: !activeSettings.deviceFlipY })} className={`rounded-xl border px-3 py-2 text-xs font-bold ${activeSettings.deviceFlipY ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-200' : 'border-white/10 text-zinc-300 hover:bg-white/[0.06]'}`}>
+                        Flip vertical
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-200">Quick poses</p>
+                        <p className="mt-0.5 text-xs text-zinc-500">Professional angles in one click</p>
+                      </div>
+                      <span className="rounded-full bg-violet-500/15 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-violet-300">New</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {DEVICE_POSES.map((pose, index) => (
+                        <button
+                          key={pose.name}
+                          onClick={() => updateSetting(pose.settings)}
+                          className="group flex items-center gap-3 rounded-xl border border-white/10 bg-zinc-800 p-2.5 text-left transition-all hover:border-indigo-400/50 hover:bg-indigo-500/10"
+                        >
+                          <span className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-zinc-800 to-zinc-700">
+                            <span
+                              className="h-8 w-4 rounded-[4px] border-2 border-slate-700 bg-zinc-800 shadow-sm transition-transform group-hover:scale-105"
+                              style={{ transform: `rotate(${[-0, -7, 7, -12][index]}deg)` }}
+                            />
+                          </span>
+                          <span className="text-xs font-bold text-zinc-200">{pose.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-200">Frame style</p>
+                        <p className="text-xs text-zinc-500 mt-0.5">Choose a polished device finish</p>
+                      </div>
+                      <button
+                        onClick={() => updateSetting({ deviceFrame: !activeSettings.deviceFrame })}
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${activeSettings.deviceFrame
+                          ? 'bg-indigo-500/15 text-indigo-200'
+                          : 'bg-zinc-950/60 text-zinc-400'
+                          }`}
+                      >
+                        {activeSettings.deviceFrame ? 'Frame on' : 'Frame off'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {DEVICE_FRAMES.map((frame) => {
+                        const selected = activeSettings.deviceFrame && activeSettings.deviceFrameStyle === frame.id;
+                        return (
+                          <button
+                            key={frame.id}
+                            onClick={() => updateSetting({
+                              deviceFrame: true,
+                              deviceFrameStyle: frame.id,
+                              deviceFrameColor: frame.shell,
+                              deviceFrameEdgeColor: frame.edge,
+                            })}
+                            className={`group relative flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all ${selected
+                              ? 'border-indigo-400 bg-indigo-500/15 ring-1 ring-indigo-500/40'
+                              : 'border-white/10 bg-zinc-800 hover:border-white/20 hover:shadow-sm'
+                              }`}
+                          >
+                            <span
+                              className="relative h-12 w-7 shrink-0 rounded-[8px] p-[3px] shadow-sm"
+                              style={{ background: `linear-gradient(145deg, ${frame.edge}, ${frame.shell})` }}
+                            >
+                              <span className="block h-full w-full rounded-[6px] bg-gradient-to-b from-zinc-800 to-zinc-700" />
+                              {frame.id !== 'minimal' && (
+                                <span className="absolute left-1/2 top-1 -translate-x-1/2 h-1 w-2.5 rounded-full" style={{ backgroundColor: frame.island }} />
+                              )}
+                            </span>
+                            <span className={`text-xs font-semibold ${selected ? 'text-indigo-200' : 'text-zinc-200'}`}>
+                              {frame.name}
+                            </span>
+                            {selected && (
+                              <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-white">
+                                <Check size={10} strokeWidth={3} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: 'Frame', key: 'deviceFrameColor' as const },
+                        { label: 'Edge', key: 'deviceFrameEdgeColor' as const },
+                      ].map(({ label, key }) => (
+                        <label key={key} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
+                          <input
+                            type="color"
+                            value={activeSettings[key]}
+                            onChange={(e) => updateSetting({ [key]: e.target.value })}
+                            className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                            aria-label={`${label} color`}
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-[10px] font-semibold uppercase tracking-wide text-zinc-500">{label}</span>
+                            <span className="block truncate font-mono text-[11px] text-zinc-300">{activeSettings[key].toUpperCase()}</span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                      Scale ({activeSettings.deviceScale}%)
+                    </span>
+                    <input
+                      type="range" min={40} max={100}
+                      value={activeSettings.deviceScale}
+                      onChange={(e) => updateSetting({ deviceScale: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                      Border ({activeSettings.deviceBorder}px)
+                    </span>
+                    <input
+                      type="range" min={0} max={40}
+                      value={activeSettings.deviceBorder}
+                      onChange={(e) => updateSetting({ deviceBorder: Number(e.target.value) })}
+                      className="w-full"
+                      disabled={!activeSettings.deviceFrame}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Corner curve ({activeSettings.deviceCornerRadius}px)
+                      </span>
+                      <button
+                        onClick={() => updateSetting({ deviceCornerRadius: DEFAULT_SETTINGS.deviceCornerRadius })}
+                        className="text-[11px] font-medium text-indigo-300 hover:text-indigo-200"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <input
+                      type="range" min={0} max={120}
+                      value={activeSettings.deviceCornerRadius}
+                      onChange={(e) => updateSetting({ deviceCornerRadius: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-[10px] text-zinc-500">
+                      <span>Square</span>
+                      <span>Extra round</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                      Rotation ({activeSettings.deviceRotation}°)
+                    </span>
+                    <input
+                      type="range" min={-45} max={45}
+                      value={activeSettings.deviceRotation}
+                      onChange={(e) => updateSetting({ deviceRotation: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[-45, -20, 0, 20, 45].map((angle) => (
+                        <button
+                          key={angle}
+                          onClick={() => updateSetting({ deviceRotation: angle })}
+                          className={`py-2 rounded-xl text-xs font-medium border transition-colors ${activeSettings.deviceRotation === angle
+                            ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-200'
+                            : 'border-white/10 text-zinc-300 hover:bg-white/[0.06]'
+                            }`}
+                        >
+                          {angle}°
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Tilt X ({activeSettings.deviceTiltX}°)
+                      </span>
+                      <input
+                        type="range" min={-20} max={20}
+                        value={activeSettings.deviceTiltX}
+                        onChange={(e) => updateSetting({ deviceTiltX: Number(e.target.value) })}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                        Tilt Y ({activeSettings.deviceTiltY}°)
+                      </span>
+                      <input
+                        type="range" min={-20} max={20}
+                        value={activeSettings.deviceTiltY}
+                        onChange={(e) => updateSetting({ deviceTiltY: Number(e.target.value) })}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                      Shadow ({activeSettings.deviceShadow})
+                    </span>
+                    <input
+                      type="range" min={0} max={80}
+                      value={activeSettings.deviceShadow}
+                      onChange={(e) => updateSetting({ deviceShadow: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Screenshot</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <details className="group rounded-xl border border-white/10 bg-white/[0.03]">
+                    <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-3 text-xs font-bold text-zinc-200">
+                      Screenshot crop & adjustments
+                      <ChevronRight size={14} className="transition-transform group-open:rotate-90" />
+                    </summary>
+                    <div className="space-y-4 border-t border-white/10 p-3">
+                      {([
+                        { label: 'Zoom', key: 'screenshotScale' as const, min: 50, max: 200, suffix: '%' },
+                        { label: 'Horizontal', key: 'screenshotOffsetX' as const, min: -300, max: 300, suffix: 'px' },
+                        { label: 'Vertical', key: 'screenshotOffsetY' as const, min: -300, max: 300, suffix: 'px' },
+                        { label: 'Rotation', key: 'screenshotRotation' as const, min: -180, max: 180, suffix: '°' },
+                        { label: 'Brightness', key: 'screenshotBrightness' as const, min: 25, max: 175, suffix: '%' },
+                        { label: 'Contrast', key: 'screenshotContrast' as const, min: 25, max: 175, suffix: '%' },
+                        { label: 'Saturation', key: 'screenshotSaturation' as const, min: 0, max: 200, suffix: '%' },
+                      ]).map(({ label, key, min, max, suffix }) => (
+                        <label key={key} className="block">
+                          <span className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                            {label}<span className="font-mono text-zinc-300">{activeSettings[key]}{suffix}</span>
+                          </span>
+                          <input type="range" min={min} max={max} value={activeSettings[key]} onChange={(e) => updateSetting({ [key]: Number(e.target.value) })} className="mt-2 w-full" />
+                        </label>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => updateSetting({ screenshotScale: 100, screenshotOffsetX: 0, screenshotOffsetY: 0, screenshotRotation: 0, screenshotBrightness: 100, screenshotContrast: 100, screenshotSaturation: 100 })}
+                        className="w-full rounded-lg border border-white/10 bg-zinc-800 py-2 text-xs font-bold text-zinc-300 hover:bg-white/[0.06]"
+                      >
+                        Reset screenshot
+                      </button>
+                    </div>
+                  </details>
+                </div>
+              </div>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Position</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Nudge Device</p>
+                  <div className="grid grid-cols-4 gap-1.5 text-xs">
+                    <button onClick={() => nudgeCurrent('device', 'x', -10)} className="py-2 rounded border border-white/10 hover:bg-white/[0.06]">← Left</button>
+                    <button onClick={() => nudgeCurrent('device', 'x', 10)} className="py-2 rounded border border-white/10 hover:bg-white/[0.06]">Right →</button>
+                    <button onClick={() => nudgeCurrent('device', 'y', -10)} className="py-2 rounded border border-white/10 hover:bg-white/[0.06]">↑ Up</button>
+                    <button onClick={() => nudgeCurrent('device', 'y', 10)} className="py-2 rounded border border-white/10 hover:bg-white/[0.06]">Down ↓</button>
+                  </div>
+                </div>
+              </div>
+                </>
+              ) : (
+                <>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Apply changes to</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-zinc-800 px-4 py-3 shadow-sm">
+                    <div>
+                      <p className="text-xs font-bold text-zinc-100">Editing scope</p>
+                      <p className={`mt-0.5 text-[11px] font-medium ${applyToAll ? 'text-indigo-300' : 'text-amber-300'}`}>
+                        {applyToAll ? 'All slides' : `Slide ${activeIndex + 1} only`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setApplyToAll((value) => !value)}
+                      aria-pressed={applyToAll}
+                      className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition-colors ${applyToAll ? 'bg-indigo-600' : 'bg-amber-400'}`}
+                      title="Toggle whether changes apply to every slide"
+                    >
+                      <span className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-zinc-800 shadow-sm transition-transform ${applyToAll ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Layout</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                      <Layout size={16} className="text-indigo-400" /> Layout
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['text-top', 'text-bottom', 'centered'] as const).map((l) => (
+                        <button
+                          key={l}
+                          onClick={() =>
+                            updateSetting({
+                              layout: l,
+                              ...(l === 'text-bottom' && activeSettings.phonePositionMode !== 'half-up'
+                                ? { phonePositionMode: 'half-up' }
+                                : l === 'text-top' && activeSettings.phonePositionMode === 'half-up'
+                                  ? { phonePositionMode: 'half-down' }
+                                  : {}),
+                            })
+                          }
+                          className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.layout === l
+                              ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-200 font-bold shadow-2xs'
+                              : 'bg-zinc-800 border-white/10 text-zinc-300 hover:bg-white/[0.06]'
+                            }`}
+                        >
+                          {l === 'text-top' ? 'Text Top' : l === 'text-bottom' ? 'Text Bottom' : 'Centered'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Text Align</label>
+                    <div className="flex bg-zinc-950/60 p-1 rounded-xl">
+                      {(['left', 'center', 'right'] as const).map((align) => (
+                        <button
+                          key={align}
+                          onClick={() => {
+                            updateSetting({ textAlign: align });
+                            if (activeScreenshot)
+                              updateCurrentScreenshot({ textOffset: { x: 0, y: activeScreenshot.textOffset.y } });
+                          }}
+                          className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.textAlign === align
+                            ? 'bg-zinc-800 shadow text-indigo-200'
+                            : 'text-zinc-300 hover:text-zinc-100'
+                            }`}
+                        >
+                          {align}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                        <Smartphone size={16} className="text-indigo-400" /> Phone Position
+                      </label>
+                      <span className="text-[10px] text-zinc-500">Bleed & Alignment</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'half-up' as const, label: 'Top Bleed', desc: 'Device at top (bleeds off top)' },
+                        { id: 'centered' as const, label: 'Centered', desc: 'In-frame device' },
+                        { id: 'half-down' as const, label: 'Bottom Bleed', desc: 'Device at bottom (bleeds off bottom)' },
+                      ].map((mode) => (
+                        <button
+                          key={mode.id}
+                          onClick={() => updateSetting({ phonePositionMode: mode.id })}
+                          className={`py-2 px-2 rounded-xl text-xs font-medium border transition-colors text-center ${activeSettings.phonePositionMode === mode.id
+                              ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-200 font-bold shadow-2xs'
+                              : 'bg-zinc-800 border-white/10 text-zinc-300 hover:bg-white/[0.06]'
+                            }`}
+                          title={mode.desc}
+                        >
+                          {mode.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Device Align</label>
+                      <div className="flex bg-zinc-950/60 p-1 rounded-xl">
+                        {(['left', 'center', 'right'] as const).map((align) => (
+                          <button
+                            key={align}
+                            onClick={() => {
+                              updateSetting({ deviceAlign: align });
+                              if (activeScreenshot)
+                                updateCurrentScreenshot({ deviceOffset: { x: 0, y: activeScreenshot.deviceOffset.y } });
+                            }}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${activeSettings.deviceAlign === align
+                              ? 'bg-zinc-800 shadow text-indigo-200'
+                              : 'text-zinc-300 hover:text-zinc-100'
+                              }`}
+                          >
+                            {align}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Image Fit</label>
+                    <div className="flex bg-zinc-950/60 p-1 rounded-xl">
+                      {(['cover', 'contain'] as const).map((fit) => (
+                        <button
+                          key={fit}
+                          onClick={() => updateSetting({ imageFit: fit })}
+                          className={`flex-1 py-1.5 text-sm font-medium rounded-lg capitalize transition-colors ${activeSettings.imageFit === fit
+                            ? 'bg-zinc-800 shadow text-indigo-200'
+                            : 'text-zinc-300 hover:text-zinc-100'
+                            }`}
+                        >
+                          {fit}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Output size</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-zinc-200">
+                        <MonitorSmartphone size={16} className="text-indigo-400" /> Output size
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => updateSetting({ canvasWidth: activeSettings.canvasHeight, canvasHeight: activeSettings.canvasWidth })}
+                          className="rounded-md border border-white/10 bg-zinc-800 px-2 py-1 text-[10px] font-bold text-indigo-300 hover:bg-indigo-500/15"
+                          title="Swap canvas orientation"
+                        >
+                          Rotate
+                        </button>
+                        <span className="rounded-md bg-zinc-950/60 px-2 py-1 font-mono text-[10px] text-zinc-400">
+                          {activeSettings.canvasWidth} × {activeSettings.canvasHeight}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {CANVAS_PRESETS.map((preset) => {
+                        const selected = activeSettings.canvasWidth === preset.width && activeSettings.canvasHeight === preset.height;
+                        return (
+                          <button
+                            key={preset.id}
+                            onClick={() => updateSetting({ canvasWidth: preset.width, canvasHeight: preset.height })}
+                            className={`rounded-xl border px-3 py-2.5 text-left transition-all ${selected
+                              ? 'border-indigo-400 bg-indigo-500/15 ring-1 ring-indigo-500/30'
+                              : 'border-white/10 bg-zinc-800 hover:border-white/20'
+                              }`}
+                          >
+                            <span className={`block text-xs font-bold ${selected ? 'text-indigo-200' : 'text-zinc-200'}`}>{preset.label}</span>
+                            <span className="mt-0.5 block font-mono text-[10px] text-zinc-500">{preset.width} × {preset.height}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <span className="block text-[10px] font-bold uppercase tracking-wide text-zinc-500">Width</span>
+                        <input
+                          type="number"
+                          min={320}
+                          max={4096}
+                          value={activeSettings.canvasWidth}
+                          onChange={(e) => updateSetting({ canvasWidth: Math.max(320, Number(e.target.value)) })}
+                          className="mt-1 w-full bg-transparent text-sm font-semibold text-zinc-200 outline-none"
+                        />
+                      </label>
+                      <label className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <span className="block text-[10px] font-bold uppercase tracking-wide text-zinc-500">Height</span>
+                        <input
+                          type="number"
+                          min={320}
+                          max={4096}
+                          value={activeSettings.canvasHeight}
+                          onChange={(e) => updateSetting({ canvasHeight: Math.max(320, Number(e.target.value)) })}
+                          className="mt-1 w-full bg-transparent text-sm font-semibold text-zinc-200 outline-none"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-white/[0.06]">
+                <div className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Slide</div>
+                <div className="space-y-3 px-4 pb-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="py-2 text-sm font-medium rounded-lg border border-white/10 hover:bg-white/[0.06] text-zinc-200 flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                      <ImageIcon size={14} /> Replace
+                      <input type="file" accept="image/*" className="hidden" onChange={handleScreenshotReplace} />
+                    </label>
+                    <button
+                      onClick={() => duplicateScreenshot()}
+                      className="py-2 text-sm font-medium rounded-lg border border-white/10 hover:bg-white/[0.06] text-zinc-200 flex items-center justify-center gap-2"
+                    >
+                      <Copy size={14} /> Duplicate
+                    </button>
+                  </div>
+                  <button
+                    onClick={resetCurrentPosition}
+                    className="w-full py-2 text-sm font-medium rounded-lg border border-white/10 hover:bg-white/[0.06] text-zinc-200 flex items-center justify-center gap-2"
+                  >
+                    <LocateFixed size={14} /> Reset Position
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => activeScreenshot && removeScreenshot(activeScreenshot.id)}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/20 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/10"
+                  >
+                    <Trash2 size={14} /> Delete slide
+                  </button>
+                  {selectedSlideIds.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-indigo-500/10 p-2">
+                      <span className="mr-auto text-[11px] font-semibold text-indigo-300">{selectedSlideIds.length} selected</span>
+                      <button type="button" onClick={applyStyleToSelectedSlides} className="rounded-md px-2 py-1 text-[11px] font-semibold text-indigo-200 hover:bg-indigo-500/20">Apply style</button>
+                      <button type="button" onClick={duplicateSelectedSlides} className="rounded-md px-2 py-1 text-[11px] font-semibold text-zinc-300 hover:bg-white/10">Duplicate</button>
+                      <button type="button" onClick={removeSelectedSlides} className="rounded-md px-2 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-500/10">Remove</button>
+                      <button type="button" onClick={() => setSelectedSlideIds([])} className="rounded-md px-2 py-1 text-[11px] font-semibold text-zinc-500 hover:bg-white/10">Clear</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+                </>
+              )}
             </div>
+        </div>
+      )}
+
+      {(!showRightPanel && hasSlides) && (
+        <div className="absolute right-4 top-4 z-40 flex items-center gap-1 rounded-xl border border-white/10 bg-zinc-900/90 p-1 shadow-2xl backdrop-blur">
+          {editorMode !== 'preview' && (
+            <button type="button" onClick={() => setRightPanelOpen(true)} className="rounded-lg p-2 text-zinc-300 hover:bg-white/5" title="Show panel">
+              <PanelRight size={15} />
+            </button>
           )}
-        </aside>
+          <button
+            type="button"
+            onClick={() => { setEditorMode('export'); setRightPanelOpen(true); }}
+            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-500"
+          >
+            <Download size={14} /> Export
+          </button>
+        </div>
       )}
 
       {toast && (
         <div
           role="status"
           className={`fixed bottom-5 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold shadow-2xl backdrop-blur-xl ${toast.tone === 'success'
-            ? 'border-emerald-200 bg-emerald-50/95 text-emerald-800'
-            : 'border-red-200 bg-red-50/95 text-red-700'
+            ? 'border-emerald-500/30 bg-emerald-950/90 text-emerald-200'
+            : 'border-red-500/30 bg-red-950/90 text-red-300'
             }`}
         >
           {toast.tone === 'success' ? <Check size={16} /> : <X size={16} />}
@@ -4973,17 +4895,17 @@ export default function App() {
 
       {confirmClearOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="clear-project-title">
-          <div className="w-full max-w-sm rounded-3xl border border-white/20 bg-white p-6 shadow-2xl">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+          <div className="w-full max-w-sm rounded-3xl border border-white/20 bg-zinc-800 p-6 shadow-2xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
               <Trash2 size={20} />
             </div>
-            <h2 id="clear-project-title" className="mt-4 text-lg font-extrabold tracking-tight text-slate-900">Clear this project?</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-500">All scenes will be removed from the workspace. You can still use Undo immediately afterward.</p>
+            <h2 id="clear-project-title" className="mt-4 text-lg font-extrabold tracking-tight text-zinc-100">Clear this project?</h2>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-400">All scenes will be removed from the workspace. You can still use Undo immediately afterward.</p>
             <div className="mt-6 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setConfirmClearOpen(false)}
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-bold text-zinc-300 hover:bg-white/[0.06]"
               >
                 Keep project
               </button>
