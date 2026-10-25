@@ -1,4 +1,4 @@
-import { produce, type Draft } from 'immer';
+import { produce, type Draft, current, isDraft } from 'immer';
 import { create } from 'zustand';
 import { createDevice, createProject, createSlide, makeId } from '../model/defaults';
 import { OUTPUT_CATALOG } from '../model/outputs';
@@ -94,10 +94,13 @@ interface EditorState {
   setOverrideOutput: (outputId: Id | null) => void;
 }
 
+/** Deep copy that also works on immer drafts (structuredClone throws on draft proxies). */
+const clone = <T,>(value: T): T => (isDraft(value) ? current(value) : structuredClone(value));
+
 const findSlide = (project: Draft<Project>, slideId: Id) => project.slides.find((slide) => slide.id === slideId);
 
 function freshIds<T extends StudioElement>(element: T): T {
-  return { ...structuredClone(element), id: makeId() };
+  return { ...clone(element), id: makeId() };
 }
 
 export const useEditor = create<EditorState>()((set, get) => {
@@ -162,7 +165,7 @@ export const useEditor = create<EditorState>()((set, get) => {
         // New slides inherit the look of the slide they follow: same background and element styles, empty screen.
         const source = get().project.slides.find((s) => s.id === afterSlideId) ?? get().project.slides.at(-1);
         if (!source) return createSlide();
-        const copy = structuredClone(source);
+        const copy = clone(source);
         return {
           ...copy,
           id: makeId(),
@@ -187,7 +190,7 @@ export const useEditor = create<EditorState>()((set, get) => {
       if (!source) return null;
       const idMap = new Map<string, string>();
       const copy: Slide = {
-        ...structuredClone(source),
+        ...clone(source),
         id: makeId(),
         name: `${source.name} copy`,
         elements: source.elements.map((element) => {
@@ -231,11 +234,11 @@ export const useEditor = create<EditorState>()((set, get) => {
     }, { coalesce: `slide-name-${slideId}` }),
     setBackground: (slideId, background, options) => commit((draft) => {
       for (const slide of draft.slides) {
-        if (options?.allSlides || slide.id === slideId) slide.background = structuredClone(background);
+        if (options?.allSlides || slide.id === slideId) slide.background = clone(background);
       }
     }, { coalesce: options?.coalesce }),
     setSpan: (patch, options) => commit((draft) => {
-      Object.assign(draft.span, structuredClone(patch));
+      Object.assign(draft.span, clone(patch));
     }, { coalesce: options?.coalesce }),
 
     addElement: (slideId, element) => {
@@ -254,13 +257,13 @@ export const useEditor = create<EditorState>()((set, get) => {
           slide.overrides[overrideOutputId] ??= {};
           const bucket = slide.overrides[overrideOutputId];
           for (const element of targets) {
-            const resolved = { ...structuredClone(element), ...(bucket[element.id] ?? {}) } as StudioElement;
+            const resolved = { ...clone(element), ...(bucket[element.id] ?? {}) } as StudioElement;
             const next = typeof patch === 'function'
               ? produce(resolved, (d) => { patch(d as Draft<StudioElement>); })
               : { ...resolved, ...patch } as StudioElement;
             const changed: Record<string, unknown> = { ...(bucket[element.id] ?? {}) };
             for (const key of Object.keys(next) as Array<keyof StudioElement>) {
-              if (JSON.stringify(next[key]) !== JSON.stringify(element[key])) changed[key] = structuredClone(next[key]);
+              if (JSON.stringify(next[key]) !== JSON.stringify(element[key])) changed[key] = clone(next[key]);
               else delete changed[key];
             }
             bucket[element.id] = changed as Partial<StudioElement>;
@@ -270,7 +273,7 @@ export const useEditor = create<EditorState>()((set, get) => {
 
         const apply = (element: Draft<StudioElement>) => {
           if (typeof patch === 'function') patch(element);
-          else Object.assign(element, structuredClone(patch));
+          else Object.assign(element, clone(patch));
         };
         targets.forEach(apply);
 
@@ -278,11 +281,11 @@ export const useEditor = create<EditorState>()((set, get) => {
           for (const source of targets) {
             const styleOnly = (element: Draft<StudioElement>) => {
               const updated = typeof patch === 'function'
-                ? produce(structuredClone(element) as StudioElement, (d) => { patch(d as Draft<StudioElement>); })
-                : ({ ...structuredClone(element), ...patch } as StudioElement);
+                ? produce(clone(element) as StudioElement, (d) => { patch(d as Draft<StudioElement>); })
+                : ({ ...clone(element), ...patch } as StudioElement);
               for (const key of Object.keys(updated)) {
                 if (UNSYNCED_KEYS.has(key)) continue;
-                (element as unknown as Record<string, unknown>)[key] = structuredClone((updated as unknown as Record<string, unknown>)[key]);
+                (element as unknown as Record<string, unknown>)[key] = clone((updated as unknown as Record<string, unknown>)[key]);
               }
             };
             for (const other of draft.slides) {
@@ -382,7 +385,7 @@ export const useEditor = create<EditorState>()((set, get) => {
         }
         const template = draft.slides.at(-1);
         while (queue.length > 0) {
-          const base = template ? structuredClone(template) as Slide : createSlide();
+          const base = template ? clone(template) as Slide : createSlide();
           const slide: Slide = {
             ...base,
             id: makeId(),
@@ -410,7 +413,7 @@ export const useEditor = create<EditorState>()((set, get) => {
         if (draft.outputs.length > 1) draft.outputs = draft.outputs.filter((output) => output.id !== outputId);
       } else {
         const spec = OUTPUT_CATALOG.find((output) => output.id === outputId);
-        if (spec) draft.outputs.push(structuredClone(spec));
+        if (spec) draft.outputs.push(clone(spec));
       }
     }),
     setPrimaryOutput: (outputId) => commit((draft) => {

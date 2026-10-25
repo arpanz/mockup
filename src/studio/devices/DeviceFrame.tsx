@@ -10,6 +10,8 @@ export interface DeviceFrameProps {
   height: number;
   unit: number;
   screenSrc: string | null;
+  /** Editor only: show an "add screenshot" call to action on empty screens. Never in exports. */
+  showDropHint?: boolean;
 }
 
 export function deviceBoxSize(
@@ -23,7 +25,7 @@ export function deviceBoxSize(
     : { width: heightPx * model.aspect, height: heightPx };
 }
 
-function DeviceFrameView({ element, model, width, height, unit, screenSrc }: DeviceFrameProps): ReactElement {
+function DeviceFrameView({ element, model, width, height, unit, screenSrc, showDropHint = false }: DeviceFrameProps): ReactElement {
   const finish = model.finishes.find((option) => option.id === element.finish) ?? model.finishes[0];
   const rotated = element.orientation === 'landscape' && model.kind !== 'laptop' && model.kind !== 'browser';
   const frameWidth = rotated ? height : width;
@@ -118,7 +120,7 @@ function DeviceFrameView({ element, model, width, height, unit, screenSrc }: Dev
         <div style={screenStyle}>
           {screenSrc
             ? <img src={screenSrc} alt="" draggable={false} style={{ width: '100%', height: '100%', display: 'block', objectFit: element.screen.fit, objectPosition: `center ${element.screen.position}` }} />
-            : <Placeholder />}
+            : <Placeholder hint={showDropHint} />}
           {element.glare > 0 && (
             <div
               style={{
@@ -242,17 +244,22 @@ function LaptopBase({ width, body, finish, real }: { width: number; body: string
   );
 }
 
-function Placeholder(): ReactElement {
+function Placeholder({ hint }: { hint: boolean }): ReactElement {
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: 'linear-gradient(145deg,#F4F4F5,#E4E4E7)' }}>
-      <div style={{ position: 'absolute', left: '7%', right: '7%', top: '5%', height: '2.2%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#71717A', font: '600 3.2cqw system-ui' }}>
-        <span>9:41</span><span>◔ ▰</span>
-      </div>
-      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '13%', height: '4%', borderRadius: 999, background: '#D4D4D8' }} />
-      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '23%', height: '23%', borderRadius: '8%', background: 'linear-gradient(135deg,#FAFAFA,#D4D4D8)' }} />
-      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '51%', height: '15%', borderRadius: '8%', background: '#FAFAFA' }} />
-      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '70%', height: '15%', borderRadius: '8%', background: '#D4D4D8' }} />
-      <div style={{ position: 'absolute', left: 0, right: 0, top: '47%', textAlign: 'center', color: 'rgba(63,63,70,.11)', font: '500 4.2cqw system-ui', letterSpacing: '.02em' }}>Drop screenshot</div>
+    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: 'linear-gradient(160deg,#F4F4F5,#E4E4E7)', containerType: 'inline-size' }}>
+      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '7%', height: '3%', borderRadius: 999, background: '#DCDCE0' }} />
+      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '14%', height: '22%', borderRadius: '6cqw', background: '#D9D9DE' }} />
+      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '40%', height: '12%', borderRadius: '6cqw', background: '#FAFAFA' }} />
+      <div style={{ position: 'absolute', left: '8%', right: '8%', top: '56%', height: '12%', borderRadius: '6cqw', background: '#FAFAFA' }} />
+      {hint && (
+        <div style={{ position: 'absolute', inset: '6%', border: '0.9cqw dashed rgba(99,102,241,.55)', borderRadius: '9cqw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3cqw', background: 'rgba(238,242,255,.72)', color: '#4F46E5', textAlign: 'center' }}>
+          <svg viewBox="0 0 24 24" width="18%" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
+          </svg>
+          <div style={{ font: '600 6.5cqw/1.2 Inter, system-ui, sans-serif' }}>Drop screenshot</div>
+          <div style={{ font: '500 4.6cqw/1.3 Inter, system-ui, sans-serif', opacity: .7 }}>or double-click to upload</div>
+        </div>
+      )}
     </div>
   );
 }

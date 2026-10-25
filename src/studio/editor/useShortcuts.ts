@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { StudioElement } from '../model/types';
-import { makeId } from '../model/defaults';
+import { createDevice, createText, makeId } from '../model/defaults';
 import { resolveElement } from '../model/units';
 import { useEditor } from '../store/editorStore';
 import { canvasCommands } from './Canvas';
@@ -61,6 +61,15 @@ export function useShortcuts(handlers: { openFilePicker: () => void; openExport:
       if (event.altKey && event.code === 'KeyS') {
         event.preventDefault();
         handlers.openFilePicker();
+        return;
+      }
+      if (event.altKey && (event.code === 'KeyD' || event.code === 'KeyT') && selection.slideId) {
+        event.preventDefault();
+        const element = event.code === 'KeyD'
+          ? createDevice({ x: 0.5, y: 0.6, h: 0.6 })
+          : createText('caption', { text: 'New text', y: 0.45 });
+        store.addElement(selection.slideId, element);
+        store.select({ elementIds: [element.id] });
         return;
       }
       if (mod && event.shiftKey && key === 'e') {

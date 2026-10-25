@@ -154,7 +154,7 @@ function ElementView({
       const model = resolveDeviceModel(element.model, output.family);
       const box = elementBox(element, output);
       const src = element.screen.assetId ? project.assets[element.screen.assetId]?.src ?? null : null;
-      content = <DeviceFrame element={element} model={model} width={box.width} height={box.height} unit={unit} screenSrc={src} />;
+      content = <DeviceFrame element={element} model={model} width={box.width} height={box.height} unit={unit} screenSrc={src} showDropHint={Boolean(interactive)} />;
       break;
     }
     case 'image':

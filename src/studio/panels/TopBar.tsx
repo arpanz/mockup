@@ -105,6 +105,8 @@ export function TopBar({ onAddScreenshots }: { onAddScreenshots: () => void }) {
               <span>Preview</span><Kbd>P</Kbd>
               <span>Duplicate</span><Kbd>{MOD}D</Kbd>
               <span>Edit text</span><Kbd>Enter</Kbd>
+              <span>Add device</span><Kbd>⌥D</Kbd>
+              <span>Add text</span><Kbd>⌥T</Kbd>
               <span>Export</span><Kbd>{MOD}⇧E</Kbd>
             </div>
           </div>

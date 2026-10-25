@@ -18,7 +18,8 @@ export function applyTemplate(project: Project, template: Template): Project {
       subtitle: subtitle && subtitle.text !== defaultSubtitle ? subtitle.text : entry.subtitle,
     };
   });
-  const count = Math.max(project.slides.length, template.defaultCopy.length);
+  // Keep the user's screenshot count; an empty project gets the template's full set.
+  const count = project.slides.length || template.defaultCopy.length;
   const copyItems = Array.from({ length: count }, (_, index) => copies[index] ?? template.defaultCopy[index % template.defaultCopy.length]);
   const screens = Array.from({ length: count }, (_, index) => screenIds[index] ?? null);
   const designed = template.build(screens, copyItems);

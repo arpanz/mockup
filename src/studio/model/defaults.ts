@@ -163,13 +163,26 @@ export function createSlide(patch: Partial<Slide> = {}): Slide {
   };
 }
 
+const STARTER_COPY = [
+  { title: 'Your work,\n*beautifully* organized', subtitle: 'Everything you need to move from idea to impact.' },
+  { title: 'Stay on top of\n*what matters*', subtitle: 'Smart reminders keep every task on track.' },
+  { title: 'Built for\n*your flow*', subtitle: 'Fast, focused and ready wherever you are.' },
+];
+
 export function createProject(): Project {
   return {
     version: 2,
     id: makeId(),
     name: 'Untitled project',
     outputs: OUTPUT_CATALOG.filter((output) => DEFAULT_OUTPUT_IDS.includes(output.id)),
-    slides: [createSlide({ name: 'Screenshot 1' }), createSlide({ name: 'Screenshot 2' }), createSlide({ name: 'Screenshot 3' })],
+    slides: STARTER_COPY.map((copy, index) => {
+      const slide = createSlide({ name: `Screenshot ${index + 1}` });
+      for (const element of slide.elements) {
+        if (element.type === 'text' && element.role === 'title') element.text = copy.title;
+        if (element.type === 'text' && element.role === 'subtitle') element.text = copy.subtitle;
+      }
+      return slide;
+    }),
     assets: {},
     span: { enabled: false, background: defaultBackground() },
     updatedAt: Date.now(),

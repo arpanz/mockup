@@ -66,7 +66,8 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
           <X size={16} />
         </button>
       </div>
-      <div data-scrollable className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(300px,1fr))] content-start gap-4 overflow-y-auto p-5">
+      <div data-scrollable className="min-h-0 flex-1 overflow-y-auto p-5">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
         {TEMPLATES.filter((template) => category === 'All' || template.category === category).map((template) => (
           <TemplateCard
             key={template.id}
@@ -77,6 +78,7 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
             onSelect={() => apply(template)}
           />
         ))}
+        </div>
       </div>
     </div>
   );
