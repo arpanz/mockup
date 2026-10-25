@@ -68,7 +68,7 @@ function geometry(element: DeviceElement, model: DeviceModel, frameWidth: number
   const style = element.style;
   if (FLAT_STYLES.has(style) && (model.kind === 'phone' || model.kind === 'tablet')) {
     // Even border all the way round, sized like the references (WhatsApp / Notion / Uber Eats).
-    const border = style === 'none' ? 0 : frameWidth * (style === 'glass' ? (model.kind === 'phone' ? .042 : .028) : style === 'outline' ? .03 : (model.kind === 'phone' ? .026 : .018));
+    const border = style === 'none' ? 0 : frameWidth * (style === 'glass' ? (model.kind === 'phone' ? .034 : .024) : style === 'outline' ? .03 : (model.kind === 'phone' ? .026 : .018));
     return {
       frameWidth, frameHeight, radius,
       screen: { x: border, y: border, w: frameWidth - border * 2, h: frameHeight - border * 2, r: Math.max(0, radius - border * (style === 'none' ? 0 : .9)) },
@@ -143,7 +143,7 @@ function frontBackground(element: DeviceElement, finish: DeviceFinish): string {
     case 'minimal':
       return tint;
     case 'glass':
-      return `linear-gradient(160deg, ${hexToRgba(tint, .55)} 0%, ${hexToRgba(tint, .28)} 45%, ${hexToRgba(tint, .4)} 100%)`;
+      return `linear-gradient(160deg, ${hexToRgba(tint, .42)} 0%, ${hexToRgba(tint, .2)} 45%, ${hexToRgba(tint, .3)} 100%)`;
     default:
       return 'transparent';
   }
@@ -156,7 +156,7 @@ function frontShadow(element: DeviceElement, frameWidth: number): string | undef
     case 'matte': return `0 0 0 ${hair}px rgba(0,0,0,.35), inset 0 0 0 ${hair}px rgba(255,255,255,.12)`;
     case 'clay': return `inset ${frameWidth * .012}px ${frameWidth * .014}px ${frameWidth * .03}px rgba(255,255,255,.45), inset ${-frameWidth * .012}px ${-frameWidth * .016}px ${frameWidth * .035}px rgba(0,0,0,.16), 0 0 0 ${hair}px rgba(0,0,0,.08)`;
     case 'minimal': return luminance(element.tint) < .2 ? `inset 0 0 0 ${hair}px rgba(255,255,255,.1)` : `0 0 0 ${hair}px rgba(0,0,0,.1)`;
-    case 'glass': return `inset 0 0 0 ${hair * 1.5}px rgba(255,255,255,.75), 0 0 0 ${hair}px rgba(15,23,42,.08), inset 0 ${frameWidth * .01}px ${frameWidth * .03}px rgba(255,255,255,.35)`;
+    case 'glass': return `inset 0 0 0 ${hair * 1.5}px rgba(255,255,255,.45), 0 0 0 ${hair}px rgba(15,23,42,.08), inset 0 ${frameWidth * .01}px ${frameWidth * .03}px rgba(255,255,255,.35)`;
     default: return undefined;
   }
 }
@@ -235,7 +235,7 @@ function DeviceFrameView({ element, model, width, height, unit, screenSrc, showD
   const screen: CSSProperties = {
     position: 'absolute', left: geo.screen.x, top: geo.screen.y, width: geo.screen.w, height: geo.screen.h,
     borderRadius: geo.screen.r, overflow: 'hidden', background: element.screen.background,
-    boxShadow: style === 'glass' ? `0 0 0 ${hair}px rgba(255,255,255,.6)` : undefined,
+    boxShadow: style === 'glass' ? `0 0 0 ${hair}px rgba(255,255,255,.35)` : undefined,
   };
   // Outline draws its stroke with a border, so its children are offset by it; compensate.
   if (style === 'outline') {
