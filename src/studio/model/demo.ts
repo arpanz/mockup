@@ -87,9 +87,9 @@ export function createDemoProject(): Project {
 
   project.slides = [
     slide('Organized', { kind: 'linear', angle: 180, stops: [{ color: '#EEF2FF', position: 0 }, { color: '#FFFFFF', position: 1 }], noise: 0 }, [
-      createText('title', { text: 'Your money,\n*beautifully* organized' }),
+      createText('title', { text: 'Your money,\n*sorted.*' }),
       createText('subtitle', { text: 'Budgets, goals and insights in one calm place.' }),
-      createDevice({ screen: { assetId: assets[0].id, fit: 'cover', position: 'top', background: '#FFFFFF' }, y: 0.67 }),
+      createDevice({ screen: { assetId: assets[0].id, fit: 'cover', position: 'top', background: '#FFFFFF' } }),
     ]),
     slide('Insights', { kind: 'linear', angle: 160, stops: [{ color: '#0B1120', position: 0 }, { color: '#1E1B4B', position: 1 }], noise: 0.06 }, [
       createText('title', {
@@ -98,14 +98,14 @@ export function createDemoProject(): Project {
         accent: { style: 'highlight', color: '#38BDF8', textColor: '#0B1120', paint: solid('#38BDF8') },
       }),
       createText('subtitle', { text: 'Clear charts that tell you what changed and why.', fill: solid('#94A3B8') }),
-      createDevice({ screen: { assetId: assets[1].id, fit: 'cover', position: 'top', background: '#0B1120' }, y: 0.68, finish: 'black-titanium', tiltY: -14, tiltX: 4, rotation: 0 }),
+      createDevice({ screen: { assetId: assets[1].id, fit: 'cover', position: 'top', background: '#0B1120' }, finish: 'black-titanium', tiltY: -14, tiltX: 4, rotation: 0 }),
     ]),
     slide('Activity', { kind: 'linear', angle: 180, stops: [{ color: '#FFF7ED', position: 0 }, { color: '#FFEDD5', position: 1 }], noise: 0 }, [
-      createText('badge', { text: 'New', y: 0.06, plate: { enabled: true, paint: solid('#F97316'), radius: 999, padX: 20, padY: 10, stroke: { enabled: false, width: 2, color: '#000000', opacity: 1 } } }),
-      createText('title', { text: 'Every move,\n*tracked* for you', y: 0.14, accent: { style: 'underline', color: '#F97316', textColor: '#FFFFFF', paint: solid('#F97316') } }),
-      createText('subtitle', { text: 'Smart categories learn how you spend.', y: 0.235 }),
-      createDevice({ screen: { assetId: assets[3].id, fit: 'cover', position: 'top', background: '#FFFFFF' }, x: 0.34, y: 0.72, h: 0.64, rotation: -6 }),
-      createDevice({ screen: { assetId: assets[2].id, fit: 'cover', position: 'top', background: '#FFFFFF' }, x: 0.68, y: 0.69, h: 0.64, rotation: 5 }),
+      createText('badge', { text: 'New', y: 0.05, plate: { enabled: true, paint: solid('#F97316'), radius: 999, padX: 20, padY: 10, stroke: { enabled: false, width: 2, color: '#000000', opacity: 1 } } }),
+      createText('title', { text: 'Every move,\n*tracked* for you', y: 0.125, accent: { style: 'underline', color: '#F97316', textColor: '#FFFFFF', paint: solid('#F97316') } }),
+      createText('subtitle', { text: 'Smart categories learn how you spend.', y: 0.215 }),
+      createDevice({ screen: { assetId: assets[3].id, fit: 'cover', position: 'top', background: '#FFFFFF' }, x: 0.33, y: 0.74, h: 0.72, rotation: -6 }),
+      createDevice({ screen: { assetId: assets[2].id, fit: 'cover', position: 'top', background: '#FFFFFF' }, x: 0.69, y: 0.71, h: 0.72, rotation: 5 }),
     ]),
   ];
   return project;

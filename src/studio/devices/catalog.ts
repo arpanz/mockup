@@ -170,9 +170,10 @@ export const DEVICE_MODELS: DeviceModel[] = [
     { left: .045, top: .045, width: .91, height: .91, radius: .035 }, 'punch-hole', 1600 / 2560,
   ),
   {
-    id: 'macbook-pro-14', name: 'MacBook Pro 14″', family: 'mac', kind: 'laptop', aspect: 1.58,
-    screen: { left: .018, top: .018, width: .964, height: .79, radius: .025 },
-    bodyRadius: .035, cutout: 'notch', finishes: aluminum, buttons: [], screenAspect: 3024 / 1964,
+    // Box = base width × (lid + base) height. Lid is 92.6% of the base width; see LaptopFrame.
+    id: 'macbook-pro-14', name: 'MacBook Pro 14″', family: 'mac', kind: 'laptop', aspect: 1.487,
+    screen: { left: .0555, top: .0413, width: .889, height: .8584, radius: .006 },
+    bodyRadius: .026, cutout: 'notch', finishes: aluminum, buttons: [], screenAspect: 3024 / 1964,
   },
   {
     id: 'browser', name: 'Browser', family: 'web', kind: 'browser', aspect: 1.6,

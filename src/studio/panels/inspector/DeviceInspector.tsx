@@ -1,11 +1,46 @@
-import { useRef } from 'react';
+import { useRef, type CSSProperties } from 'react';
 import { ImagePlus, RectangleHorizontal, RectangleVertical, Trash2, Upload } from 'lucide-react';
 import { DEVICE_MODELS, resolveDeviceModel } from '../../devices/catalog';
-import type { DeviceElement, OutputSpec } from '../../model/types';
+import type { DeviceElement, DeviceFrameStyle, OutputSpec } from '../../model/types';
 import { useEditor } from '../../store/editorStore';
 import { readImageFile } from '../../store/persistence';
 import { ColorField, Field, Section, Segmented, Select, SliderField, Toggle, Tooltip } from '../../ui';
 import { PositionSection, ShadowSection, type Update } from './common';
+
+const STYLE_TINT: Record<DeviceFrameStyle, string> = {
+  real: '#E5E7EB', clay: '#E5E7EB', matte: '#1F2937', minimal: '#0B0B0C', glass: '#FFFFFF', outline: '#0F172A', none: '#E5E7EB',
+};
+
+const FRAME_STYLES: Array<{ value: DeviceFrameStyle; label: string; preview: CSSProperties }> = [
+  { value: 'real', label: 'Real', preview: { background: 'linear-gradient(90deg,#77797D,#343538 20%,#343538 80%,#77797D)', boxShadow: 'inset 0 0 0 2px #030304, inset 0 0 0 1px #9a9ba0' } },
+  { value: 'minimal', label: 'Minimal', preview: { background: '#0B0B0C' } },
+  { value: 'glass', label: 'Glass', preview: { background: 'rgba(255,255,255,.35)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.8)' } },
+  { value: 'clay', label: 'Clay', preview: { background: 'radial-gradient(circle at 30% 15%,#fff,#d4d4d8 60%)' } },
+  { value: 'matte', label: 'Matte', preview: { background: '#1F2937', boxShadow: 'inset 0 0 0 2px #030304' } },
+  { value: 'outline', label: 'Line', preview: { background: 'transparent', boxShadow: 'inset 0 0 0 1.5px #E4E4E7' } },
+  { value: 'none', label: 'None', preview: { background: 'transparent' } },
+];
+
+function FrameStyleGrid({ value, onChange }: { value: DeviceFrameStyle; onChange: (style: DeviceFrameStyle) => void }) {
+  return (
+    <div className="grid grid-cols-4 gap-1.5">
+      {FRAME_STYLES.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          aria-pressed={value === option.value}
+          className={`flex flex-col items-center gap-1.5 rounded-lg border px-1 pb-1.5 pt-2 text-[11px] transition-colors ${value === option.value ? 'border-indigo-500/80 bg-indigo-500/10 text-zinc-100' : 'border-white/[0.07] text-zinc-400 hover:border-white/20 hover:text-zinc-200'}`}
+        >
+          <span className="relative h-[30px] w-[16px] rounded-[5px]" style={option.preview}>
+            <span className="absolute inset-[2.5px] rounded-[3px] bg-gradient-to-b from-indigo-300 to-indigo-500" />
+          </span>
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 const TILT_PRESETS: Array<{ id: string; label: string; tiltX: number; tiltY: number; rotation: number }> = [
   { id: 'flat', label: 'Flat', tiltX: 0, tiltY: 0, rotation: 0 },
@@ -87,18 +122,13 @@ export function DeviceInspector({ element, output, update, slideId }: { element:
 
       <Section title="Device">
         <Select value={element.model} options={modelOptions} onChange={(value) => update({ model: value, finish: 'default' }, 'model')} />
-        <Segmented
-          fullWidth
-          size="sm"
+        <FrameStyleGrid
           value={element.style}
-          onChange={(style) => update({ style }, 'style')}
-          options={[
-            { value: 'real', label: 'Real' },
-            { value: 'clay', label: 'Clay' },
-            { value: 'matte', label: 'Matte' },
-            { value: 'outline', label: 'Line' },
-            { value: 'none', label: 'None' },
-          ]}
+          onChange={(style) => {
+            // Swap in the new style's default color unless the user picked their own.
+            const keepTint = element.tint.toUpperCase() !== STYLE_TINT[element.style];
+            update({ style, ...(keepTint ? {} : { tint: STYLE_TINT[style] }) }, 'style');
+          }}
         />
         {element.style === 'real' && (
           <Field label="Finish">
@@ -117,8 +147,8 @@ export function DeviceInspector({ element, output, update, slideId }: { element:
             </div>
           </Field>
         )}
-        {(element.style === 'clay' || element.style === 'matte' || element.style === 'outline') && (
-          <Field label={element.style === 'outline' ? 'Line' : 'Color'}>
+        {element.style !== 'real' && element.style !== 'none' && (
+          <Field label={element.style === 'outline' ? 'Line' : element.style === 'glass' ? 'Tint' : 'Color'}>
             <ColorField value={element.tint} allowAlpha={false} onChange={(tint) => update({ tint }, 'tint')} />
           </Field>
         )}

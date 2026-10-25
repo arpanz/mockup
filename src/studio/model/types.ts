@@ -113,6 +113,8 @@ export interface TextElement extends BaseElement {
   role: 'title' | 'subtitle' | 'caption' | 'badge';
   text: string;
   w: number;              // max line width, fraction of W
+  /** Shrink the font (down to 60%) so the text wraps to at most this many lines. Titles default to 2; 0 = off. */
+  maxLines?: number;
   fontFamily: string;     // a family from fonts/catalog
   fontWeight: number;     // 100..900
   fontSize: number;       // units
@@ -138,7 +140,11 @@ export interface TextElement extends BaseElement {
   };
 }
 
-export type DeviceFrameStyle = 'real' | 'clay' | 'matte' | 'outline' | 'none';
+/**
+ * real: metal band + black glass · matte: painted body · clay: soft monochrome model ·
+ * minimal: flat uniform border · glass: frosted translucent rim · outline: hairline stroke · none: screen only
+ */
+export type DeviceFrameStyle = 'real' | 'clay' | 'matte' | 'minimal' | 'glass' | 'outline' | 'none';
 
 export interface DeviceElement extends BaseElement {
   type: 'device';

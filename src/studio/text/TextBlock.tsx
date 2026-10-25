@@ -1,4 +1,4 @@
-import { memo, type CSSProperties, type ReactElement } from 'react';
+import { memo, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import type { Paint, TextElement } from '../model/types';
 import { hexToRgba } from '../model/units';
 import { fontStack, useFont } from './fontLoader';
@@ -56,17 +56,40 @@ function brushStroke(color: string): string {
 }
 
 function TextBlockInner({ element, unit, canvasWidth }: TextBlockProps): ReactElement {
-  useFont(element.fontFamily, element.fontWeight);
-  useFont('Instrument Serif', 400);
+  const fontReady = useFont(element.fontFamily, element.fontWeight);
+  const serifReady = useFont('Instrument Serif', 400);
   const lines = parseRichText(element.text);
   const width = element.w * canvasWidth;
+  const basePx = element.fontSize * unit;
+  const maxLines = element.maxLines ?? (element.role === 'title' ? 2 : 0);
+  const ref = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
+
+  // Auto-fit: step the size down until the text wraps to at most `maxLines` lines (never below 60%).
+  // Runs before paint and again once web fonts arrive, in the editor and in exports alike.
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node || !maxLines || element.plate.enabled) {
+      setFit(1);
+      return;
+    }
+    let scale = 1;
+    const linesAt = (s: number) => {
+      node.style.fontSize = `${basePx * s}px`;
+      // offsetHeight is layout size, unaffected by the canvas zoom transform.
+      return node.offsetHeight / (basePx * s * element.lineHeight);
+    };
+    while (scale > .6 && linesAt(scale) > maxLines + .3) scale = Math.round((scale - .04) * 100) / 100;
+    node.style.fontSize = `${basePx * scale}px`;
+    setFit(scale);
+  }, [element.text, basePx, width, maxLines, element.lineHeight, element.letterSpacing, element.fontFamily, element.fontWeight, element.transform, element.plate.enabled, fontReady, serifReady]);
   const style: CSSProperties = {
     display: 'block',
     width: `${width}px`,
     margin: 0,
     fontFamily: fontStack(element.fontFamily),
     fontWeight: element.fontWeight,
-    fontSize: `${element.fontSize * unit}px`,
+    fontSize: `${basePx * fit}px`,
     lineHeight: element.lineHeight,
     letterSpacing: `${element.letterSpacing}em`,
     textAlign: element.align,
@@ -107,7 +130,7 @@ function TextBlockInner({ element, unit, canvasWidth }: TextBlockProps): ReactEl
   const accentStyle = element.accent.style;
 
   return (
-    <div style={style}>
+    <div ref={ref} style={style}>
       <span style={plate}>
         {lines.map((line, lineIndex) => (
           <span key={lineIndex}>

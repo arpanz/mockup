@@ -98,6 +98,20 @@ export function TextInspector({ element, output, update }: { element: TextElemen
           />
         </div>
         <SliderField label="Width" value={Math.round(element.w * 100)} min={10} max={100} step={1} unit="%" defaultValue={86} onChange={(value) => update({ w: value / 100 }, 'width', 'content')} />
+        <Field label="Fit to">
+          <Segmented
+            fullWidth
+            size="sm"
+            value={String(element.maxLines ?? (element.role === 'title' ? 2 : 0))}
+            onChange={(value) => update({ maxLines: Number(value) }, 'max-lines')}
+            options={[
+              { value: '0', label: 'Off', title: 'Never shrink' },
+              { value: '1', label: '1 line' },
+              { value: '2', label: '2 lines' },
+              { value: '3', label: '3 lines' },
+            ]}
+          />
+        </Field>
       </Section>
 
       <Section title="Fill">

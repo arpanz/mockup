@@ -31,8 +31,8 @@ export const defaultBackground = (): Background => ({
 
 export function createText(role: TextElement['role'], patch: Partial<TextElement> = {}): TextElement {
   const presets: Record<TextElement['role'], Partial<TextElement>> = {
-    title: { text: 'Your work,\n*beautifully* organized', fontSize: 78, fontWeight: 800, lineHeight: 1.08, letterSpacing: -0.02, y: 0.12, w: 0.86 },
-    subtitle: { text: 'Everything you need to move from idea to impact.', fontSize: 34, fontWeight: 500, lineHeight: 1.35, letterSpacing: 0, y: 0.215, w: 0.78 },
+    title: { text: 'Your work,\n*organized*', fontSize: 112, fontWeight: 800, lineHeight: 1.04, letterSpacing: -0.025, y: 0.1, w: 0.88 },
+    subtitle: { text: 'Everything you need to move from idea to impact.', fontSize: 50, fontWeight: 500, lineHeight: 1.3, letterSpacing: -0.01, y: 0.19, w: 0.84 },
     caption: { text: 'Caption', fontSize: 26, fontWeight: 600, lineHeight: 1.3, letterSpacing: 0, y: 0.5, w: 0.6 },
     badge: { text: 'NEW', fontSize: 22, fontWeight: 800, lineHeight: 1, letterSpacing: 0.08, y: 0.05, w: 0.5, transform: 'uppercase' },
   };
@@ -87,12 +87,12 @@ export function createDevice(patch: Partial<DeviceElement> = {}): DeviceElement 
     visible: true,
     locked: false,
     x: 0.5,
-    y: 0.66,
+    y: 0.645,
     rotation: 0,
     opacity: 1,
-    shadow: { enabled: true, x: 0, y: 30, blur: 70, spread: 0, color: '#0F172A', opacity: 0.22 },
+    shadow: { enabled: true, x: 0, y: 24, blur: 60, spread: 0, color: '#0F172A', opacity: 0.18 },
     model: 'auto',
-    h: 0.72,
+    h: 0.79,
     style: 'real',
     finish: 'default',
     tint: '#E5E7EB',
@@ -164,8 +164,8 @@ export function createSlide(patch: Partial<Slide> = {}): Slide {
 }
 
 const STARTER_COPY = [
-  { title: 'Your work,\n*beautifully* organized', subtitle: 'Everything you need to move from idea to impact.' },
-  { title: 'Stay on top of\n*what matters*', subtitle: 'Smart reminders keep every task on track.' },
+  { title: 'Your work,\n*organized*', subtitle: 'Everything you need to move from idea to impact.' },
+  { title: 'Never miss\n*a beat*', subtitle: 'Smart reminders keep every task on track.' },
   { title: 'Built for\n*your flow*', subtitle: 'Fast, focused and ready wherever you are.' },
 ];
 
