@@ -42,7 +42,9 @@ interface Style {
   accentStyle?: TextElement['accent']['style'];
   font?: string; weight?: number; size?: number; tracking?: number;
   /** Subtitle typeface; defaults to Inter. */
-  body?: string; bodyWeight?: number;
+  body?: string; bodyWeight?: number; bodySize?: number;
+  /** Per-slide text tweaks: a left-aligned slide in a centered set, or a device-only slide with no text. */
+  textAt?: (i: number) => { align?: 'left' | 'center'; hidden?: boolean };
   /** A small numbered label above the headline ("01", "02"…). */
   eyebrow?: string;
   align?: 'left' | 'center';
@@ -59,6 +61,28 @@ const solidBg = (color: string): Background => ({ kind: 'solid', color, noise: 0
 const art = (file: string, overlay?: string, width = 1024, height = 1536): Art => ({ file, width, height, overlay });
 const artAssetId = (file: string) => `template-art-${file}`;
 const alternate = (a: Partial<DeviceElement>, b: Partial<DeviceElement>) => (i: number) => (i % 2 ? b : a);
+
+/**
+ * A different camera on every slide, like a hand-made store set: a straight phone cropped by the bottom edge,
+ * two parallel phones turned clockwise, a left-aligned slide with one phone turned the other way, then a device-only close-up.
+ */
+const CAMERAS: Partial<DeviceElement>[] = [
+  { x: 0.5, y: 0.73, h: 0.84 },
+  { x: 0.24, y: 0.66, h: 0.66, rotation: 25 },
+  { x: 0.6, y: 0.74, h: 0.66, rotation: -28, tiltX: 8 },
+  { x: 0.56, y: 0.53, h: 1.06, rotation: 14 },
+];
+const cameraCycle = (tint: string): Pick<Style, 'deviceAt' | 'extras' | 'textAt'> => ({
+  deviceAt: (i) => ({ ...CAMERAS[i % CAMERAS.length], style: 'minimal', tint }),
+  // The pair: a parallel phone one phone-width (plus a gap) to the right, half off the edge, showing the next
+  // screenshot. The two never overlap.
+  extras: (i, screens) => i % CAMERAS.length !== 1 ? [] : [createDevice({
+    name: 'Second device', x: 1.04, y: 0.66, h: 0.66, rotation: 25, style: 'minimal', tint,
+    screen: { assetId: screens[(i + 1) % Math.max(1, screens.length)] ?? null, fit: 'cover', position: 'top', background: '#FFFFFF' },
+    shadow: { enabled: true, x: 0, y: 28, blur: 68, spread: 0, color: '#000000', opacity: 0.22 },
+  })],
+  textAt: (i) => ({ align: i % CAMERAS.length === 2 ? 'left' : 'center', hidden: i % CAMERAS.length === 3 }),
+});
 
 const configs: Array<{ id: string; name: string; category: Template['category']; description: string; style: Style }> = [
   // ── Art-directed sets with generated backgrounds ──
@@ -90,6 +114,17 @@ const configs: Array<{ id: string; name: string; category: Template['category'];
   { id: 'silk', name: 'Silk', category: 'Panorama', description: 'One sweep of silk across every screenshot, phones flowing between frames.', style: {
     layout: 'panorama', art: art('silk-panorama', undefined, 1536, 1024), bg: solidBg('#1B1440'), ink: '#FFFFFF', muted: '#E9D5FF', accent: '#FDBA74',
     font: 'Outfit', weight: 700, size: 116, body: 'Outfit', bodyWeight: 400, device: { style: 'real', finish: 'black-titanium' } } },
+
+  // ── Hand-composed sets: a different camera on every slide ──
+  { id: 'sky', name: 'Sky', category: 'Bold', description: 'Sky-blue gradient, big rounded blue headlines and a new camera on every slide.', style: {
+    layout: 'classic', bg: linear('#DDEFFF', '#4E9FEF', 172), ink: '#1F7FDB', muted: '#0E1B33', accent: '#1F7FDB',
+    font: 'Fredoka', weight: 600, size: 142, body: 'Fredoka', bodyWeight: 600, bodySize: 76, titleY: 0.085, subtitleY: 0.2, ...cameraCycle('#0E0F12') } },
+  { id: 'mint-night', name: 'Mint Night', category: 'Dark', description: 'Deep navy into green, mint headlines and a new camera on every slide.', style: {
+    layout: 'classic', bg: linear('#0B1224', '#0B5A47', 172), ink: '#5EEAD4', muted: '#FFFFFF', accent: '#5EEAD4',
+    font: 'Fredoka', weight: 600, size: 142, body: 'Fredoka', bodyWeight: 600, bodySize: 76, titleY: 0.085, subtitleY: 0.2, ...cameraCycle('#050608') } },
+  { id: 'peach', name: 'Peach', category: 'Playful', description: 'Warm peach gradient, chunky rust headlines and a new camera on every slide.', style: {
+    layout: 'classic', bg: linear('#FFF1E4', '#FB9A68', 172), ink: '#C2410C', muted: '#2A1408', accent: '#C2410C',
+    font: 'Baloo 2', weight: 800, size: 142, body: 'Baloo 2', bodyWeight: 700, bodySize: 76, titleY: 0.085, subtitleY: 0.2, ...cameraCycle('#14100E') } },
 
   // ── Flat 2D illustrated backgrounds ──
   { id: 'bauhaus', name: 'Bauhaus', category: 'Illustrated', description: 'Bold primary shapes on cream paper, framed by a crisp black phone.', style: {
@@ -168,7 +203,8 @@ function build(config: typeof configs[number], screens: Array<string | null>, co
     const text = copyItems[i] ?? copy[i % copy.length];
     // Flip layouts put the text under the device on every other slide.
     const textBelow = layout === 'flip' && i % 2 === 1;
-    const left = style.align === 'left' || layout === 'offset';
+    const slideText = style.textAt?.(i) ?? {};
+    const left = (slideText.align ?? style.align) === 'left' || layout === 'offset';
     const titleW = style.titleW ?? (left ? 0.84 : 0.86);
     const titleX = left ? 0.08 + titleW / 2 : 0.5;
     const eyebrowGap = style.eyebrow && !textBelow ? 0.03 : 0;
@@ -185,8 +221,10 @@ function build(config: typeof configs[number], screens: Array<string | null>, co
     });
     const subtitle = createText('subtitle', {
       text: text.subtitle, x: left ? 0.08 + 0.4 : 0.5, y: subtitleY, w: 0.8,
-      align: left ? 'left' : 'center', fontFamily: style.body ?? 'Inter', fontWeight: style.bodyWeight ?? 500, fontSize: 48, fill: solid(style.muted),
+      align: left ? 'left' : 'center', fontFamily: style.body ?? 'Inter', fontWeight: style.bodyWeight ?? 500, fontSize: style.bodySize ?? 48, fill: solid(style.muted),
     });
+    // A device-only slide keeps its copy, just hidden, so switching templates later brings it back.
+    if (slideText.hidden) title.visible = subtitle.visible = false;
     const eyebrow = style.eyebrow
       ? [createText('caption', {
         name: 'Eyebrow', text: String(i + 1).padStart(2, '0'), x: left ? 0.08 + 0.15 : 0.5, y: titleY - 0.078, w: 0.3,
