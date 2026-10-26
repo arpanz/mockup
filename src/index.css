@@ -107,3 +107,16 @@ input[type='color']::-webkit-color-swatch {
     border-color: rgba(255, 255, 255, 0.14);
   }
 }
+
+/* Enter animations for popovers, dialogs and toasts (CSS keeps motion libraries out of the bundle). */
+@keyframes ff-pop {
+  from { opacity: 0; transform: translateY(var(--ff-enter-y, -4px)) scale(.97); }
+}
+@keyframes ff-fade {
+  from { opacity: 0; }
+}
+.ff-pop { animation: ff-pop .14s cubic-bezier(.2, .8, .2, 1); }
+.ff-fade { animation: ff-fade .14s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .ff-pop, .ff-fade { animation: none; }
+}

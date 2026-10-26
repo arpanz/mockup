@@ -143,6 +143,7 @@ export function TopBar({ onAddScreenshots }: { onAddScreenshots: () => void }) {
               type="button"
               onClick={() => {
                 useEditor.getState().newProject();
+                useEditor.getState().setMode('templates');
                 setConfirmNew(false);
               }}
               className="flex h-8 items-center gap-1.5 rounded-lg bg-red-500/90 px-3 text-[13px] font-medium text-white hover:bg-red-500"

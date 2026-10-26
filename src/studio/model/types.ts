@@ -207,6 +207,8 @@ export interface Asset {
   src: string;            // data URL
   width: number;
   height: number;
+  /** A placeholder screen from a template; adding real screenshots replaces it first. */
+  sample?: boolean;
 }
 
 export interface Project {

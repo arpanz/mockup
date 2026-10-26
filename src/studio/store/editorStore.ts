@@ -377,7 +377,7 @@ export const useEditor = create<EditorState>()((set, get) => {
           if (queue.length === 0) break;
           for (const element of slide.elements) {
             if (queue.length === 0) break;
-            if (element.type === 'device' && !element.screen.assetId) {
+            if (element.type === 'device' && (!element.screen.assetId || draft.assets[element.screen.assetId]?.sample)) {
               element.screen.assetId = queue.shift() ?? null;
               lastSlideId = slide.id;
             }
@@ -403,6 +403,9 @@ export const useEditor = create<EditorState>()((set, get) => {
           lastSlideId = slide.id;
           queue = queue.filter(Boolean);
         }
+        // Drop sample screens nothing shows any more.
+        const used = new Set(draft.slides.flatMap((slide) => slide.elements.flatMap((element) => element.type === 'device' && element.screen.assetId ? [element.screen.assetId] : [])));
+        for (const [id, asset] of Object.entries(draft.assets)) if (asset.sample && !used.has(id)) delete draft.assets[id];
       });
       if (lastSlideId) set((state) => ({ selection: { ...state.selection, slideId: lastSlideId, elementIds: [] } }));
     },

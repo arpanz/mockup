@@ -1,5 +1,5 @@
 import type { Project } from '../model/types';
-import { createRenderSession, type RenderOptions } from './renderSlide';
+import type { RenderOptions } from './renderSlide';
 
 export interface ExportJob {
   slideIds?: string[];
@@ -58,6 +58,8 @@ export async function exportProject(
   signal?: AbortSignal,
 ): Promise<{ files: number; bytes: number }> {
   const plan = exportFilePlan(project, job);
+  // The renderer (html-to-image, font embedding) loads on first export, not with the app.
+  const { createRenderSession } = await import('./renderSlide');
   if (!plan.length) throw new Error('Select at least one slide and one output size to export.');
   const { default: JSZip } = await import('jszip');
   const zip = new JSZip();

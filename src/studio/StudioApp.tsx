@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createDemoProject } from './model/demo';
+import { createProject } from './model/defaults';
 import { useEditor } from './store/editorStore';
 import { loadProject, readImageFile, saveProject } from './store/persistence';
 import { Canvas, PANEL_INSET } from './editor/Canvas';
@@ -24,7 +24,11 @@ function useHydrateAndAutosave() {
     loadProject()
       .catch(() => null)
       .then((saved) => {
-        if (!cancelled) useEditor.getState().loadProject(saved ?? createDemoProject());
+        if (cancelled) return;
+        const store = useEditor.getState();
+        store.loadProject(saved ?? createProject());
+        // First visit: start by picking a look rather than editing an empty project.
+        if (!saved) store.setMode('templates');
       });
     return () => { cancelled = true; };
   }, []);
