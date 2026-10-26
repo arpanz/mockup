@@ -36,7 +36,9 @@ export function withSampleScreens(project: Project): Project {
 }
 
 /** Earlier builds drew different sample screens; their names map to the screen that replaced each one. */
-const LEGACY_SAMPLES: Record<string, number> = { 'Overview.svg': 0, 'Insights.svg': 1, 'Activity.svg': 2, 'Goals.svg': 3 };
+const LEGACY_SAMPLES: Record<string, number> = {
+  'Overview.svg': 0, 'Activity.svg': 2, 'Goals.svg': 3, 'Today.svg': 0, 'Calendar.svg': 1, 'Habits.svg': 2, 'Insights.svg': 3,
+};
 
 /** Swap sample screens saved by an earlier build for the current ones, keeping their ids so devices still point at them. */
 export function refreshSampleScreens(project: Project): Project {
@@ -46,7 +48,7 @@ export function refreshSampleScreens(project: Project): Project {
   const assets = { ...project.assets };
   for (const asset of Object.values(project.assets)) {
     if (!asset.sample || current.has(asset.src)) continue;
-    const replacement = samples[LEGACY_SAMPLES[asset.name] ?? 0];
+    const replacement = samples.find((sample) => sample.name === asset.name) ?? samples[LEGACY_SAMPLES[asset.name] ?? 0];
     assets[asset.id] = { ...asset, name: replacement.name, src: replacement.src };
     changed = true;
   }

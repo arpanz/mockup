@@ -14,7 +14,7 @@ type Layout = 'classic' | 'bleed' | 'flip' | 'offset' | 'tilt' | 'duo' | 'panora
 export interface TemplateCopy { title: string; subtitle: string }
 export interface Template {
   id: string; name: string;
-  category: 'Minimal' | 'Bold' | 'Dark' | 'Playful' | 'Editorial' | 'Panorama';
+  category: 'Minimal' | 'Bold' | 'Dark' | 'Playful' | 'Editorial' | 'Illustrated' | 'Panorama';
   description: string;
   build: (screens: Array<string | null>, copy: TemplateCopy[]) => { slides: Slide[]; span: Project['span']; assets: Asset[] };
   defaultCopy: TemplateCopy[];
@@ -73,8 +73,7 @@ const configs: Array<{ id: string; name: string; category: Template['category'];
     font: 'DM Serif Display', weight: 400, size: 128, tracking: -0.01, device: { style: 'glass', tint: '#FFFFFF' } } },
   { id: 'chrome', name: 'Chrome', category: 'Bold', description: 'Liquid iridescent chrome and crisp, confident type.', style: {
     layout: 'tilt', art: art('chrome-iridescent'), bg: solidBg('#F4F3F8'), ink: '#14121A', muted: '#4B4759', accent: '#6D5DF6', accentStyle: 'gradient',
-    font: 'Bricolage Grotesque', weight: 700, size: 120, body: 'Instrument Sans', titleY: 0.115, device: { style: 'minimal', tint: '#0B0B0F' },
-    deviceAt: alternate({ tiltY: -12, tiltX: 5, rotation: -3 }, { tiltY: 12, tiltX: 5, rotation: 3 }) } },
+    font: 'Bricolage Grotesque', weight: 700, size: 108, body: 'Instrument Sans', titleY: 0.115, device: { style: 'minimal', tint: '#0B0B0F', tiltY: 20, tiltX: 10 } } },
   { id: 'spotlight', name: 'Spotlight', category: 'Dark', description: 'A single pool of light on charcoal, gold serif and titanium.', style: {
     layout: 'classic', art: art('spotlight-dark'), bg: solidBg('#0E0E10'), ink: '#F7F2EA', muted: '#B9B2A6', accent: '#D9B77C', accentStyle: 'italic-serif',
     font: 'Playfair Display', weight: 600, size: 116, eyebrow: '#D9B77C', device: { style: 'real', finish: 'natural-titanium', y: 0.66 } } },
@@ -92,6 +91,32 @@ const configs: Array<{ id: string; name: string; category: Template['category'];
     layout: 'panorama', art: art('silk-panorama', undefined, 1536, 1024), bg: solidBg('#1B1440'), ink: '#FFFFFF', muted: '#E9D5FF', accent: '#FDBA74',
     font: 'Outfit', weight: 700, size: 116, body: 'Outfit', bodyWeight: 400, device: { style: 'real', finish: 'black-titanium' } } },
 
+  // ── Flat 2D illustrated backgrounds ──
+  { id: 'bauhaus', name: 'Bauhaus', category: 'Illustrated', description: 'Bold primary shapes on cream paper, framed by a crisp black phone.', style: {
+    layout: 'classic', art: art('bauhaus'), bg: solidBg('#F2EAD8'), ink: '#161616', muted: '#4A4237', accent: '#D8402A',
+    font: 'Archivo Black', weight: 400, size: 104, tracking: -0.01, body: 'Archivo', bodyWeight: 500, eyebrow: '#D8402A', device: { style: 'minimal', tint: '#161616', h: 0.7, y: 0.65 } } },
+  { id: 'memphis', name: 'Memphis', category: 'Illustrated', description: 'Confetti squiggles on blush pink with a highlighter headline.', style: {
+    layout: 'classic', art: art('memphis'), bg: solidBg('#F9D9DC'), ink: '#2B1B3D', muted: '#6B5374', accent: '#FDE047', accentStyle: 'highlight',
+    font: 'Unbounded', weight: 700, size: 96, body: 'DM Sans', bodyWeight: 500, device: { style: 'real', finish: 'white-titanium' } } },
+  { id: 'cutout', name: 'Cut-Out', category: 'Illustrated', description: 'Matisse-style paper cut-outs and a painted cobalt phone.', style: {
+    layout: 'bleed', art: art('cutout'), bg: solidBg('#F5EFE3'), ink: '#1D2B6B', muted: '#4C5683', accent: '#E8613C', accentStyle: 'italic-serif',
+    font: 'Fraunces', weight: 700, size: 120, body: 'DM Sans', device: { style: 'matte', tint: '#2340A8' } } },
+  { id: 'riso', name: 'Riso', category: 'Illustrated', description: 'Grainy risograph pink and blue with sharp grotesk type.', style: {
+    layout: 'classic', art: art('riso'), bg: solidBg('#F4EFEA'), ink: '#16162B', muted: '#4A4560', accent: '#FF2E93',
+    font: 'Space Grotesk', weight: 700, size: 118, tracking: -0.02, body: 'Space Grotesk', bodyWeight: 500, eyebrow: '#FF2E93', device: { style: 'minimal', tint: '#16162B' } } },
+  { id: 'hills', name: 'Hills', category: 'Illustrated', description: 'Layered sunrise hills in peach and plum, calm and warm.', style: {
+    layout: 'classic', art: art('hills'), bg: solidBg('#FBDCC4'), ink: '#4A1F3D', muted: '#7A4A55', accent: '#D9653B',
+    font: 'Lexend', weight: 700, size: 112, tracking: -0.02, body: 'Lexend', bodyWeight: 400, device: { style: 'clay', tint: '#FDEBDD', h: 0.64, y: 0.63 } } },
+  { id: 'retro-stripes', name: 'Retro Stripes', category: 'Illustrated', description: 'A seventies rainbow sweep in rust and mustard with rounded type.', style: {
+    layout: 'classic', art: art('stripes'), bg: solidBg('#FBF1DF'), ink: '#3B2416', muted: '#6E5140', accent: '#D9622B',
+    font: 'Baloo 2', weight: 800, size: 124, body: 'Nunito', bodyWeight: 600, device: { style: 'minimal', tint: '#3B2416', h: 0.64, y: 0.63 } } },
+  { id: 'night-sky', name: 'Night Sky', category: 'Illustrated', description: 'A flat starry night over layered mountains, lit by a moon-gold accent.', style: {
+    layout: 'classic', art: art('night'), bg: solidBg('#0B1A4A'), ink: '#FFFFFF', muted: '#C7D2FE', accent: '#FDE68A',
+    font: 'Sora', weight: 700, size: 112, body: 'DM Sans', device: { style: 'real', finish: 'black-titanium', glare: 0.1, h: 0.64, y: 0.63 } } },
+  { id: 'topo', name: 'Topo', category: 'Illustrated', description: 'Cream contour lines on forest green for outdoorsy, grounded apps.', style: {
+    layout: 'classic', art: art('topo'), bg: solidBg('#123524'), ink: '#F4EBD0', muted: '#C9D8C5', accent: '#E9C46A',
+    font: 'Hanken Grotesk', weight: 800, size: 116, tracking: -0.02, eyebrow: '#E9C46A', device: { style: 'real', finish: 'natural-titanium' } } },
+
   // ── Systems built from gradients, mesh and patterns ──
   { id: 'clean-center', name: 'Clean Center', category: 'Minimal', description: 'Quiet gradients, confident type, and a device that takes center stage.', style: { layout: 'classic', bg: linear('#F5F3FF', '#FFFFFF', 180), ink: '#18181B', muted: '#52525B', accent: '#6366F1', font: 'Inter Tight', weight: 800 } },
   { id: 'soft-pastel', name: 'Soft Pastel', category: 'Minimal', description: 'Airy mesh color and friendly rounded typography.', style: { layout: 'bleed', bg: mesh('#FFFDF9', ['#FBCFE8', '#C4B5FD', '#A7F3D0']), ink: '#29233B', muted: '#655D73', accent: '#8B5CF6', font: 'Nunito', weight: 800, body: 'Nunito', bodyWeight: 600, device: { style: 'clay', tint: '#E6DDFB' } } },
@@ -101,7 +126,7 @@ const configs: Array<{ id: string; name: string; category: Template['category'];
   { id: 'color-pop', name: 'Color Pop', category: 'Bold', description: 'A new saturated color every slide with clean frameless screens.', style: { layout: 'bleed', bg: solidBg('#06C167'), bgs: [solidBg('#06C167'), solidBg('#FFD8CE'), solidBg('#FF6B35'), solidBg('#FFC043')], ink: '#111111', muted: '#2B2B2B', accent: '#111111', font: 'Outfit', weight: 600, size: 120, body: 'Outfit', bodyWeight: 400, device: { style: 'none' } } },
   { id: 'big-type', name: 'Big Type', category: 'Bold', description: 'Oversized condensed headlines meet saturated color.', style: { layout: 'bleed', accentStyle: 'underline', bg: linear('#F97316', '#EC4899', 135), ink: '#FFFFFF', muted: '#FFF7ED', accent: '#FDE047', font: 'Anton', weight: 400, size: 150, tracking: 0 } },
   { id: 'color-block', name: 'Color Block', category: 'Bold', description: 'Graphic color fields and bold, clean contrast.', style: { layout: 'flip', accentStyle: 'highlight', bg: solidBg('#4F46E5'), ink: '#FFFFFF', muted: '#E0E7FF', accent: '#A5F3FC', font: 'Archivo Black', weight: 400 } },
-  { id: 'tilted', name: 'Tilted', category: 'Bold', description: 'A little perspective adds instant motion and depth.', style: { layout: 'tilt', bg: mesh('#F8FAFC', ['#C7D2FE', '#FDA4AF', '#BAE6FD']), ink: '#111827', muted: '#4B5563', accent: '#4F46E5', font: 'Plus Jakarta Sans', weight: 800, deviceAt: alternate({ tiltY: -12, tiltX: 5, rotation: -3 }, { tiltY: 12, tiltX: 5, rotation: 3 }) } },
+  { id: 'tilted', name: 'Tilted', category: 'Bold', description: 'A little perspective adds instant motion and depth.', style: { layout: 'tilt', bg: mesh('#F8FAFC', ['#C7D2FE', '#FDA4AF', '#BAE6FD']), ink: '#111827', muted: '#4B5563', accent: '#4F46E5', font: 'Plus Jakarta Sans', weight: 800, device: { tiltY: -20, tiltX: 10 } } },
   { id: 'midnight', name: 'Midnight', category: 'Dark', description: 'Deep atmospheric color with polished titanium hardware.', style: { layout: 'bleed', accentStyle: 'gradient', bg: mesh('#080B18', ['#312E81', '#155E75', '#4338CA']), ink: '#F8FAFC', muted: '#CBD5E1', accent: '#67E8F9', device: { finish: 'black-titanium' } } },
   { id: 'neon', name: 'Neon', category: 'Dark', description: 'Electric accents glow against a cinematic dark canvas.', style: { layout: 'classic', accentStyle: 'gradient', bg: mesh('#09090B', ['#701A75', '#312E81', '#BE185D']), ink: '#FAFAFA', muted: '#D4D4D8', accent: '#E879F9', font: 'Sora', weight: 700, device: { finish: 'black-titanium', glare: 0.18 } } },
   { id: 'premium', name: 'Premium', category: 'Dark', description: 'Navy, warm gold, and expressive serif typography.', style: { layout: 'classic', accentStyle: 'italic-serif', bg: mesh('#0C1424', ['#1E3A5F', '#7C5B32', '#172554']), ink: '#FFF9ED', muted: '#D6D3D1', accent: '#E9C982', font: 'DM Serif Display', weight: 400, eyebrow: '#E9C982', device: { finish: 'natural-titanium' } } },
@@ -114,7 +139,7 @@ const configs: Array<{ id: string; name: string; category: Template['category'];
   { id: 'swiss', name: 'Swiss', category: 'Editorial', description: 'A measured grid, precise grotesk type, and disciplined spacing.', style: { layout: 'flip', bg: { kind: 'pattern', patternId: 'grid', base: '#F4F4F1', colors: ['#D4D4D0'], scale: 1, noise: 0.02 }, ink: '#18181B', muted: '#52525B', accent: '#DC2626', font: 'Inter Tight', weight: 750, align: 'left', titleY: 0.12, titleW: 0.84, eyebrow: '#DC2626', deviceAt: alternate({ y: 0.75 }, {}) } },
   { id: 'quote', name: 'Quote', category: 'Editorial', description: 'A testimonial led opening with proof and a composed device reveal.', style: { layout: 'classic', accentStyle: 'italic-serif', bg: linear('#FFF7ED', '#FDE2D5'), ink: '#292524', muted: '#78716C', accent: '#EA580C', font: 'Playfair Display', weight: 600, extras: (i) => [createText('caption', { name: 'Customer rating', text: i === 0 ? '★★★★★  4.9  •  Loved by 2M+' : '★★★★★  •  Made for everyday', y: 0.232, fontSize: 30, fill: solid('#B45309') })] } },
   { id: 'panorama-flow', name: 'Panorama Flow', category: 'Panorama', description: 'One continuous canvas with screens crossing every boundary.', style: { layout: 'panorama', bg: mesh('#F3F0FF', ['#C4B5FD', '#FBCFE8', '#A5F3FC']), ink: '#211A39', muted: '#5E5671', accent: '#6D28D9', font: 'Plus Jakarta Sans', weight: 800 } },
-  { id: 'panorama-tilt', name: 'Panorama Tilt', category: 'Panorama', description: 'A kinetic gallery of tilted screens woven across the canvas.', style: { layout: 'panorama', bg: mesh('#111827', ['#3730A3', '#0E7490', '#7E22CE']), ink: '#FFFFFF', muted: '#CBD5E1', accent: '#67E8F9', device: { tiltY: -14, tiltX: 4, finish: 'black-titanium' } } },
+  { id: 'panorama-tilt', name: 'Panorama Tilt', category: 'Panorama', description: 'A kinetic gallery of tilted screens woven across the canvas.', style: { layout: 'panorama', bg: mesh('#111827', ['#3730A3', '#0E7490', '#7E22CE']), ink: '#FFFFFF', muted: '#CBD5E1', accent: '#67E8F9', device: { tiltY: -16, tiltX: 6, rotation: 0, finish: 'black-titanium' } } },
   { id: 'gradient-ribbon', name: 'Gradient Ribbon', category: 'Panorama', description: 'A flowing ribbon of blurred color ties each frame together.', style: { layout: 'panorama', bg: { kind: 'mesh', base: '#FFF7F0', points: [
     // A band of color weaving across the whole set, behind the phones.
     { x: 0.08, y: 0.42, color: '#FB7185', radius: 0.32 }, { x: 0.36, y: 0.56, color: '#A78BFA', radius: 0.34 }, { x: 0.64, y: 0.44, color: '#38BDF8', radius: 0.34 }, { x: 0.92, y: 0.58, color: '#F472B6', radius: 0.32 },
@@ -176,7 +201,8 @@ function build(config: typeof configs[number], screens: Array<string | null>, co
         case 'bleed': return { x: 0.5, y: 0.68, h: 0.86 };
         case 'flip': return textBelow ? { x: 0.5, y: 0.3, h: 0.82 } : { x: 0.5, y: 0.68, h: 0.8 };
         case 'offset': return { x: 0.6, y: 0.69, h: 0.78, rotation: 4 };
-        case 'tilt': return { x: 0.5, y: 0.66, h: 0.8 };
+        // One consistent turn across the set reads as depth; mixing in a 2D rotation just looks skewed.
+        case 'tilt': return { x: 0.5, y: 0.67, h: 0.72 };
         // Each phone sits on the right and runs into the next frame, so the set reads as one chain
         // with no two phones colliding at a boundary. The last one stays (mostly) inside its frame.
         case 'panorama': return i < count - 1 ? { x: 0.94, y: 0.66, h: 0.74, rotation: i % 2 ? 3 : -3 } : { x: 0.64, y: 0.66, h: 0.74, rotation: 3 };

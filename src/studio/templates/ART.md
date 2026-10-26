@@ -16,3 +16,13 @@ people, and kept the top 20% (headline) and center (phone) calm.
 | sunlit-leaves | Sunlit | Blurred palm-leaf shadows on sand-beige plaster, afternoon sun |
 | holo-glass | Holo | Pastel holographic gradient with frosted-glass refraction and caustics at the edges |
 | silk-panorama | Silk | Silk waves sweeping horizontally, indigo to violet to coral, darker at the bottom |
+| bauhaus | Bauhaus | Flat Bauhaus circles, half circles, arcs and bars in mustard, tomato, cobalt and black on cream paper |
+| memphis | Memphis | Flat Memphis squiggles, zigzags, triangles and confetti in coral, teal, lilac and lemon on blush pink |
+| cutout | Cut-Out | Matisse-style paper cut-out leaves and fronds in cobalt, coral and ochre on off-white |
+| riso | Riso | Risograph pink and blue color fields with heavy grain and halftone on off-white (768 px wide, q62) |
+| hills | Hills | Flat layered sunrise hills, peach to plum, pale sun, apricot sky |
+| stripes | Retro Stripes | 1970s rainbow stripes in orange, mustard, rust and brown curving across the bottom of cream |
+| night | Night Sky | Flat indigo night sky with small stars, crescent moon and layered dark mountains |
+| topo | Topo | Cream topographic contour lines on forest green, calm in the top and center |
+
+Sample app screens in `public/samples` are rendered from `src/studio/model/sampleScreenArt.ts` with `npm run samples`.
