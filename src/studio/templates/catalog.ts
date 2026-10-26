@@ -49,8 +49,8 @@ interface Style {
   eyebrow?: string;
   align?: 'left' | 'center';
   titleY?: number; titleW?: number; subtitleY?: number;
-  /** false: the headline carries the slide alone. The subtitle is still created (hidden, one click to show) and the
-   * device moves up into the room it leaves. */
+  /** false: the headline carries the slide alone. The subtitle is still created (hidden, one click to show), and the
+   * headline and device grow into the room it leaves. */
   subtitle?: boolean;
   device?: Partial<DeviceElement>;
   /** Per-slide device tweaks layered over the layout, e.g. alternating tilt. */
@@ -229,7 +229,10 @@ function build(config: typeof configs[number], screens: Array<string | null>, co
     // A device-only slide keeps its copy, just hidden, so switching templates later brings it back.
     if (slideText.hidden) title.visible = subtitle.visible = false;
     if (style.subtitle === false) subtitle.visible = false;
-    const lift = style.subtitle === false && !textBelow && !slideText.hidden ? 0.045 : 0;
+    // Without a subtitle the headline and the phone share its room: the headline steps up a size and the phone
+    // grows 5% taller with its top 4% higher.
+    const roomy = style.subtitle === false && !textBelow && !slideText.hidden;
+    if (roomy) title.fontSize = Math.round(title.fontSize * 1.12);
     const eyebrow = style.eyebrow
       ? [createText('caption', {
         name: 'Eyebrow', text: String(i + 1).padStart(2, '0'), x: left ? 0.08 + 0.15 : 0.5, y: titleY - 0.078, w: 0.3,
@@ -256,7 +259,10 @@ function build(config: typeof configs[number], screens: Array<string | null>, co
     // An eyebrow pushes the headline down; move the device down with it so they never collide.
     if (eyebrowGap && placement.y !== undefined) placement.y += eyebrowGap;
     const device = createDevice({ ...placement, ...style.device, ...style.deviceAt?.(i), screen, shadow });
-    device.y -= lift;
+    if (roomy) {
+      device.h += 0.05;
+      device.y -= 0.015;
+    }
     const extras = style.extras?.(i, screens) ?? [];
     const elements: StudioElement[] = [...extras, device, ...eyebrow, title, subtitle];
     const background = style.bgs ? style.bgs[i % style.bgs.length] : spanning ? style.bg : artBackground ?? style.bg;

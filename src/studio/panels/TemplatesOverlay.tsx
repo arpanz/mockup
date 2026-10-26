@@ -35,6 +35,7 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
       draft.slides = next.slides;
       draft.span = next.span;
       draft.assets = next.assets;
+      delete draft.layout;
     });
     store.selectSlide(useEditor.getState().project.slides[0]?.id ?? '');
     setAppliedId(template.id);

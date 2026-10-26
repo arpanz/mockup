@@ -6,6 +6,7 @@ import { PATTERN_REGISTRY, getPattern } from '../../backgrounds/patterns';
 import type { Background, MeshPoint, OutputSpec, Paint, Slide } from '../../model/types';
 import { useEditor } from '../../store/editorStore';
 import { readImageFile } from '../../store/persistence';
+import { SetLayoutSection } from './SetLayoutSection';
 import { Button, ColorField, Field, PaintField, Section, Segmented, Select, SliderField, TextInput, Toggle, Tooltip } from '../../ui';
 
 type Kind = Background['kind'];
@@ -247,6 +248,8 @@ export function SlideInspector({ slide, output }: { slide: Slide; output: Output
           </div>
         )}
       </Section>
+
+      <SetLayoutSection />
 
       <Section
         title={span.enabled ? 'Panorama background' : 'Background'}

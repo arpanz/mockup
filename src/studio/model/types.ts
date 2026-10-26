@@ -220,7 +220,17 @@ export interface Project {
   assets: Record<Id, Asset>;
   /** One continuous background behind all slides; elements may straddle slide edges. */
   span: { enabled: boolean; background: Background };
+  /** Whole-set adjustments applied on top of the template (see model/setLayout). Absent = untouched. */
+  layout?: SetLayout;
   updatedAt: number;
+}
+
+export interface SetLayout {
+  deviceScale: number;    // ×, phones grow from their top edge
+  deviceShift: number;    // fraction of H, + moves down
+  titleScale: number;     // ×
+  subtitleScale: number;  // ×
+  textShift: number;      // fraction of H, + moves down
 }
 
 /* ───────────────────────── Editor-only state ───────────────────────── */
