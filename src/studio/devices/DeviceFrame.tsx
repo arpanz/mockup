@@ -1,4 +1,4 @@
-import { memo, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { memo, type CSSProperties, type ReactElement } from 'react';
 import type { DeviceElement } from '../model/types';
 import { hexToRgba } from '../model/units';
 import type { DeviceFinish, DeviceModel } from './catalog';
@@ -161,24 +161,65 @@ function frontShadow(element: DeviceElement, frameWidth: number): string | undef
   }
 }
 
-/** Stacked slices behind the front face give the body a real side wall when it's tilted in 3D. */
-function DepthSlices({ depth, radius, front, back, count }: { depth: number; radius: number; front: string; back: string; count: number }): ReactElement {
-  const slices: ReactNode[] = [];
-  for (let i = 1; i <= count; i += 1) {
-    const t = i / count;
-    slices.push(
-      <div
-        key={i}
-        style={{
-          position: 'absolute', inset: 0, borderRadius: radius,
-          // Fade from the front edge tone to the back tone so the side wall reads as a rounded surface.
-          background: `color-mix(in srgb, ${front} ${Math.round((1 - t) * 100)}%, ${back})`,
-          transform: `translateZ(${-depth * t}px)`,
-        }}
-      />,
-    );
+/**
+ * The body's side wall when it's tilted in 3D: thin strips standing on the outline (straight sides plus a fan of
+ * facets round each corner). Strips are only `depth` tall, so this costs a sliver of the GPU memory that stacking
+ * full-size copies of the body did — that exhausted the GPU with a few tilted devices on the canvas.
+ */
+function SideWall({ width, height, radius, depth, front, back }: { width: number; height: number; radius: number; depth: number; front: string; back: string }): ReactElement {
+  const r = Math.min(radius, width / 2, height / 2);
+  const facets: Array<{ x: number; y: number; length: number; angle: number }> = [
+    { x: width / 2, y: 0, length: width - 2 * r, angle: 0 },
+    { x: width / 2, y: height, length: width - 2 * r, angle: 0 },
+    { x: 0, y: height / 2, length: height - 2 * r, angle: 90 },
+    { x: width, y: height / 2, length: height - 2 * r, angle: 90 },
+  ];
+  if (r > 0) {
+    const steps = 8;
+    const step = Math.PI / 2 / steps;
+    const corners = [
+      { cx: r, cy: r, from: Math.PI },
+      { cx: width - r, cy: r, from: Math.PI * 1.5 },
+      { cx: width - r, cy: height - r, from: 0 },
+      { cx: r, cy: height - r, from: Math.PI / 2 },
+    ];
+    for (const corner of corners) {
+      for (let i = 0; i < steps; i += 1) {
+        const mid = corner.from + step * (i + .5);
+        const inset = r * Math.cos(step / 2);
+        facets.push({
+          x: corner.cx + inset * Math.cos(mid),
+          y: corner.cy + inset * Math.sin(mid),
+          length: 2 * r * Math.sin(step / 2),
+          angle: (mid * 180) / Math.PI + 90,
+        });
+      }
+    }
   }
-  return <>{slices}</>;
+  // Light from the top left: faces turned toward it pick up a highlight, the rest fall into shade.
+  const shade = (color: string, angle: number) => {
+    const facing = Math.cos(((angle - 90) * Math.PI) / 180 - Math.PI * 1.25);
+    return facing >= 0
+      ? `color-mix(in srgb, ${color}, #fff ${Math.round(facing * 14)}%)`
+      : `color-mix(in srgb, ${color}, #000 ${Math.round(-facing * 22)}%)`;
+  };
+  return (
+    <>
+      {facets.filter((facet) => facet.length > 0).map((facet, index) => (
+        <div
+          key={index}
+          style={{
+            position: 'absolute',
+            // Overlap neighbours by a hair so no seams show between facets.
+            left: facet.x - facet.length / 2 - .5, top: facet.y, width: facet.length + 1, height: depth,
+            transformOrigin: '50% 0',
+            transform: `rotateZ(${facet.angle}deg) rotateX(-90deg)`,
+            background: `linear-gradient(${shade(front, facet.angle)}, ${shade(back, facet.angle)})`,
+          }}
+        />
+      ))}
+    </>
+  );
 }
 
 function DeviceFrameView({ element, model, width, height, unit, screenSrc, showDropHint = false }: DeviceFrameProps): ReactElement {
@@ -216,7 +257,6 @@ function DeviceFrameView({ element, model, width, height, unit, screenSrc, showD
   const browser = model.kind === 'browser';
   const solid = SOLID_STYLES.has(style) && !browser;
   const depth = frameWidth * (model.kind === 'phone' ? .075 : .04);
-  const sliceCount = Math.max(8, Math.min(28, Math.round(depth / Math.max(.75, frameWidth * .003))));
   const band = !solid || style === 'minimal' ? 0 : frameWidth * (model.kind === 'phone' ? .0135 : .0085);
   const hair = Math.max(.5, frameWidth * .0011);
 
@@ -251,7 +291,7 @@ function DeviceFrameView({ element, model, width, height, unit, screenSrc, showD
     <div style={wrapper}>
       <div style={rig}>
         <div style={body}>
-          {solid && tilted && <DepthSlices depth={depth} radius={geo.radius} front={colors.edgeFront} back={colors.edgeBack} count={sliceCount} />}
+          {solid && tilted && <SideWall width={frameWidth} height={frameHeight} radius={geo.radius} depth={depth} front={colors.edgeFront} back={colors.edgeBack} />}
           {showButtons && model.buttons.map((button, index) => {
             const vertical = button.side !== 'top';
             const shape: CSSProperties = vertical

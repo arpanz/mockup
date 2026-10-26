@@ -11,7 +11,9 @@ export interface MeasuredBox {
 export function measureElement(root: HTMLElement | null, id: string): MeasuredBox | null {
   const node = root?.querySelector<HTMLElement>(`[data-element-id="${CSS.escape(id)}"]`);
   if (!node) return null;
-  return { w: node.offsetWidth, h: node.offsetHeight };
+  // The slide may be painted below full size (see SlideCell); report canvas units.
+  const renderScale = Number(root?.dataset.renderScale) || 1;
+  return { w: node.offsetWidth / renderScale, h: node.offsetHeight / renderScale };
 }
 
 const HANDLE_CURSOR: Record<Handle, string> = {

@@ -71,19 +71,24 @@ export function StudioApp() {
   return (
     <ToastProvider>
       <div className="studio relative h-dvh w-full overflow-hidden bg-[#0c0c0e] font-sans text-zinc-100 antialiased">
-        {hydrated && <Canvas rightInset={rightInset} />}
-        <TopBar onAddScreenshots={handlers.openFilePicker} />
-        <BottomBar rightInset={rightInset} />
-        {mode === 'templates' && <TemplatesOverlay rightInset={rightInset} />}
-        {showPanel && (mode === 'export' ? <ExportPanel onClose={() => useEditor.getState().setMode('editor')} /> : <RightPanel onCollapse={() => setPanelOpen(false)} />)}
-        {!showPanel && mode !== 'preview' && (
-          <button
-            type="button"
-            onClick={() => setPanelOpen(true)}
-            className="absolute right-4 top-4 z-30 h-9 rounded-xl border border-white/10 bg-zinc-900/90 px-3 text-xs font-medium text-zinc-300 shadow-2xl backdrop-blur hover:text-white"
-          >
-            Show panel
-          </button>
+        {/* Wait for the saved project so the UI never flashes an empty "Untitled project" first. */}
+        {hydrated && (
+          <>
+            <Canvas rightInset={rightInset} />
+            <TopBar onAddScreenshots={handlers.openFilePicker} />
+            <BottomBar rightInset={rightInset} />
+            {mode === 'templates' && <TemplatesOverlay rightInset={rightInset} />}
+            {showPanel && (mode === 'export' ? <ExportPanel onClose={() => useEditor.getState().setMode('editor')} /> : <RightPanel onCollapse={() => setPanelOpen(false)} />)}
+            {!showPanel && mode !== 'preview' && (
+              <button
+                type="button"
+                onClick={() => setPanelOpen(true)}
+                className="absolute right-4 top-4 z-30 h-9 rounded-xl border border-white/10 bg-zinc-900/90 px-3 text-xs font-medium text-zinc-300 shadow-2xl backdrop-blur hover:text-white"
+              >
+                Show panel
+              </button>
+            )}
+          </>
         )}
         <input
           ref={fileInputRef}

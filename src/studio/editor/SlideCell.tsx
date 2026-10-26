@@ -1,4 +1,4 @@
-import { memo, useRef, useState, type DragEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { memo, useMemo, useRef, useState, type DragEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Draft } from 'immer';
 import type { OutputSpec, Project, Slide, StudioElement } from '../model/types';
 import { baseUnit, resolveElement, resolveElements } from '../model/units';
@@ -52,6 +52,15 @@ function SlideCellImpl({ project, slide, slideIndex, output, scale, interactive 
   const selected = isActiveCell ? resolved.filter((element) => selection.elementIds.includes(element.id)) : [];
   const hovered = isActiveColumn ? resolved.find((element) => element.id === hoverElementId) ?? null : null;
   const editing = isActiveCell ? resolved.find((element) => element.id === editingTextId && element.type === 'text') : undefined;
+
+  // Paint the slide near its on-screen resolution rather than at full export size scaled down: a 2868px-tall
+  // slide (with 3D device layers) per cell exhausts GPU memory and shows as grey tiles. Power-of-two steps
+  // keep zooming from re-rendering every frame.
+  const renderScale = Math.min(1, 2 ** Math.ceil(Math.log2(Math.max(scale * (window.devicePixelRatio || 1), 1 / 64))));
+  const renderOutput = useMemo(
+    () => (renderScale === 1 ? output : { ...output, width: output.width * renderScale, height: output.height * renderScale }),
+    [output, renderScale],
+  );
 
   const toCanvas = (clientX: number, clientY: number, rect: DOMRect) => ({ x: (clientX - rect.left) / scale, y: (clientY - rect.top) / scale });
 
@@ -258,17 +267,20 @@ function SlideCellImpl({ project, slide, slideIndex, output, scale, interactive 
       }}
       onDragLeave={() => setDropHover(false)}
       onDrop={handleDrop}
+      data-render-scale={renderScale}
       style={{ width: W * scale, height: H * scale, position: 'relative', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      <div style={{ width: W, height: H, transform: `scale(${scale})`, transformOrigin: '0 0', position: 'absolute', left: 0, top: 0 }}>
+      <div style={{ width: renderOutput.width, height: renderOutput.height, transform: `scale(${scale / renderScale})`, transformOrigin: '0 0', position: 'absolute', left: 0, top: 0 }}>
         <SlideRenderer
           project={project}
           slide={slide}
-          output={output}
+          output={renderOutput}
           slideIndex={slideIndex}
           interactive={interactive}
           hiddenElementId={editing?.id ?? null}
         />
+      </div>
+      <div style={{ width: W, height: H, transform: `scale(${scale})`, transformOrigin: '0 0', position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
         {interactive && (
           <SelectionOverlay
             rootRef={rootRef}
@@ -282,7 +294,9 @@ function SlideCellImpl({ project, slide, slideIndex, output, scale, interactive 
           />
         )}
         {interactive && editing && editing.type === 'text' && (
-          <TextEditorOverlay slideId={slide.id} element={resolveElement(slide, editing, output.id)} canvasWidth={W} canvasHeight={H} />
+          <div style={{ pointerEvents: 'auto' }}>
+            <TextEditorOverlay slideId={slide.id} element={resolveElement(slide, editing, output.id)} canvasWidth={W} canvasHeight={H} />
+          </div>
         )}
       </div>
       {dropHover && (

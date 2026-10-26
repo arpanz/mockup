@@ -2,17 +2,20 @@ import { memo, useMemo, type ReactElement } from 'react';
 import type { Asset, Project } from '../model/types';
 import { OUTPUT_CATALOG } from '../model/outputs';
 import { SlideRenderer } from '../render/SlideRenderer';
+import { applyTemplate } from './applyTemplate';
 import type { Template } from './catalog';
 
 export interface TemplateCardProps {
   template: Template;
   screens: Array<string | null>;
   assets: Project['assets'];
+  /** The user's project: when given, the preview is exactly what applying the template would produce. */
+  source?: Project;
   selected: boolean;
   onSelect: () => void;
 }
 
-function TemplateCardImpl({ template, screens, assets, selected, onSelect }: TemplateCardProps): ReactElement {
+function TemplateCardImpl({ template, screens, assets, source, selected, onSelect }: TemplateCardProps): ReactElement {
   const gap = template.category === 'Panorama' ? 0 : 6;
   const height = 150;
   const width = height * OUTPUT_CATALOG[0].width / OUTPUT_CATALOG[0].height;
@@ -20,7 +23,9 @@ function TemplateCardImpl({ template, screens, assets, selected, onSelect }: Tem
   // units, so the slide looks the same, but the browser paints ~300px layers instead of 2868px ones.
   const output = useMemo(() => ({ ...OUTPUT_CATALOG[0], width: width * 2, height: height * 2 }), [width]);
   const preview = useMemo(() => {
-    const built = template.build(screens.slice(0, 3), template.defaultCopy.slice(0, 3));
+    const built = source
+      ? applyTemplate({ ...source, assets }, template)
+      : template.build(screens.slice(0, 3), template.defaultCopy.slice(0, 3));
     const slides = built.slides.slice(0, 3);
     return {
       project: {
@@ -35,7 +40,7 @@ function TemplateCardImpl({ template, screens, assets, selected, onSelect }: Tem
       },
       slides,
     };
-  }, [assets, output, screens, template]);
+  }, [assets, output, screens, source, template]);
 
   return (
     <button

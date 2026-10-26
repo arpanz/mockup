@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { X } from 'lucide-react';
 import { applyTemplate } from '../templates/applyTemplate';
 import { TEMPLATES, type Template } from '../templates/catalog';
@@ -44,29 +44,31 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
 
   return (
     <div
-      className="absolute bottom-24 left-4 top-20 z-40 flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.8)]"
-      style={{ right: rightInset + 16 }}
+      className="absolute bottom-24 left-4 right-[var(--templates-right)] top-20 z-40 flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.8)] max-[1040px]:right-4"
+      style={{ '--templates-right': `${rightInset + 16}px` } as CSSProperties}
     >
-      <div className="flex items-center gap-4 border-b border-white/[0.06] px-5 py-4">
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold text-white">Templates</h2>
-          <p className="text-[12px] text-zinc-500">Restyle every screenshot at once. Your images and headlines stay.</p>
+      <div className="border-b border-white/[0.06] px-5 pb-3 pt-4">
+        <div className="flex items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[15px] font-semibold text-white">Templates</h2>
+            <p className="text-[12px] text-zinc-500">Restyle every screenshot at once. Your images and headlines stay.</p>
+          </div>
+          <button type="button" aria-label="Close templates" onClick={() => useEditor.getState().setMode('editor')} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/[0.08] hover:text-white">
+            <X size={16} />
+          </button>
         </div>
-        <div className="ml-auto flex flex-wrap gap-1">
+        <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto">
           {CATEGORIES.map((name) => (
             <button
               key={name}
               type="button"
               onClick={() => setCategory(name)}
-              className={`h-7 rounded-full px-3 text-[12px] font-medium transition-colors ${category === name ? 'bg-white/[0.12] text-white' : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100'}`}
+              className={`h-7 shrink-0 rounded-full px-3 text-[12px] font-medium transition-colors ${category === name ? 'bg-white/[0.12] text-white' : 'text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100'}`}
             >
               {name}
             </button>
           ))}
         </div>
-        <button type="button" aria-label="Close templates" onClick={() => useEditor.getState().setMode('editor')} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/[0.08] hover:text-white">
-          <X size={16} />
-        </button>
       </div>
       <div data-scrollable className="min-h-0 flex-1 overflow-y-auto p-5">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
@@ -76,6 +78,7 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
             template={template}
             screens={screens}
             assets={previewAssets}
+            source={project}
             selected={appliedId === template.id}
             onSelect={() => apply(template)}
           />

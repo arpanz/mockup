@@ -23,9 +23,17 @@ export function applyTemplate(project: Project, template: Template): Project {
   const copyItems = Array.from({ length: count }, (_, index) => copies[index] ?? template.defaultCopy[index % template.defaultCopy.length]);
   const screens = Array.from({ length: count }, (_, index) => screenIds[index] ?? null);
   const designed = template.build(screens, copyItems);
+  // A title or subtitle the user deleted stays deleted; don't refill it with the template's sample copy.
+  const removedRoles = project.slides.map((slide) => new Set<string>(
+    (['title', 'subtitle'] as const).filter((role) => !slide.elements.some((element) => element.type === 'text' && element.role === role)),
+  ));
   return {
     ...project,
-    slides: designed.slides.map((slide, index) => ({ ...slide, name: project.slides[index]?.name ?? slide.name })),
+    slides: designed.slides.map((slide, index) => ({
+      ...slide,
+      name: project.slides[index]?.name ?? slide.name,
+      elements: slide.elements.filter((element) => !(element.type === 'text' && removedRoles[index]?.has(element.role))),
+    })),
     span: designed.span,
     updatedAt: Date.now(),
   };
