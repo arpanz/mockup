@@ -34,20 +34,22 @@ function placedElements(project: Project, slide: Slide, slideIndex: number, outp
   if (!project.span.enabled) return own;
 
   // Spanning: pull in neighbours' elements that cross into this slide so straddling devices line up.
-  const neighbours: PlacedElement[] = [];
+  // Stack in slide order (earlier slides below later ones) so an overlap looks the same from both sides of the seam.
+  const before: PlacedElement[] = [];
+  const after: PlacedElement[] = [];
   const previous = project.slides[slideIndex - 1];
   const next = project.slides[slideIndex + 1];
   if (previous) {
     for (const element of resolveElements(previous, output.id)) {
-      if (horizontalExtent(element, output)[1] > 1) neighbours.push({ element, slideId: previous.id, offset: -1 });
+      if (horizontalExtent(element, output)[1] > 1) before.push({ element, slideId: previous.id, offset: -1 });
     }
   }
   if (next) {
     for (const element of resolveElements(next, output.id)) {
-      if (horizontalExtent(element, output)[0] < 0) neighbours.push({ element, slideId: next.id, offset: 1 });
+      if (horizontalExtent(element, output)[0] < 0) after.push({ element, slideId: next.id, offset: 1 });
     }
   }
-  return [...neighbours, ...own];
+  return [...before, ...own, ...after];
 }
 
 function ShapeView({ element, unit }: { element: ShapeElement; unit: number }) {

@@ -75,7 +75,7 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
         </div>
       </div>
       <div data-scrollable className="min-h-0 flex-1 overflow-y-auto p-5">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(264px,1fr))] gap-4">
         {TEMPLATES.filter((template) => category === 'All' || template.category === category).map((template) => previewAssets ? (
           <TemplateCard
             key={template.id}

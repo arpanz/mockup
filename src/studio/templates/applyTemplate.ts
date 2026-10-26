@@ -35,6 +35,8 @@ export function applyTemplate(project: Project, template: Template): Project {
       elements: slide.elements.filter((element) => !(element.type === 'text' && removedRoles[index]?.has(element.role))),
     })),
     span: designed.span,
+    // Template background art joins the project's assets (stable ids, so re-applying never duplicates it).
+    assets: { ...project.assets, ...Object.fromEntries(designed.assets.map((asset) => [asset.id, asset])) },
     updatedAt: Date.now(),
   };
 }

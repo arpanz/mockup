@@ -17,7 +17,7 @@ export interface TemplateCardProps {
 
 function TemplateCardImpl({ template, screens, assets, source, selected, onSelect }: TemplateCardProps): ReactElement {
   const gap = template.category === 'Panorama' ? 0 : 6;
-  const height = 150;
+  const height = 172;
   const width = height * OUTPUT_CATALOG[0].width / OUTPUT_CATALOG[0].height;
   // Render at 2× thumbnail size rather than full export size: everything is laid out in canvas-relative
   // units, so the slide looks the same, but the browser paints ~300px layers instead of 2868px ones.
@@ -34,7 +34,7 @@ function TemplateCardImpl({ template, screens, assets, source, selected, onSelec
         name: template.name,
         outputs: [output],
         slides,
-        assets,
+        assets: 'version' in built ? built.assets : { ...assets, ...Object.fromEntries(built.assets.map((asset) => [asset.id, asset])) },
         span: built.span,
         updatedAt: 0,
       },
