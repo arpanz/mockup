@@ -165,7 +165,19 @@ export interface DeviceElement extends BaseElement {
   perspective: number;    // px at 1u scale, 600..4000
   showButtons: boolean;
   glare: number;          // 0..1 screen reflection
+  /** Bezel thickness as a multiple of the model's own (1); 0 = edge-to-edge screen. The screen keeps its aspect. */
+  bezel?: number;
+  /** Corner roundness as a multiple of the model's own (1). */
+  corner?: number;
+  /** Surface finish layered over the body. */
+  material?: DeviceMaterial;
+  /** Camera cutout; 'auto' keeps the model's own. */
+  cutout?: 'auto' | 'dynamic-island' | 'notch' | 'punch-hole' | 'none';
+  /** Light rim around the outer edge, 0..1, so dark frames stay visible on dark backgrounds. */
+  rim?: number;
 }
+
+export type DeviceMaterial = 'default' | 'gloss' | 'satin' | 'brushed' | 'frosted';
 
 export interface ImageElement extends BaseElement {
   type: 'image';
@@ -253,4 +265,6 @@ export interface Selection {
   slideId: Id | null;
   elementIds: Id[];       // empty → the slide itself (background) is selected
   outputId: Id | null;    // which output row the user is working in (for overrides)
+  /** Screenshots selected together (drag a box, or ⇧/⌘-click). With 2+, edits apply to all of them. Includes slideId. */
+  slideIds: Id[];
 }

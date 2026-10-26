@@ -1,4 +1,4 @@
-import type { DeviceFamily } from '../model/types';
+import type { DeviceElement, DeviceFamily } from '../model/types';
 
 export interface DeviceFinish {
   id: string;
@@ -200,4 +200,42 @@ export function defaultModelFor(family: DeviceFamily): DeviceModel {
 
 export function resolveDeviceModel(model: 'auto' | string, family: DeviceFamily): DeviceModel {
   return model === 'auto' ? defaultModelFor(family) : (getDeviceModel(model) ?? defaultModelFor(family));
+}
+
+const FLAT_BEZELS: Record<string, { phone: number; tablet: number }> = {
+  minimal: { phone: .026, tablet: .018 }, glass: { phone: .034, tablet: .024 }, outline: { phone: .03, tablet: .03 }, none: { phone: 0, tablet: 0 },
+};
+
+const framed = new WeakMap<DeviceModel, Map<string, DeviceModel>>();
+
+/**
+ * The model with the element's bezel and corner tweaks applied. A thicker bezel widens the frame rather than shrinking
+ * the screen, so screenshots keep their exact aspect. Results are cached so memoised frames keep a stable model.
+ */
+export function frameModel(model: DeviceModel, element: Pick<DeviceElement, 'style' | 'bezel' | 'corner'>): DeviceModel {
+  const key = `${element.style}|${element.bezel ?? 1}|${element.corner ?? 1}`;
+  let cache = framed.get(model);
+  if (!cache) framed.set(model, cache = new Map());
+  let result = cache.get(key);
+  if (!result) cache.set(key, result = computeFrameModel(model, element));
+  return result;
+}
+
+function computeFrameModel(model: DeviceModel, element: Pick<DeviceElement, 'style' | 'bezel' | 'corner'>): DeviceModel {
+  const corner = element.corner ?? 1;
+  const variableBezel = (model.kind === 'phone' || model.kind === 'tablet') && model.cutout !== 'home-button';
+  const baseBezel = variableBezel
+    ? element.style === 'real' || element.style === 'matte' || element.style === 'clay'
+      ? model.screen.left
+      : FLAT_BEZELS[element.style]?.[model.kind === 'phone' ? 'phone' : 'tablet']
+      : undefined;
+  const bezel = baseBezel === undefined ? undefined : baseBezel * (element.bezel ?? 1);
+  if (corner === 1 && (bezel === undefined || bezel === model.screen.left)) return model;
+  const bodyRadius = model.bodyRadius * corner;
+  if (bezel === undefined) return { ...model, bodyRadius, screen: { ...model.screen, radius: model.screen.radius * corner } };
+  const aspect = model.screenAspect / (1 - 2 * bezel * (1 - model.screenAspect));
+  return {
+    ...model, aspect, bodyRadius,
+    screen: { left: bezel, width: 1 - 2 * bezel, top: bezel * aspect, height: 1 - 2 * bezel * aspect, radius: Math.max(.012, bodyRadius - bezel) },
+  };
 }

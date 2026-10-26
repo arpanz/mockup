@@ -74,6 +74,19 @@ function applyStyleToAll(slideId: string, elementId: string, outputId: string | 
   notify({ title: count ? `${capitalize(style.label)} style applied to ${plural(count)}` : `No other screenshot has a ${style.label}`, tone: count ? 'success' : 'info', action: count ? undoAction : undefined });
 }
 
+function visibleOnAll(slideId: string, elementId: string, visible: boolean) {
+  const { slide, element } = find(slideId, elementId);
+  if (!slide || !element) return;
+  let count = 0;
+  store().commit((draft) => {
+    for (const other of draft.slides) {
+      const match = other.id === slideId ? other.elements.find((item) => item.id === elementId) : counterpart(slide, element, other);
+      if (match && match.visible !== visible) { match.visible = visible; count++; }
+    }
+  });
+  if (count) notify({ title: `${capitalize(kindLabel(element))} ${visible ? 'shown' : 'hidden'} on ${plural(count)}`, tone: 'success', action: undoAction });
+}
+
 function samePositionOnAll(slideId: string, elementId: string, outputId: string | null) {
   const { slide, element } = find(slideId, elementId);
   if (!slide || !element) return;
@@ -158,6 +171,11 @@ export function elementMenu(slideId: string, elementId: string, outputId: string
     { separator: true },
     { label: many ? `Duplicate ${ids.length} layers` : 'Duplicate', icon: <CopyPlus size={14} />, shortcut: '⌘D', onSelect: () => store().duplicateElements(slideId, ids) },
     { label: element.visible ? 'Hide' : 'Show', icon: element.visible ? <EyeOff size={14} /> : <Eye size={14} />, shortcut: '⇧⌘H', onSelect: () => store().updateElements(slideId, ids, { visible: !element.visible }) },
+    {
+      label: element.visible ? `Hide ${label} on all screenshots` : `Show ${label} on all screenshots`,
+      icon: element.visible ? <EyeOff size={14} /> : <Eye size={14} />,
+      onSelect: () => visibleOnAll(slideId, elementId, !element.visible),
+    },
     { label: element.locked ? 'Unlock' : 'Lock', icon: element.locked ? <LockOpen size={14} /> : <Lock size={14} />, shortcut: '⇧⌘L', onSelect: () => store().updateElements(slideId, ids, { locked: !element.locked }) },
     { separator: true },
     { label: many ? `Delete ${ids.length} layers` : 'Delete', icon: <Trash2 size={14} />, shortcut: '⌫', danger: true, onSelect: () => store().removeElements(slideId, ids) },
@@ -173,6 +191,7 @@ export function slideMenu(slideId: string, outputId: string | null, at?: { x: nu
   const index = project.slides.findIndex((item) => item.id === slideId);
   const { slide: copiedSlide, background: copiedBackground } = useStyleClipboard.getState();
   const others = project.slides.filter((item) => item.id !== slideId).map((item) => item.id);
+  const group = store().selection.slideIds.includes(slideId) ? store().selection.slideIds : [];
   const add = (element: StudioElement) => {
     store().addElement(slideId, element);
     store().selectElement(slideId, element.id, outputId);
@@ -212,10 +231,14 @@ export function slideMenu(slideId: string, outputId: string | null, at?: { x: nu
       ],
     },
     { separator: true },
-    { label: 'Duplicate screenshot', icon: <CopyPlus size={14} />, shortcut: '⌘D', onSelect: () => store().duplicateSlide(slideId) },
+    group.length > 1
+      ? { label: `Duplicate ${group.length} screenshots`, icon: <CopyPlus size={14} />, onSelect: () => group.forEach((id) => store().duplicateSlide(id)) }
+      : { label: 'Duplicate screenshot', icon: <CopyPlus size={14} />, shortcut: '⌘D', onSelect: () => store().duplicateSlide(slideId) },
     { label: 'Move left', icon: <ArrowLeft size={14} />, disabled: index <= 0, onSelect: () => store().moveSlide(slideId, index - 1) },
     { label: 'Move right', icon: <ArrowRight size={14} />, disabled: index >= project.slides.length - 1, onSelect: () => store().moveSlide(slideId, index + 1) },
     { separator: true },
-    { label: 'Delete screenshot', icon: <Trash2 size={14} />, danger: true, disabled: project.slides.length <= 1, onSelect: () => store().removeSlide(slideId) },
+    group.length > 1
+      ? { label: `Delete ${group.length} screenshots`, icon: <Trash2 size={14} />, danger: true, disabled: group.length >= project.slides.length, onSelect: () => store().removeSlides(group) }
+      : { label: 'Delete screenshot', icon: <Trash2 size={14} />, danger: true, disabled: project.slides.length <= 1, onSelect: () => store().removeSlide(slideId) },
   ];
 }

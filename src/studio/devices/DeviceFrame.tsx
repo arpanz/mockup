@@ -53,6 +53,8 @@ const luminance = (hex: string) => {
 
 /** Styles that draw a solid body (and therefore get a 3D edge when tilted). */
 const SOLID_STYLES = new Set(['real', 'matte', 'clay', 'minimal']);
+/** Styles with a body surface a material can be laid over. */
+const BODY_STYLES = new Set(['real', 'matte', 'clay', 'minimal', 'glass']);
 /** Styles that are pure "screen in a border" and skip cutouts/buttons for a clean, modern look. */
 const FLAT_STYLES = new Set(['minimal', 'glass', 'outline', 'none']);
 
@@ -66,14 +68,7 @@ interface Geometry {
 function geometry(element: DeviceElement, model: DeviceModel, frameWidth: number, frameHeight: number): Geometry {
   const radius = model.bodyRadius * frameWidth;
   const style = element.style;
-  if (FLAT_STYLES.has(style) && (model.kind === 'phone' || model.kind === 'tablet')) {
-    // Even border all the way round, sized like the references (WhatsApp / Notion / Uber Eats).
-    const border = style === 'none' ? 0 : frameWidth * (style === 'glass' ? (model.kind === 'phone' ? .034 : .024) : style === 'outline' ? .03 : (model.kind === 'phone' ? .026 : .018));
-    return {
-      frameWidth, frameHeight, radius,
-      screen: { x: border, y: border, w: frameWidth - border * 2, h: frameHeight - border * 2, r: Math.max(0, radius - border * (style === 'none' ? 0 : .9)) },
-    };
-  }
+  if (style === 'none' && (model.kind === 'phone' || model.kind === 'tablet')) return { frameWidth, frameHeight, radius, screen: { x: 0, y: 0, w: frameWidth, h: frameHeight, r: radius } };
   return {
     frameWidth, frameHeight, radius,
     screen: {
@@ -86,7 +81,7 @@ function geometry(element: DeviceElement, model: DeviceModel, frameWidth: number
   };
 }
 
-function ScreenContent({ element, model, screenSrc, showDropHint, flat }: { element: DeviceElement; model: DeviceModel; screenSrc: string | null; showDropHint: boolean; flat: boolean }): ReactElement {
+function ScreenContent({ element, model, screenSrc, showDropHint, flat, cutout }: { element: DeviceElement; model: DeviceModel; screenSrc: string | null; showDropHint: boolean; flat: boolean; cutout: DeviceModel['cutout'] }): ReactElement {
   return (
     <>
       {screenSrc
@@ -101,15 +96,15 @@ function ScreenContent({ element, model, screenSrc, showDropHint, flat }: { elem
           }}
         />
       )}
-      {!flat && model.cutout === 'dynamic-island' && (
+      {(!flat || (element.cutout && element.cutout !== 'auto')) && cutout === 'dynamic-island' && (
         <div style={{ position: 'absolute', left: '50%', top: '1.15%', width: '28.6%', height: '3.85%', transform: 'translateX(-50%)', borderRadius: 999, background: '#000' }}>
           <i style={{ position: 'absolute', right: '11%', top: '50%', height: '42%', aspectRatio: '1', transform: 'translateY(-50%)', borderRadius: '50%', background: 'radial-gradient(circle at 38% 32%, #2b3644, #07090c 62%)' }} />
         </div>
       )}
-      {!flat && model.cutout === 'punch-hole' && (
+      {(!flat || (element.cutout && element.cutout !== 'auto')) && cutout === 'punch-hole' && (
         <div style={{ position: 'absolute', left: '50%', top: '1.3%', width: '3.2%', aspectRatio: '1', transform: 'translateX(-50%)', borderRadius: '50%', background: '#050506', boxShadow: '0 0 0 1px rgba(255,255,255,.08)' }} />
       )}
-      {!flat && model.cutout === 'notch' && (
+      {(!flat || (element.cutout && element.cutout !== 'auto')) && cutout === 'notch' && (
         <div style={{ position: 'absolute', left: '50%', top: 0, width: '11%', height: '3.4%', transform: 'translateX(-50%)', borderRadius: '0 0 18% 18% / 0 0 40% 40%', background: '#050506' }} />
       )}
     </>
@@ -252,6 +247,7 @@ function DeviceFrameView({ element, model, width, height, unit, screenSrc, showD
   }
 
   const geo = geometry(element, model, frameWidth, frameHeight);
+  const cutout = model.cutout === 'home-button' ? model.cutout : element.cutout && element.cutout !== 'auto' ? element.cutout : model.cutout;
   const colors = palette(element, finish);
   const flat = FLAT_STYLES.has(style);
   const browser = model.kind === 'browser';
@@ -313,6 +309,21 @@ function DeviceFrameView({ element, model, width, height, unit, screenSrc, showD
             );
           })}
           <div style={front}>
+            {element.material && element.material !== 'default' && BODY_STYLES.has(style) && (
+              <div style={{
+                position: 'absolute', inset: 0, borderRadius: geo.radius, pointerEvents: 'none', overflow: 'hidden',
+                background: element.material === 'gloss'
+                  ? 'linear-gradient(125deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,.12) 18%, transparent 34%, transparent 72%, rgba(255,255,255,.16) 100%)'
+                  : element.material === 'satin'
+                    ? 'linear-gradient(160deg, rgba(255,255,255,.2), transparent 45%, rgba(0,0,0,.14))'
+                    : element.material === 'brushed'
+                      ? `repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 ${Math.max(1, frameWidth * .0022)}px, rgba(0,0,0,.06) ${Math.max(1, frameWidth * .0022)}px ${Math.max(1, frameWidth * .0044)}px), linear-gradient(180deg, transparent 40%, rgba(255,255,255,.08) 50%, transparent 62%)`
+                      : `url("data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)" opacity=".5"/></svg>')}"), linear-gradient(rgba(255,255,255,.1), rgba(255,255,255,.1))`,
+                backgroundSize: element.material === 'frosted' ? `${frameWidth * .25}px ${frameWidth * .25}px, auto` : undefined,
+                opacity: element.material === 'frosted' ? .22 : 1,
+                mixBlendMode: element.material === 'frosted' ? 'overlay' : undefined,
+              }} />
+            )}
             {band > 0 && (
               <div
                 style={{
@@ -324,8 +335,9 @@ function DeviceFrameView({ element, model, width, height, unit, screenSrc, showD
             )}
             {browser && <BrowserChrome width={frameWidth} />}
             <div style={screen}>
-              <ScreenContent element={element} model={model} screenSrc={screenSrc} showDropHint={showDropHint} flat={flat} />
+              <ScreenContent element={element} model={model} screenSrc={screenSrc} showDropHint={showDropHint} flat={flat} cutout={cutout} />
             </div>
+            {(element.rim ?? 0) > 0 && <div style={{ position: 'absolute', inset: 0, borderRadius: geo.radius, pointerEvents: 'none', boxShadow: `inset 0 0 0 ${Math.max(hair, frameWidth * .004)}px rgba(255,255,255,${.55 * (element.rim ?? 0)}), 0 0 ${frameWidth * .035 * (element.rim ?? 0)}px rgba(255,255,255,${.28 * (element.rim ?? 0)})` }} />}
             {!flat && model.cutout === 'home-button' && (
               <div
                 style={{
@@ -381,7 +393,7 @@ function LaptopFrame({ element, model, finish, width, height, screenSrc, showDro
     <>
       <div style={lid}>
         <div style={screen}>
-          <ScreenContent element={element} model={model} screenSrc={screenSrc} showDropHint={showDropHint} flat={flat} />
+          <ScreenContent element={element} model={model} screenSrc={screenSrc} showDropHint={showDropHint} flat={flat} cutout={model.cutout} />
         </div>
       </div>
       {style !== 'none' && (

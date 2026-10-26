@@ -29,6 +29,10 @@ export function Canvas({ rightInset }: { rightInset: number }) {
   const [draggedSlide, setDraggedSlide] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const panRef = useRef<{ pointerId: number; x: number; y: number; originX: number; originY: number; moved: boolean; deselect: boolean } | null>(null);
+  // Drag on empty canvas draws a selection box, like a desktop; screenshots it touches are selected together.
+  const marqueeRef = useRef<{ pointerId: number; x: number; y: number; additive: boolean; base: string[]; hits: string } | null>(null);
+  const [marquee, setMarquee] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const group = selection.slideIds;
   const preview = mode === 'preview';
   const outputs = project.outputs;
   const layout = computeLayout(project, view.zoom, outputs);
@@ -134,20 +138,54 @@ export function Canvas({ rightInset }: { rightInset: number }) {
     const background = (event.target as HTMLElement).dataset.canvasBackground === 'true';
     const forcePan = event.button === 1 || (event.button === 0 && spaceHeld);
     if (!forcePan && !(event.button === 0 && background)) return;
-    if (forcePan) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
       // Synthetic pointers can't be captured; panning still works.
     }
+    if (!forcePan && !preview) {
+      const { selection: current } = useEditor.getState();
+      const additive = event.shiftKey || event.metaKey;
+      const base = additive ? (current.slideIds.length ? current.slideIds : current.slideId ? [current.slideId] : []) : [];
+      marqueeRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, additive, base, hits: '' };
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
     panRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, originX: view.x, originY: view.y, moved: false, deselect: !forcePan };
     setPanning(true);
   };
 
+  const updateMarquee = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const box = marqueeRef.current;
+    const container = containerRef.current;
+    if (!box || !container) return;
+    const left = Math.min(box.x, event.clientX);
+    const top = Math.min(box.y, event.clientY);
+    const right = Math.max(box.x, event.clientX);
+    const bottom = Math.max(box.y, event.clientY);
+    if (!marquee && right - left < 4 && bottom - top < 4) return;
+    const origin = container.getBoundingClientRect();
+    setMarquee({ left: left - origin.left, top: top - origin.top, width: right - left, height: bottom - top });
+    const hits = new Set(box.base);
+    let outputId: string | null = null;
+    for (const cell of container.querySelectorAll<HTMLElement>('[data-slide-cell]')) {
+      const rect = cell.getBoundingClientRect();
+      if (rect.right < left || rect.left > right || rect.bottom < top || rect.top > bottom) continue;
+      hits.add(cell.dataset.slideCell!);
+      outputId ??= cell.dataset.outputId ?? null;
+    }
+    const key = [...hits].sort().join(',');
+    if (key === box.hits) return;
+    box.hits = key;
+    if (hits.size) useEditor.getState().selectSlides([...hits], outputId ?? undefined);
+  };
+
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (marqueeRef.current?.pointerId === event.pointerId) {
+      updateMarquee(event);
+      return;
+    }
     const pan = panRef.current;
     if (!pan || pan.pointerId !== event.pointerId) return;
     const dx = event.clientX - pan.x;
@@ -160,6 +198,14 @@ export function Canvas({ rightInset }: { rightInset: number }) {
   };
 
   const onPointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const box = marqueeRef.current;
+    if (box?.pointerId === event.pointerId) {
+      marqueeRef.current = null;
+      // A plain click on empty canvas lets go of everything.
+      if (!marquee && !box.additive) useEditor.getState().select({ elementIds: [], slideIds: [] });
+      setMarquee(null);
+      return;
+    }
     const pan = panRef.current;
     if (!pan || pan.pointerId !== event.pointerId) return;
     panRef.current = null;
@@ -189,6 +235,12 @@ export function Canvas({ rightInset }: { rightInset: number }) {
         void addScreenshots(event.dataTransfer.files);
       }}
     >
+      {marquee && (
+        <div
+          className="pointer-events-none absolute z-40 rounded-[3px] border border-indigo-400/90 bg-indigo-500/10"
+          style={{ left: marquee.left, top: marquee.top, width: marquee.width, height: marquee.height }}
+        />
+      )}
       <div
         data-canvas-background="true"
         className="absolute left-0 top-0"
@@ -215,6 +267,7 @@ export function Canvas({ rightInset }: { rightInset: number }) {
           const output = outputs.find((item) => item.id === cell.outputId)!;
           const activeCell = selection.slideId === slide.id && selection.outputId === output.id;
           const activeColumn = selection.slideId === slide.id;
+          const grouped = group.length > 1 && group.includes(slide.id);
           return (
             <div key={`${cell.outputId}-${cell.slideId}`} className="absolute" style={{ left: cell.x, top: cell.y - CHIP_ROW, width: cell.width, zIndex: activeCell ? 5 : undefined }}>
               <SlideChip
@@ -222,7 +275,7 @@ export function Canvas({ rightInset }: { rightInset: number }) {
                 index={slideIndex}
                 slideId={slide.id}
                 outputId={output.id}
-                active={activeColumn && !preview}
+                active={(activeColumn || grouped) && !preview}
                 compact={cell.width < 150}
                 preview={preview}
                 dragging={draggedSlide === slide.id}
@@ -240,9 +293,13 @@ export function Canvas({ rightInset }: { rightInset: number }) {
                 }}
               />
               <div
+                data-slide-cell={slide.id}
+                data-output-id={output.id}
                 className={`relative transition-shadow duration-150 ${activeCell && !preview ? 'z-10 ' : ''}${activeCell && !preview
                   ? 'shadow-[0_0_0_2px_#6366F1,0_24px_60px_-12px_rgba(0,0,0,0.6)]'
-                  : 'shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_24px_60px_-12px_rgba(0,0,0,0.55)]'}`}
+                  : grouped && !preview
+                    ? 'shadow-[0_0_0_2px_rgba(129,140,248,0.55),0_24px_60px_-12px_rgba(0,0,0,0.55)]'
+                    : 'shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_24px_60px_-12px_rgba(0,0,0,0.55)]'}`}
                 style={{ width: cell.width, height: cell.height }}
               >
                 <SlideCell project={project} slide={slide} slideIndex={slideIndex} output={output} scale={cell.scale} interactive={!preview} />
@@ -327,14 +384,15 @@ function SlideChip({ name, index, slideId, outputId, active, compact, preview, d
       onContextMenu={(event) => {
         if (preview) return;
         event.preventDefault();
-        store().selectSlide(slideId, outputId);
+        if (useEditor.getState().selection.slideIds.includes(slideId)) store().select({ elementIds: [], slideId, outputId });
+        else store().selectSlide(slideId, outputId);
         openContextMenu(event.clientX, event.clientY, slideMenu(slideId, outputId));
       }}
     >
       {dropBefore && <div className="absolute -left-[22px] top-0 h-full w-[3px] rounded-full bg-indigo-400" />}
       <button
         type="button"
-        onClick={() => store().selectSlide(slideId, outputId)}
+        onClick={(event) => (event.shiftKey || event.metaKey ? store().toggleSlideSelection(slideId, outputId) : store().selectSlide(slideId, outputId))}
         className={`flex h-full min-w-0 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition-colors ${active
           ? 'bg-indigo-600 text-white'
           : 'bg-white/[0.05] text-zinc-400 hover:bg-white/10 hover:text-zinc-100'} ${preview ? 'pointer-events-none' : 'cursor-grab active:cursor-grabbing'}`}

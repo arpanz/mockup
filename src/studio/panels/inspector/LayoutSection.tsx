@@ -40,13 +40,14 @@ function LayoutTile({ layout, onClick }: { layout: SlideLayout; onClick: () => v
 
 export function LayoutSection() {
   const slideId = useEditor((state) => state.selection.slideId);
+  const groupSize = useEditor((state) => state.selection.slideIds.length);
   const [scope, setScope] = useState<'this' | 'all'>('this');
   const store = useEditor.getState;
 
   return (
     <Section
       title="Layout"
-      actions={<Segmented<'this' | 'all'> size="sm" value={scope} onChange={setScope} options={[{ value: 'this', label: 'This', title: 'This screenshot' }, { value: 'all', label: 'All', title: 'All screenshots' }]} />}
+      actions={<Segmented<'this' | 'all'> size="sm" value={scope} onChange={setScope} options={[{ value: 'this', label: groupSize > 1 ? 'Selected' : 'This', title: groupSize > 1 ? 'The selected screenshots' : 'This screenshot' }, { value: 'all', label: 'All', title: 'All screenshots' }]} />}
     >
       <div className="grid grid-cols-6 gap-1.5">
         {SLIDE_LAYOUTS.map((layout) => (
@@ -56,7 +57,8 @@ export function LayoutSection() {
             onClick={() => {
               if (!slideId) return;
               store().commit((draft) => {
-                const ids = scope === 'all' ? draft.slides.map((slide) => slide.id) : [slideId];
+                const { slideIds } = store().selection;
+                const ids = scope === 'all' ? draft.slides.map((slide) => slide.id) : slideIds.length > 1 ? slideIds : [slideId];
                 for (const id of ids) applySlideLayout(draft, id, layout.id);
               });
             }}

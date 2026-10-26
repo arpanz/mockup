@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactElement, type RefObject } from 'react';
 import {
-  ChevronsRight, Circle, Eye, EyeOff, Image as ImageIcon, Link2, Lock, LockOpen, MoreHorizontal, Palette, Plus, Smartphone, Sparkles, Square, Star, Tag, Type, Unlink2,
+  ChevronsRight, Circle, Copy, Eye, EyeOff, Image as ImageIcon, Link2, Lock, LockOpen, MoreHorizontal, Palette, Plus, Smartphone, Sparkles, Square, Star, Tag, Type, Unlink2,
 } from 'lucide-react';
 import { openContextMenu } from '../editor/ContextMenu';
 import { elementMenu, slideMenu } from '../editor/menus';
@@ -197,6 +197,7 @@ function LayerRow({ element, slideId, outputId, selected, overridden }: { elemen
 export function RightPanel({ onCollapse }: { onCollapse: () => void }) {
   const { slide, output, elements, update, overrideOutputId } = useSelected();
   const selectedIds = useEditor((state) => state.selection.elementIds);
+  const groupSize = useEditor((state) => state.selection.slideIds.length);
   const multipleOutputs = useEditor((state) => state.project.outputs.length > 1);
   const syncStyles = useUiPrefs((state) => state.syncStyles);
   const setSyncStyles = useUiPrefs((state) => state.setSyncStyles);
@@ -223,7 +224,7 @@ export function RightPanel({ onCollapse }: { onCollapse: () => void }) {
         <div className="flex items-center gap-1.5 px-3 pb-1.5 pt-2.5">
           <button
             type="button"
-            onClick={() => store().selectSlide(slide.id)}
+            onClick={() => store().select({ elementIds: [] })}
             className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-left text-[13px] font-semibold transition-colors ${selectedIds.length === 0 ? 'text-white' : 'text-zinc-300 hover:text-white'}`}
           >
             <span className={`h-2 w-2 shrink-0 rounded-full ${selectedIds.length === 0 ? 'bg-indigo-400' : 'bg-zinc-600'}`} />
@@ -264,6 +265,16 @@ export function RightPanel({ onCollapse }: { onCollapse: () => void }) {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-900/95 shadow-[0_16px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+        {groupSize > 1 && (
+          <div className="ff-fade flex items-center gap-2 border-b border-indigo-400/20 bg-indigo-500/[0.12] px-3 py-2 text-[12px] text-indigo-100">
+            <Copy size={13} className="shrink-0 text-indigo-300" />
+            <span className="min-w-0 flex-1 leading-snug">
+              <b className="font-semibold">{groupSize} screenshots</b> selected
+              <span className="block text-[11px] text-indigo-200/70">{primary ? `Edits to this ${primary.type === 'device' ? 'phone' : 'layer'} reach the matching one on each.` : 'Background and layout changes apply to all of them.'}</span>
+            </span>
+            <button type="button" onClick={() => store().select({ slideIds: [] })} className="shrink-0 rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/15">Done</button>
+          </div>
+        )}
         {(multipleOutputs || primary) && (
           <div className="flex flex-col gap-1.5 border-b border-white/[0.06] px-3 py-2.5">
             {multipleOutputs && (
@@ -284,7 +295,7 @@ export function RightPanel({ onCollapse }: { onCollapse: () => void }) {
                 </button>
               </div>
             )}
-            {primary && !overriding && (
+            {primary && !overriding && groupSize < 2 && (
               <label className="flex items-center justify-between text-[12px] text-zinc-400">
                 <span>Sync style across screenshots</span>
                 <Toggle checked={syncStyles} onChange={setSyncStyles} />

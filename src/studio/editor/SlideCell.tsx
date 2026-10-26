@@ -1,6 +1,7 @@
 import { memo, useMemo, useRef, useState, type DragEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Draft } from 'immer';
 import type { OutputSpec, Project, Slide, StudioElement } from '../model/types';
+import { counterpart } from '../model/styleClipboard';
 import { baseUnit, resolveElement, resolveElements } from '../model/units';
 import { SlideRenderer } from '../render/SlideRenderer';
 import { readImageFile } from '../store/persistence';
@@ -51,7 +52,20 @@ function SlideCellImpl({ project, slide, slideIndex, output, scale, interactive 
   const isActiveCell = selection.slideId === slide.id && selection.outputId === output.id;
   const isActiveColumn = selection.slideId === slide.id;
   const resolved = resolveElements(slide, output.id);
-  const selected = isActiveCell ? resolved.filter((element) => selection.elementIds.includes(element.id)) : [];
+  const grouped = selection.slideIds.length > 1 && selection.slideIds.includes(slide.id);
+  // Other screenshots in the selected set outline the layer the edit will also reach.
+  const linked = useMemo(() => {
+    if (!grouped || isActiveColumn || !selection.elementIds.length) return [];
+    const primary = project.slides.find((item) => item.id === selection.slideId);
+    if (!primary) return [];
+    return primary.elements
+      .filter((element) => selection.elementIds.includes(element.id))
+      .flatMap((element) => {
+        const match = counterpart(primary, element, slide);
+        return match ? [resolveElement(slide, match, output.id)] : [];
+      });
+  }, [grouped, isActiveColumn, selection.elementIds, selection.slideId, project.slides, slide, output.id]);
+  const selected = isActiveCell ? resolved.filter((element) => selection.elementIds.includes(element.id)) : linked;
   const hovered = isActiveColumn ? resolved.find((element) => element.id === hoverElementId) ?? null : null;
   const editing = isActiveCell ? resolved.find((element) => element.id === editingTextId && element.type === 'text') : undefined;
 
@@ -98,7 +112,10 @@ function SlideCellImpl({ project, slide, slideIndex, output, scale, interactive 
     // Pointer capture retargets the following dblclick to the cell root; remember what was hit.
     downElementRef.current = elementId ?? null;
     if (!elementId) {
-      store.selectSlide(slide.id, output.id);
+      if (event.shiftKey || event.metaKey) store.toggleSlideSelection(slide.id, output.id);
+      // Inside the selected set, the first click only lets go of the layer; the next selects just this screenshot.
+      else if (grouped && selection.elementIds.length) store.select({ elementIds: [], slideId: slide.id, outputId: output.id });
+      else store.selectSlide(slide.id, output.id);
       return;
     }
     const element = resolved.find((item) => item.id === elementId);
@@ -264,7 +281,8 @@ function SlideCellImpl({ project, slide, slideIndex, output, scale, interactive 
           openContextMenu(event.clientX, event.clientY, elementMenu(slide.id, elementId, output.id));
           return;
         }
-        store.selectSlide(slide.id, output.id);
+        if (grouped) store.select({ elementIds: [], slideId: slide.id, outputId: output.id });
+        else store.selectSlide(slide.id, output.id);
         const rect = event.currentTarget.getBoundingClientRect();
         const at = { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height };
         openContextMenu(event.clientX, event.clientY, slideMenu(slide.id, output.id, at));
@@ -307,7 +325,7 @@ function SlideCellImpl({ project, slide, slideIndex, output, scale, interactive 
             selected={editing ? [] : selected}
             hovered={editing ? null : hovered}
             guides={guides}
-            showHandles={!editing}
+            showHandles={!editing && isActiveCell}
           />
         )}
         {interactive && editing && editing.type === 'text' && (

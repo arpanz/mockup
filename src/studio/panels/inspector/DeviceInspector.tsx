@@ -1,6 +1,6 @@
 import { useRef, type CSSProperties } from 'react';
 import { ImagePlus, RectangleHorizontal, RectangleVertical, Trash2, Upload } from 'lucide-react';
-import { DEVICE_MODELS, resolveDeviceModel } from '../../devices/catalog';
+import { DEVICE_MODELS, frameModel, resolveDeviceModel } from '../../devices/catalog';
 import type { DeviceElement, DeviceFrameStyle, OutputSpec } from '../../model/types';
 import { useEditor } from '../../store/editorStore';
 import { readImageFile } from '../../store/persistence';
@@ -54,8 +54,16 @@ const FAMILY_LABEL: Record<string, string> = {
   iphone: 'iPhone', ipad: 'iPad', 'android-phone': 'Android', 'android-tablet': 'Android tablet', mac: 'Mac', web: 'Web',
 };
 
+const MATERIALS = [
+  { value: 'default', label: 'Default', background: '#252528' },
+  { value: 'gloss', label: 'Gloss', background: 'linear-gradient(125deg,#fff8,#fff2 25%,#252528 45%,#252528 75%,#fff3)' },
+  { value: 'satin', label: 'Satin', background: 'linear-gradient(160deg,#fff4,#252528 50%,#080809)' },
+  { value: 'brushed', label: 'Brushed', background: 'repeating-linear-gradient(90deg,#fff2 0 2px,#111 2px 4px),#343438' },
+  { value: 'frosted', label: 'Frosted', background: 'linear-gradient(135deg,#fff5,#5558),#343438' },
+] as const;
+
 export function DeviceInspector({ element, output, update, slideId }: { element: DeviceElement; output: OutputSpec; update: Update; slideId: string }) {
-  const model = resolveDeviceModel(element.model, output.family);
+  const model = frameModel(resolveDeviceModel(element.model, output.family), element);
   const asset = useEditor((state) => (element.screen.assetId ? state.project.assets[element.screen.assetId] : undefined));
   const inputRef = useRef<HTMLInputElement>(null);
   const screen = element.screen;
@@ -66,6 +74,8 @@ export function DeviceInspector({ element, output, update, slideId }: { element:
   ];
   const finishes = model.finishes;
   const activeFinish = finishes.find((finish) => finish.id === element.finish) ?? finishes[0];
+  const hasBody = ['real', 'matte', 'clay', 'minimal', 'glass'].includes(element.style);
+  const canAdjustBezel = (model.kind === 'phone' || model.kind === 'tablet') && model.cutout !== 'home-button' && element.style !== 'none';
 
   return (
     <>
@@ -152,6 +162,44 @@ export function DeviceInspector({ element, output, update, slideId }: { element:
             <ColorField value={element.tint} allowAlpha={false} onChange={(tint) => update({ tint }, 'tint')} />
           </Field>
         )}
+        {canAdjustBezel && <SliderField label="Bezel" value={Math.round((element.bezel ?? 1) * 100)} min={0} max={250} step={1} unit="%" defaultValue={100} onChange={(value) => update({ bezel: value / 100 }, 'bezel')} />}
+        <SliderField label="Corners" value={Math.round((element.corner ?? 1) * 100)} min={40} max={160} step={1} unit="%" defaultValue={100} onChange={(value) => update({ corner: value / 100 }, 'corner')} />
+        {hasBody && (
+          <Field label="Material">
+            <div className="grid grid-cols-5 gap-1">
+              {MATERIALS.map((item) => {
+                const active = (element.material ?? 'default') === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => update({ material: item.value }, 'material')}
+                    className={`flex flex-col items-center gap-1 rounded-md border p-1 text-[9px] transition-colors ${active ? 'border-indigo-500/80 bg-indigo-500/10 text-zinc-100' : 'border-white/[0.07] text-zinc-400 hover:border-white/20'}`}
+                  >
+                    <span className="h-5 w-8 rounded" style={{ background: item.background, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.18)' }} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+        )}
+        {model.kind === 'phone' && model.cutout !== 'home-button' && (
+          <Field label="Camera">
+            <Segmented
+              fullWidth
+              size="sm"
+              value={element.cutout ?? 'auto'}
+              onChange={(cutout) => update({ cutout }, 'cutout')}
+              options={[
+                { value: 'auto', label: 'Auto' }, { value: 'dynamic-island', label: 'Island' }, { value: 'notch', label: 'Notch' },
+                { value: 'punch-hole', label: 'Hole' }, { value: 'none', label: 'None' },
+              ]}
+            />
+          </Field>
+        )}
+        <SliderField label="Edge light" value={Math.round((element.rim ?? 0) * 100)} min={0} max={100} step={1} unit="%" defaultValue={0} onChange={(value) => update({ rim: value / 100 }, 'rim')} />
         <div className="flex items-center gap-2">
           <Segmented
             value={element.orientation}

@@ -1,4 +1,4 @@
-import { resolveDeviceModel } from '../devices/catalog';
+import { frameModel, resolveDeviceModel } from '../devices/catalog';
 import { deviceBoxSize } from '../devices/DeviceFrame';
 import type { OutputSpec, StudioElement } from '../model/types';
 import { baseUnit } from '../model/units';
@@ -17,7 +17,7 @@ export function elementBox(element: StudioElement, output: OutputSpec): { width:
       return { width: element.w * W, height: lines * element.fontSize * element.lineHeight * unit };
     }
     case 'device': {
-      const model = resolveDeviceModel(element.model, output.family);
+      const model = frameModel(resolveDeviceModel(element.model, output.family), element);
       return deviceBoxSize(model, element.orientation, element.h * H);
     }
     case 'image':

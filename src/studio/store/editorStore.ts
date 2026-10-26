@@ -2,6 +2,7 @@ import { produce, type Draft, current, isDraft } from 'immer';
 import { create } from 'zustand';
 import { createDevice, createProject, createSlide, makeId } from '../model/defaults';
 import { OUTPUT_CATALOG } from '../model/outputs';
+import { counterpart } from '../model/styleClipboard';
 import type {
   Asset,
   Background,
@@ -58,6 +59,7 @@ interface EditorState {
   addSlide: (afterSlideId?: Id, slide?: Slide) => Id;
   duplicateSlide: (slideId: Id) => Id | null;
   removeSlide: (slideId: Id) => void;
+  removeSlides: (slideIds: Id[]) => void;
   moveSlide: (slideId: Id, toIndex: number) => void;
   renameSlide: (slideId: Id, name: string) => void;
   setBackground: (slideId: Id, background: Background, options?: UpdateOptions & { allSlides?: boolean }) => void;
@@ -88,6 +90,11 @@ interface EditorState {
   select: (selection: Partial<Selection>) => void;
   selectElement: (slideId: Id, elementId: Id, outputId: Id | null, additive?: boolean) => void;
   selectSlide: (slideId: Id, outputId?: Id | null) => void;
+  /** Select several screenshots to edit together (the first, or the current one if included, stays primary). */
+  selectSlides: (slideIds: Id[], outputId?: Id | null) => void;
+  /** ⇧/⌘-click: add a screenshot to the selected set, or take it out. */
+  toggleSlideSelection: (slideId: Id, outputId?: Id | null) => void;
+  /** Steps back one level: selected layers first, then the set of screenshots. */
   clearSelection: () => void;
   setHover: (id: Id | null) => void;
   setEditingText: (id: Id | null) => void;
@@ -126,7 +133,7 @@ export const useEditor = create<EditorState>()((set, get) => {
   return {
     project: createProject(),
     hydrated: false,
-    selection: { slideId: null, elementIds: [], outputId: null },
+    selection: { slideId: null, elementIds: [], outputId: null, slideIds: [] },
     hoverElementId: null,
     editingTextId: null,
     mode: 'editor',
@@ -141,7 +148,7 @@ export const useEditor = create<EditorState>()((set, get) => {
       hydrated: true,
       past: [],
       future: [],
-      selection: { slideId: project.slides[0]?.id ?? null, elementIds: [], outputId: project.outputs[0]?.id ?? null },
+      selection: { slideId: project.slides[0]?.id ?? null, elementIds: [], outputId: project.outputs[0]?.id ?? null, slideIds: [] },
       overrideOutputId: null,
       editingTextId: null,
     }),
@@ -219,10 +226,23 @@ export const useEditor = create<EditorState>()((set, get) => {
       if (project.slides.length <= 1) return;
       const index = project.slides.findIndex((s) => s.id === slideId);
       commit((draft) => { draft.slides = draft.slides.filter((s) => s.id !== slideId); });
+      const slideIds = selection.slideIds.filter((id) => id !== slideId);
       if (selection.slideId === slideId) {
         const neighbour = get().project.slides[Math.max(0, index - 1)];
-        set({ selection: { ...selection, slideId: neighbour?.id ?? null, elementIds: [] } });
+        set({ selection: { ...selection, slideId: slideIds[0] ?? neighbour?.id ?? null, elementIds: [], slideIds: slideIds.length > 1 ? slideIds : [] } });
+      } else if (slideIds.length !== selection.slideIds.length) {
+        set({ selection: { ...selection, slideIds: slideIds.length > 1 ? slideIds : [] } });
       }
+    },
+    removeSlides: (slideIds) => {
+      const { project, selection } = get();
+      // Always keep at least one screenshot.
+      const doomed = new Set(slideIds.slice(0, Math.max(0, project.slides.length - 1)));
+      if (!doomed.size) return;
+      const first = project.slides.findIndex((s) => doomed.has(s.id));
+      commit((draft) => { draft.slides = draft.slides.filter((s) => !doomed.has(s.id)); });
+      const neighbour = get().project.slides[Math.max(0, first - 1)];
+      set({ selection: { ...selection, slideId: neighbour?.id ?? null, elementIds: [], slideIds: [] } });
     },
     moveSlide: (slideId, toIndex) => commit((draft) => {
       const from = draft.slides.findIndex((s) => s.id === slideId);
@@ -234,11 +254,15 @@ export const useEditor = create<EditorState>()((set, get) => {
       const slide = findSlide(draft, slideId);
       if (slide) slide.name = name;
     }, { coalesce: `slide-name-${slideId}` }),
-    setBackground: (slideId, background, options) => commit((draft) => {
-      for (const slide of draft.slides) {
-        if (options?.allSlides || slide.id === slideId) slide.background = clone(background);
-      }
-    }, { coalesce: options?.coalesce }),
+    setBackground: (slideId, background, options) => {
+      const group = activeGroup(get().selection);
+      const targets = group.includes(slideId) ? group : [slideId];
+      commit((draft) => {
+        for (const slide of draft.slides) {
+          if (options?.allSlides || targets.includes(slide.id)) slide.background = clone(background);
+        }
+      }, { coalesce: options?.coalesce });
+    },
     setSpan: (patch, options) => commit((draft) => {
       Object.assign(draft.span, clone(patch));
     }, { coalesce: options?.coalesce }),
@@ -277,7 +301,30 @@ export const useEditor = create<EditorState>()((set, get) => {
           if (typeof patch === 'function') patch(element);
           else Object.assign(element, clone(patch));
         };
+        const before = targets.map((element) => clone(element) as StudioElement);
         targets.forEach(apply);
+
+        // Screenshots selected together: copy what this edit changed onto the matching element of each of them.
+        // Only changed keys travel, positions move by the same amount, and words / screenshots stay per screenshot.
+        const group = activeGroup(get().selection);
+        if (group.length > 1 && group.includes(slideId)) {
+          targets.forEach((target, index) => {
+            const previous = before[index] as unknown as Record<string, unknown>;
+            const next = target as unknown as Record<string, unknown>;
+            const changed = Object.keys(next).filter((key) => !GROUP_FIXED_KEYS.has(key) && JSON.stringify(next[key]) !== JSON.stringify(previous[key]));
+            if (!changed.length) return;
+            for (const other of draft.slides) {
+              if (other.id === slideId || !group.includes(other.id)) continue;
+              const match = counterpart(slide as Slide, before[index], other) as unknown as Record<string, number | unknown> | undefined;
+              if (!match) continue;
+              for (const key of changed) {
+                if (key === 'x' || key === 'y') match[key] = (match[key] as number) + (next[key] as number) - (previous[key] as number);
+                else match[key] = clone(next[key]);
+              }
+            }
+          });
+          return;
+        }
 
         if (options?.syncAllSlides) {
           for (const source of targets) {
@@ -442,13 +489,37 @@ export const useEditor = create<EditorState>()((set, get) => {
       const elementIds = additive
         ? current.includes(elementId) ? current.filter((id) => id !== elementId) : [...current, elementId]
         : [elementId];
-      return { selection: { slideId, elementIds, outputId: outputId ?? state.selection.outputId }, editingTextId: null };
+      // Picking a layer inside the selected set keeps the set, so the edit reaches all of them.
+      const slideIds = state.selection.slideIds.includes(slideId) ? state.selection.slideIds : [];
+      return { selection: { slideId, elementIds, outputId: outputId ?? state.selection.outputId, slideIds }, editingTextId: null };
     }),
     selectSlide: (slideId, outputId) => set((state) => ({
-      selection: { slideId, elementIds: [], outputId: outputId === undefined ? state.selection.outputId : outputId },
+      selection: { slideId, elementIds: [], outputId: outputId === undefined ? state.selection.outputId : outputId, slideIds: [] },
       editingTextId: null,
     })),
-    clearSelection: () => set((state) => ({ selection: { ...state.selection, elementIds: [] }, editingTextId: null })),
+    selectSlides: (slideIds, outputId) => set((state) => {
+      const order = state.project.slides.map((slide) => slide.id);
+      const ids = order.filter((id) => slideIds.includes(id));
+      if (!ids.length) return {};
+      const slideId = state.selection.slideId && ids.includes(state.selection.slideId) ? state.selection.slideId : ids[0];
+      return {
+        selection: { slideId, elementIds: [], outputId: outputId === undefined ? state.selection.outputId : outputId, slideIds: ids.length > 1 ? ids : [] },
+        editingTextId: null,
+      };
+    }),
+    toggleSlideSelection: (slideId, outputId) => {
+      const { selection } = get();
+      const current = selection.slideIds.length ? selection.slideIds : selection.slideId ? [selection.slideId] : [];
+      const next = current.includes(slideId) ? current.filter((id) => id !== slideId) : [...current, slideId];
+      if (!next.length) return;
+      get().selectSlides(next, outputId);
+      // The clicked screenshot becomes the one the panel shows, unless it was just taken out.
+      if (next.includes(slideId)) set((state) => ({ selection: { ...state.selection, slideId } }));
+    },
+    clearSelection: () => set((state) => ({
+      selection: state.selection.elementIds.length ? { ...state.selection, elementIds: [] } : { ...state.selection, slideIds: [] },
+      editingTextId: null,
+    })),
     setHover: (hoverElementId) => set({ hoverElementId }),
     setEditingText: (editingTextId) => set({ editingTextId }),
     setMode: (mode) => set({ mode, editingTextId: null }),
@@ -458,6 +529,14 @@ export const useEditor = create<EditorState>()((set, get) => {
 });
 
 /* ───────── selectors ───────── */
+
+/** Keys that stay per screenshot when the same edit lands on several: what it says, what it shows, what it is. */
+const GROUP_FIXED_KEYS = new Set(['id', 'type', 'name', 'role', 'text', 'screen', 'assetId']);
+
+/** The screenshots being edited together, or [] when it's just one. */
+export function activeGroup(selection: Selection): Id[] {
+  return selection.slideIds.length > 1 ? selection.slideIds : [];
+}
 
 export const selectActiveSlide = (state: EditorState) =>
   state.project.slides.find((slide) => slide.id === state.selection.slideId) ?? state.project.slides[0];

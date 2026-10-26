@@ -1,7 +1,7 @@
 import { memo, type CSSProperties, type ReactElement } from 'react';
 import { BackgroundLayer } from '../backgrounds/BackgroundLayer';
 import { DeviceFrame } from '../devices/DeviceFrame';
-import { resolveDeviceModel } from '../devices/catalog';
+import { frameModel, resolveDeviceModel } from '../devices/catalog';
 import type { ImageElement, OutputSpec, Project, ShapeElement, Slide, StudioElement } from '../model/types';
 import { baseUnit, resolveElements } from '../model/units';
 import { TextBlock } from '../text/TextBlock';
@@ -153,7 +153,7 @@ function ElementView({
       content = <TextBlock element={element} unit={unit} canvasWidth={W} />;
       break;
     case 'device': {
-      const model = resolveDeviceModel(element.model, output.family);
+      const model = frameModel(resolveDeviceModel(element.model, output.family), element);
       const box = elementBox(element, output);
       const src = element.screen.assetId ? project.assets[element.screen.assetId]?.src ?? null : null;
       content = <DeviceFrame element={element} model={model} width={box.width} height={box.height} unit={unit} screenSrc={src} showDropHint={Boolean(interactive)} />;
