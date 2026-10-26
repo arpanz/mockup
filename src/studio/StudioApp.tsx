@@ -8,6 +8,7 @@ import { BottomBar } from './panels/BottomBar';
 import { ExportPanel } from './panels/ExportPanel';
 import { RightPanel } from './panels/RightPanel';
 import { TemplatesOverlay } from './panels/TemplatesOverlay';
+import { refreshSampleScreens } from './templates/sampleScreens';
 import { TopBar } from './panels/TopBar';
 import { ToastProvider } from './ui';
 
@@ -26,7 +27,7 @@ function useHydrateAndAutosave() {
       .then((saved) => {
         if (cancelled) return;
         const store = useEditor.getState();
-        store.loadProject(saved ?? createProject());
+        store.loadProject(saved ? refreshSampleScreens(saved) : createProject());
         // First visit: start by picking a look rather than editing an empty project.
         if (!saved) store.setMode('templates');
       });
