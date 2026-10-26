@@ -18,3 +18,9 @@ View your app in AI Studio: https://ai.studio/apps/9e8e01a6-67ce-4fe4-9a6a-51d99
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Store screenshots from the command line
+
+`npm run mockups` turns raw app screenshots and headlines into store-ready screenshots with the studio's templates,
+headless (needs Google Chrome). Coding agents in other projects can run it with
+`npm --prefix ~/webdev/mockup run mockups -- --help`. See [MOCKUPS.md](MOCKUPS.md).
