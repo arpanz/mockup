@@ -124,8 +124,8 @@ export interface TextElement extends BaseElement {
   transform: 'none' | 'uppercase';
   fill: Paint;
   accent: {
-    style: 'color' | 'highlight' | 'underline' | 'gradient' | 'italic-serif';
-    color: string;        // text color for `color`, marker color for `highlight`/`underline`
+    style: 'color' | 'highlight' | 'underline' | 'wave' | 'zigzag' | 'circle' | 'gradient' | 'italic-serif';
+    color: string;        // text color for `color`, marker color for `highlight`, line color for `underline`/`wave`/`zigzag`/`circle`
     paint: Paint;         // used by `gradient`
     textColor: string;    // text color on top of a highlight
   };
@@ -222,7 +222,19 @@ export interface Project {
   span: { enabled: boolean; background: Background };
   /** Whole-set adjustments applied on top of the template (see model/setLayout). Absent = untouched. */
   layout?: SetLayout;
+  /** How the app appears on the store, for the store preview. Absent = derived from the project name. */
+  listing?: StoreListing;
   updatedAt: number;
+}
+
+export interface StoreListing {
+  name: string;
+  subtitle: string;
+  developer: string;
+  category: string;
+  iconAssetId: Id | null;
+  rating: number;         // 0..5
+  ratings: string;        // display count, e.g. "12K"
 }
 
 export interface SetLayout {

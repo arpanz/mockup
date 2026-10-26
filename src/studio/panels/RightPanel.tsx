@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState, type ReactElement, type RefObject } from 'react';
 import {
-  ChevronsRight, Circle, Eye, EyeOff, Image as ImageIcon, Link2, Lock, LockOpen, Palette, Plus, Smartphone, Square, Star, Tag, Type, Unlink2,
+  ChevronsRight, Circle, Eye, EyeOff, Image as ImageIcon, Link2, Lock, LockOpen, MoreHorizontal, Palette, Plus, Smartphone, Sparkles, Square, Star, Tag, Type, Unlink2,
 } from 'lucide-react';
+import { openContextMenu } from '../editor/ContextMenu';
+import { elementMenu, slideMenu } from '../editor/menus';
 import { createDevice, createImage, createShape, createText } from '../model/defaults';
 import type { StudioElement } from '../model/types';
 import { hasOverride } from '../model/units';
@@ -12,6 +14,7 @@ import { DeviceInspector } from './inspector/DeviceInspector';
 import { ImageInspector, MultiInspector, ShapeInspector } from './inspector/ElementInspectors';
 import { SlideInspector } from './inspector/SlideInspector';
 import { TextInspector } from './inspector/TextInspector';
+import { StickerPicker } from '../stickers/StickerPicker';
 import { useSelected, useUiPrefs } from './useSelected';
 
 /** Most-used colors in the document, for picker swatches. */
@@ -31,6 +34,7 @@ const ICONS: Record<StudioElement['type'], typeof Type> = { text: Type, device: 
 
 function AddLayerMenu({ slideId }: { slideId: string }) {
   const popover = usePopover();
+  const stickers = usePopover();
   const imageInput = useRef<HTMLInputElement>(null);
   const add = (element: StudioElement) => useEditor.getState().addElement(slideId, element);
   return (
@@ -63,8 +67,12 @@ function AddLayerMenu({ slideId }: { slideId: string }) {
             { label: 'Circle', icon: <Circle size={14} />, onSelect: () => add(createShape('ellipse', { fill: { kind: 'solid', color: '#FDE68A' } })) },
             { label: 'Star', icon: <Star size={14} />, onSelect: () => add(createShape('star', { fill: { kind: 'solid', color: '#FBBF24' } })) },
             { label: 'Glow', icon: <Palette size={14} />, onSelect: () => add(createShape('ellipse', { name: 'Glow', w: 700, h: 700, blur: 160, fill: { kind: 'solid', color: '#A5B4FC' } })) },
+            { label: 'Sticker…', icon: <Sparkles size={14} />, onSelect: () => { popover.setOpen(false); stickers.setOpen(true); } },
           ]}
         />
+      </Popover>
+      <Popover open={stickers.open} onOpenChange={stickers.setOpen} anchor={popover.anchorRef} side="bottom" align="end" className="p-0">
+        <StickerPicker slideId={slideId} onDone={() => stickers.setOpen(false)} />
       </Popover>
       <input
         ref={imageInput}
@@ -114,6 +122,11 @@ function LayerRow({ element, slideId, outputId, selected, overridden }: { elemen
       onPointerLeave={() => store().setHover(null)}
       onClick={(event) => store().selectElement(slideId, element.id, outputId, event.shiftKey || event.metaKey)}
       onDoubleClick={() => setRenaming(true)}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        if (!selected) store().selectElement(slideId, element.id, outputId);
+        openContextMenu(event.clientX, event.clientY, elementMenu(slideId, element.id, outputId));
+      }}
       className={`group flex h-8 cursor-default items-center gap-2 rounded-md px-2 text-[12.5px] transition-colors ${selected
         ? 'bg-indigo-500/[0.18] text-white'
         : hovered ? 'bg-white/[0.05] text-zinc-100' : 'text-zinc-300 hover:bg-white/[0.04]'}`}
@@ -164,6 +177,19 @@ function LayerRow({ element, slideId, outputId, selected, overridden }: { elemen
       >
         {element.visible ? <Eye size={13} /> : <EyeOff size={13} />}
       </button>
+      <button
+        type="button"
+        aria-label={`${element.name} options`}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (!selected) store().selectElement(slideId, element.id, outputId);
+          const rect = event.currentTarget.getBoundingClientRect();
+          openContextMenu(rect.left, rect.bottom + 4, elementMenu(slideId, element.id, outputId));
+        }}
+        className="rounded p-0.5 text-zinc-500 opacity-0 hover:text-zinc-100 focus-visible:opacity-100 group-hover:opacity-100"
+      >
+        <MoreHorizontal size={13} />
+      </button>
     </div>
   );
 }
@@ -204,6 +230,19 @@ export function RightPanel({ onCollapse }: { onCollapse: () => void }) {
             <span className="truncate">{slide.name}</span>
           </button>
           <AddLayerMenu slideId={slide.id} />
+          <Tooltip content="Screenshot options">
+            <button
+              type="button"
+              aria-label="Screenshot options"
+              onClick={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                openContextMenu(rect.left, rect.bottom + 4, slideMenu(slide.id, output.id));
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-white/[0.08] hover:text-zinc-100"
+            >
+              <MoreHorizontal size={15} />
+            </button>
+          </Tooltip>
           <Tooltip content="Hide panel">
             <button type="button" aria-label="Hide panel" onClick={onCollapse} className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-white/[0.08] hover:text-zinc-100">
               <ChevronsRight size={15} />

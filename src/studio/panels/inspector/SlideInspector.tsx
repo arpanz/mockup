@@ -7,6 +7,8 @@ import type { Background, MeshPoint, OutputSpec, Paint, Slide } from '../../mode
 import { useEditor } from '../../store/editorStore';
 import { readImageFile } from '../../store/persistence';
 import { SetLayoutSection } from './SetLayoutSection';
+import { BrandColorSection } from './BrandColorSection';
+import { LayoutSection } from './LayoutSection';
 import { Button, ColorField, Field, PaintField, Section, Segmented, Select, SliderField, TextInput, Toggle, Tooltip } from '../../ui';
 
 type Kind = Background['kind'];
@@ -249,7 +251,9 @@ export function SlideInspector({ slide, output }: { slide: Slide; output: Output
         )}
       </Section>
 
+      <LayoutSection />
       <SetLayoutSection />
+      <BrandColorSection />
 
       <Section
         title={span.enabled ? 'Panorama background' : 'Background'}

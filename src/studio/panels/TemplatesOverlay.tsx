@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
-import { X } from 'lucide-react';
+import { Search, Shuffle, X } from 'lucide-react';
 import { applyTemplate } from '../templates/applyTemplate';
 import { TEMPLATES, type Template } from '../templates/catalog';
 import { TemplateCard } from '../templates/TemplateCard';
@@ -13,6 +13,7 @@ const CATEGORIES = ['All', ...Array.from(new Set(TEMPLATES.map((template) => tem
 export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
   const project = useEditor((state) => state.project);
   const [category, setCategory] = useState('All');
+  const [query, setQuery] = useState('');
   const [appliedId, setAppliedId] = useState<string | null>(null);
   const toast = useToast();
 
@@ -26,6 +27,10 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
     [source.slides],
   );
   const previewAssets = usePreviewAssets(source.assets, screens.slice(0, 3));
+
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const visible = TEMPLATES.filter((template) => (category === 'All' || template.category === category)
+    && words.every((word) => `${template.name} ${template.category} ${template.description}`.toLowerCase().includes(word)));
 
   const apply = (template: Template) => {
     const store = useEditor.getState();
@@ -62,7 +67,29 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
             <X size={16} />
           </button>
         </div>
-        <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto">
+        <div className="mt-3 flex items-center gap-2">
+          <label className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 focus-within:border-indigo-500/60">
+            <Search size={14} className="shrink-0 text-zinc-500" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search styles: dark, serif, pastel, 3D…"
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-zinc-100 outline-none placeholder:text-zinc-600 focus-visible:outline-none!"
+            />
+            {query && <button type="button" aria-label="Clear search" onClick={() => setQuery('')} className="text-zinc-500 hover:text-zinc-200"><X size={13} /></button>}
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              const pool = TEMPLATES.filter((template) => template.id !== appliedId);
+              apply(pool[Math.floor(Math.random() * pool.length)]);
+            }}
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 text-[12px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition-colors hover:bg-indigo-500"
+          >
+            <Shuffle size={13} /> Surprise me
+          </button>
+        </div>
+        <div className="-mx-1 mt-2 flex gap-1 overflow-x-auto">
           {CATEGORIES.map((name) => (
             <button
               key={name}
@@ -77,7 +104,8 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
       </div>
       <div data-scrollable className="min-h-0 flex-1 overflow-y-auto p-5">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(264px,1fr))] gap-4">
-        {TEMPLATES.filter((template) => category === 'All' || template.category === category).map((template) => previewAssets ? (
+        {visible.length === 0 && <p className="col-span-full py-10 text-center text-[13px] text-zinc-500">No styles match “{query}”.</p>}
+        {visible.map((template) => previewAssets ? (
           <TemplateCard
             key={template.id}
             template={template}

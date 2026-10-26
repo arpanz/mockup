@@ -3,13 +3,15 @@ import type { StudioElement } from '../model/types';
 import { createDevice, createText, makeId } from '../model/defaults';
 import { resolveElement } from '../model/units';
 import { useEditor } from '../store/editorStore';
+import { copySlideImage } from '../export/copySlide';
 import { canvasCommands } from './Canvas';
+import { copyElementStyle, copySlideStyle, pasteElementStyle, pasteSlideStyleTo } from './menus';
 
 /** In-memory clipboard for elements (survives slide changes, not reloads). */
 let clipboard: StudioElement[] = [];
 
 const isTyping = (target: EventTarget | null) =>
-  Boolean((target as HTMLElement | null)?.closest('input, textarea, select, [contenteditable="true"]'));
+  target instanceof Element && Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
 
 export function useShortcuts(handlers: { openFilePicker: () => void; openExport: () => void }) {
   useEffect(() => {
@@ -91,6 +93,23 @@ export function useShortcuts(handlers: { openFilePicker: () => void; openExport:
       }
 
       if (!slide) return;
+
+      // Style clipboard: ⌥⇧C / ⌥⇧V. Chrome keeps ⌘⌥C for Inspect Element, so that is only a fallback where it gets
+      // through. Option changes event.key on macOS, so match the physical key.
+      if (event.altKey && (mod || event.shiftKey) && (event.code === 'KeyC' || event.code === 'KeyV')) {
+        event.preventDefault();
+        if (event.code === 'KeyC') {
+          if (ids.length) copyElementStyle(slide.id, ids[0], selection.outputId);
+          else copySlideStyle(slide.id, selection.outputId);
+        } else if (ids.length) pasteElementStyle(slide.id, ids);
+        else pasteSlideStyleTo([slide.id]);
+        return;
+      }
+      if (mod && event.shiftKey && key === 'c') {
+        event.preventDefault();
+        void copySlideImage(slide.id, selection.outputId ?? undefined);
+        return;
+      }
 
       if (mod && key === 'a') {
         event.preventDefault();

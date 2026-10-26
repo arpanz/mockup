@@ -80,6 +80,8 @@ interface EditorState {
 
   // outputs
   toggleOutput: (outputId: Id) => void;
+  /** Replace the enabled store sizes with a preset, in order (the first becomes the primary design size). */
+  setOutputs: (outputIds: Id[]) => void;
   setPrimaryOutput: (outputId: Id) => void;
 
   // editor ui
@@ -418,6 +420,13 @@ export const useEditor = create<EditorState>()((set, get) => {
         const spec = OUTPUT_CATALOG.find((output) => output.id === outputId);
         if (spec) draft.outputs.push(clone(spec));
       }
+    }),
+    setOutputs: (outputIds) => commit((draft) => {
+      const specs = outputIds.flatMap((id) => {
+        const spec = draft.outputs.find((output) => output.id === id) ?? OUTPUT_CATALOG.find((output) => output.id === id);
+        return spec ? [clone(spec)] : [];
+      });
+      if (specs.length) draft.outputs = specs;
     }),
     setPrimaryOutput: (outputId) => commit((draft) => {
       const index = draft.outputs.findIndex((output) => output.id === outputId);

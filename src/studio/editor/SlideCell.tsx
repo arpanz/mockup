@@ -5,6 +5,8 @@ import { baseUnit, resolveElement, resolveElements } from '../model/units';
 import { SlideRenderer } from '../render/SlideRenderer';
 import { readImageFile } from '../store/persistence';
 import { useEditor } from '../store/editorStore';
+import { openContextMenu } from './ContextMenu';
+import { elementMenu, slideMenu } from './menus';
 import { SelectionOverlay, measureElement } from './SelectionOverlay';
 import { TextEditorOverlay } from './TextEditorOverlay';
 import { resizeBox, snapAngle, snapMove, type Box, type Guide, type Handle } from './transforms';
@@ -252,6 +254,21 @@ function SlideCellImpl({ project, slide, slideIndex, output, scale, interactive 
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={(event) => {
+        if (!interactive || (event.target as HTMLElement).closest('[data-text-editor]')) return;
+        event.preventDefault();
+        const store = actions();
+        const elementId = (event.target as HTMLElement).closest<HTMLElement>('[data-element-id]')?.dataset.elementId;
+        if (elementId && resolved.some((element) => element.id === elementId)) {
+          if (!(isActiveCell && selection.elementIds.includes(elementId))) store.selectElement(slide.id, elementId, output.id);
+          openContextMenu(event.clientX, event.clientY, elementMenu(slide.id, elementId, output.id));
+          return;
+        }
+        store.selectSlide(slide.id, output.id);
+        const rect = event.currentTarget.getBoundingClientRect();
+        const at = { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height };
+        openContextMenu(event.clientX, event.clientY, slideMenu(slide.id, output.id, at));
+      }}
       onPointerOver={(event) => {
         if (!interactive || dragRef.current) return;
         const id = (event.target as HTMLElement).closest<HTMLElement>('[data-element-id]')?.dataset.elementId ?? null;

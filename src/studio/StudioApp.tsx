@@ -3,11 +3,14 @@ import { createProject } from './model/defaults';
 import { useEditor } from './store/editorStore';
 import { loadProject, readImageFile, saveProject } from './store/persistence';
 import { Canvas, PANEL_INSET } from './editor/Canvas';
+import { ContextMenuHost } from './editor/ContextMenu';
+import { NotifyBridge } from './editor/notify';
 import { useShortcuts } from './editor/useShortcuts';
 import { BottomBar } from './panels/BottomBar';
 import { ExportPanel } from './panels/ExportPanel';
 import { RightPanel } from './panels/RightPanel';
 import { TemplatesOverlay } from './panels/TemplatesOverlay';
+import { StorePreview } from './preview/StorePreview';
 import { refreshSampleScreens } from './templates/sampleScreens';
 import { TopBar } from './panels/TopBar';
 import { ToastProvider } from './ui';
@@ -75,6 +78,8 @@ export function StudioApp() {
 
   return (
     <ToastProvider>
+      <NotifyBridge />
+      <ContextMenuHost />
       <div className="studio relative h-dvh w-full overflow-hidden bg-[#0c0c0e] font-sans text-zinc-100 antialiased">
         {/* Wait for the saved project so the UI never flashes an empty "Untitled project" first. */}
         {hydrated && (
@@ -83,6 +88,7 @@ export function StudioApp() {
             <TopBar onAddScreenshots={handlers.openFilePicker} />
             <BottomBar rightInset={rightInset} />
             {mode === 'templates' && <TemplatesOverlay rightInset={rightInset} />}
+            {mode === 'preview' && <StorePreview />}
             {showPanel && (mode === 'export' ? <ExportPanel onClose={() => useEditor.getState().setMode('editor')} /> : <RightPanel onCollapse={() => setPanelOpen(false)} />)}
             {!showPanel && mode !== 'preview' && (
               <button

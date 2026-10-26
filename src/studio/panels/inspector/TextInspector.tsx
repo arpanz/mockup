@@ -4,15 +4,19 @@ import type { OutputSpec, TextElement } from '../../model/types';
 import { getFont } from '../../text/fontCatalog';
 import { fontStack } from '../../text/fontLoader';
 import { FontPicker } from '../../text/FontPicker';
+import { accentCss } from '../../text/TextBlock';
 import { ColorField, Field, NumberField, PaintField, Popover, Section, Segmented, Select, SliderField, TextArea, Toggle, usePopover } from '../../ui';
 import { PositionSection, ShadowSection, StrokeSection, type Update } from './common';
 
 const ACCENT_STYLES: Array<{ value: TextElement['accent']['style']; label: string }> = [
   { value: 'color', label: 'Color' },
   { value: 'highlight', label: 'Marker' },
-  { value: 'underline', label: 'Underline' },
   { value: 'gradient', label: 'Gradient' },
   { value: 'italic-serif', label: 'Serif' },
+  { value: 'underline', label: 'Brush' },
+  { value: 'wave', label: 'Wave' },
+  { value: 'zigzag', label: 'Zigzag' },
+  { value: 'circle', label: 'Circle' },
 ];
 
 const WEIGHT_NAMES: Record<number, string> = {
@@ -119,7 +123,24 @@ export function TextInspector({ element, output, update }: { element: TextElemen
       </Section>
 
       <Section title="Accent">
-        <Segmented fullWidth size="sm" value={accent.style} options={ACCENT_STYLES} onChange={(style) => update({ accent: { ...accent, style } }, 'accent-style')} />
+        <div role="radiogroup" aria-label="Accent style" className="grid grid-cols-4 gap-1.5">
+          {ACCENT_STYLES.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={accent.style === value}
+              title={label}
+              onClick={() => update({ accent: { ...accent, style: value } }, 'accent-style')}
+              className={`flex h-[46px] flex-col items-center justify-center gap-0.5 rounded-md border text-[10px] transition-colors ${accent.style === value
+                ? 'border-indigo-400/70 bg-indigo-500/15 text-zinc-100'
+                : 'border-white/[0.06] bg-white/[0.03] text-zinc-500 hover:border-white/15 hover:text-zinc-300'}`}
+            >
+              <span className="text-[15px] font-bold leading-none text-zinc-100" style={accentCss({ ...accent, style: value })}>Aa</span>
+              {label}
+            </button>
+          ))}
+        </div>
         {accent.style === 'gradient' ? (
           <PaintField value={accent.paint} onChange={(paint) => update({ accent: { ...accent, paint } }, 'accent-paint')} />
         ) : (

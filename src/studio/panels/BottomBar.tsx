@@ -36,6 +36,7 @@ export function BottomBar({ rightInset }: { rightInset: number }) {
           </Tooltip>
         ))}
       </div>
+      {mode !== 'preview' && (
       <div className="flex items-center gap-0.5 rounded-xl border border-white/[0.08] bg-zinc-900/90 p-1 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         <Tooltip content="Zoom out" shortcut="⌘−" side="top">
           <button type="button" aria-label="Zoom out" onClick={() => canvasCommands.zoomBy(0.8)} className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100">
@@ -53,6 +54,7 @@ export function BottomBar({ rightInset }: { rightInset: number }) {
           </button>
         </Tooltip>
       </div>
+      )}
     </div>
   );
 }

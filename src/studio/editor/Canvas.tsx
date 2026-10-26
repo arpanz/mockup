@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { Copy, GripVertical, ImagePlus, MoreHorizontal, Plus, Star, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { ClipboardCopy, Copy, GripVertical, ImagePlus, MoreHorizontal, Plus, Star, Trash2, X } from 'lucide-react';
+import { copySlideImage } from '../export/copySlide';
 import { OUTPUT_CATALOG } from '../model/outputs';
 import { useEditor } from '../store/editorStore';
 import { readImageFile } from '../store/persistence';
+import { Popover, usePopover } from '../ui';
+import { openContextMenu } from './ContextMenu';
 import { CELL_GAP, CHIP_ROW, ROW_HEADER, ROW_REFERENCE_HEIGHT, computeLayout } from './layout';
+import { slideMenu } from './menus';
 import { SlideCell } from './SlideCell';
 
 const MIN_ZOOM = 0.03;
@@ -53,8 +57,9 @@ export function Canvas({ rightInset }: { rightInset: number }) {
     const solve = (available: number, at0: number, at1: number) => (available - at0) / Math.max(1e-6, at1 - at0);
     const widthZoom = solve(availableWidth, fixed.width, unit.width);
     const heightZoom = solve(availableHeight, fixed.height, unit.height);
-    // Never shrink slides below a readable size just to fit every row — scroll instead.
-    const readableZoom = 220 / ROW_REFERENCE_HEIGHT;
+    // Never shrink slides below a comfortable working size just to fit every row: the first row gets about half the
+    // window (as wide as the window allows) and further sizes scroll into view.
+    const readableZoom = Math.min(Math.max(220, availableHeight * 0.52) / ROW_REFERENCE_HEIGHT, Math.max(widthZoom, 220 / ROW_REFERENCE_HEIGHT));
     let zoom = Math.max(Math.min(widthZoom, heightZoom), readableZoom);
     zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
     const final = computeLayout(state.project, zoom, state.project.outputs);
@@ -76,7 +81,7 @@ export function Canvas({ rightInset }: { rightInset: number }) {
 
   // Fit once hydrated, and when the set of rows/columns or the visible area changes shape.
   const hydrated = useEditor((state) => state.hydrated);
-  const shapeKey = `${project.outputs.map((output) => output.id).join(',')}|${project.slides.length > 0}|${rightInset}|${preview}`;
+  const shapeKey = `${project.outputs.map((output) => output.id).join(',')}|${project.slides.length > 0}|${rightInset}`;
   useEffect(() => {
     if (hydrated) fitToView();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,6 +324,12 @@ function SlideChip({ name, index, slideId, outputId, active, compact, preview, d
         onDrop();
       }}
       onDragEnd={onDragEnd}
+      onContextMenu={(event) => {
+        if (preview) return;
+        event.preventDefault();
+        store().selectSlide(slideId, outputId);
+        openContextMenu(event.clientX, event.clientY, slideMenu(slideId, outputId));
+      }}
     >
       {dropBefore && <div className="absolute -left-[22px] top-0 h-full w-[3px] rounded-full bg-indigo-400" />}
       <button
@@ -333,6 +344,9 @@ function SlideChip({ name, index, slideId, outputId, active, compact, preview, d
       </button>
       {!preview && !compact && (
         <div className={`ml-auto flex items-center gap-0.5 transition-opacity ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+          <button type="button" title="Copy as image (⌘⇧C)" onClick={() => void copySlideImage(slideId, outputId)} className="rounded p-1 text-zinc-500 hover:bg-white/10 hover:text-zinc-100">
+            <ClipboardCopy size={12} />
+          </button>
           <button type="button" title="Duplicate" onClick={() => store().duplicateSlide(slideId)} className="rounded p-1 text-zinc-500 hover:bg-white/10 hover:text-zinc-100">
             <Copy size={12} />
           </button>
@@ -382,33 +396,50 @@ function RowMenu({ outputId, primary, removable }: { outputId: string; primary: 
   );
 }
 
+const OUTPUT_PRESETS = [
+  { label: 'iOS', ids: ['ios-69', 'ipad-13'], hint: 'The two sizes App Store Connect requires' },
+  { label: 'Android', ids: ['play-phone', 'play-tablet-10'], hint: 'Google Play phone and tablet' },
+  { label: 'Both', ids: ['ios-69', 'ipad-13', 'play-phone', 'play-tablet-10'], hint: 'Everything for both stores' },
+];
+
 function AddOutputButton() {
-  const [open, setOpen] = useState(false);
+  // A portalled popover: this button sits at the bottom of the canvas, so the menu has to be free to open upward.
+  const popover = usePopover();
   const outputs = useEditor((state) => state.project.outputs);
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: PointerEvent) => {
-      if (!(event.target as HTMLElement).closest('[data-output-menu]')) setOpen(false);
-    };
-    window.addEventListener('pointerdown', close);
-    return () => window.removeEventListener('pointerdown', close);
-  }, [open]);
   const groups = [
     { store: 'app-store', label: 'App Store' },
     { store: 'play-store', label: 'Google Play' },
     { store: 'mac-app-store', label: 'Mac App Store' },
   ] as const;
   return (
-    <div data-output-menu className="relative">
+    <>
       <button
+        ref={popover.anchorRef as RefObject<HTMLButtonElement>}
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={popover.toggle}
         className="flex h-8 items-center gap-2 rounded-lg border border-dashed border-white/15 px-3 text-xs font-medium text-zinc-400 transition-colors hover:border-indigo-400/70 hover:text-indigo-200"
       >
         <Plus size={13} /> Add device size
       </button>
-      {open && (
-        <div className="absolute left-0 top-10 z-50 w-72 rounded-xl border border-white/10 bg-zinc-900 p-1.5 shadow-2xl">
+      <Popover open={popover.open} onOpenChange={popover.setOpen} anchor={popover.anchorRef} side="top" className="max-h-[min(72vh,600px)] w-72 overflow-y-auto">
+          <div className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Quick sets</div>
+          <div className="grid grid-cols-3 gap-1 px-1 pb-1.5">
+            {OUTPUT_PRESETS.map((preset) => {
+              const active = preset.ids.length === outputs.length && preset.ids.every((id, index) => outputs[index]?.id === id);
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  title={preset.hint}
+                  onClick={() => useEditor.getState().setOutputs(preset.ids)}
+                  className={`rounded-md px-1.5 py-1.5 text-[11px] font-medium transition-colors ${active ? 'bg-indigo-500/20 text-indigo-100 ring-1 ring-indigo-400/50' : 'bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08]'}`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mx-2 border-t border-white/[0.06]" />
           {groups.map((group) => (
             <div key={group.store} className="py-1">
               <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{group.label}</div>
@@ -433,8 +464,7 @@ function AddOutputButton() {
               })}
             </div>
           ))}
-        </div>
-      )}
-    </div>
+      </Popover>
+    </>
   );
 }
