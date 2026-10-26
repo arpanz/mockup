@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { applyTemplate } from '../templates/applyTemplate';
 import { TEMPLATES, type Template } from '../templates/catalog';
 import { TemplateCard } from '../templates/TemplateCard';
+import { usePreviewAssets } from '../templates/previewAssets';
 import { useEditor } from '../store/editorStore';
 import { useToast } from '../ui';
 
@@ -22,6 +23,7 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
     }),
     [project.slides],
   );
+  const previewAssets = usePreviewAssets(project.assets, screens.slice(0, 3));
 
   const apply = (template: Template) => {
     const store = useEditor.getState();
@@ -42,7 +44,7 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
 
   return (
     <div
-      className="absolute bottom-24 left-4 top-20 z-40 flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950/90 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
+      className="absolute bottom-24 left-4 top-20 z-40 flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.8)]"
       style={{ right: rightInset + 16 }}
     >
       <div className="flex items-center gap-4 border-b border-white/[0.06] px-5 py-4">
@@ -68,15 +70,17 @@ export function TemplatesOverlay({ rightInset }: { rightInset: number }) {
       </div>
       <div data-scrollable className="min-h-0 flex-1 overflow-y-auto p-5">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
-        {TEMPLATES.filter((template) => category === 'All' || template.category === category).map((template) => (
+        {TEMPLATES.filter((template) => category === 'All' || template.category === category).map((template) => previewAssets ? (
           <TemplateCard
             key={template.id}
             template={template}
             screens={screens}
-            assets={project.assets}
+            assets={previewAssets}
             selected={appliedId === template.id}
             onSelect={() => apply(template)}
           />
+        ) : (
+          <div key={template.id} className="h-[230px] animate-pulse rounded-xl border border-white/10 bg-white/[0.03]" />
         ))}
         </div>
       </div>

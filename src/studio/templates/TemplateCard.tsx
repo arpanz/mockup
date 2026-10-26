@@ -13,6 +13,12 @@ export interface TemplateCardProps {
 }
 
 function TemplateCardImpl({ template, screens, assets, selected, onSelect }: TemplateCardProps): ReactElement {
+  const gap = template.category === 'Panorama' ? 0 : 6;
+  const height = 150;
+  const width = height * OUTPUT_CATALOG[0].width / OUTPUT_CATALOG[0].height;
+  // Render at 2× thumbnail size rather than full export size: everything is laid out in canvas-relative
+  // units, so the slide looks the same, but the browser paints ~300px layers instead of 2868px ones.
+  const output = useMemo(() => ({ ...OUTPUT_CATALOG[0], width: width * 2, height: height * 2 }), [width]);
   const preview = useMemo(() => {
     const built = template.build(screens.slice(0, 3), template.defaultCopy.slice(0, 3));
     const slides = built.slides.slice(0, 3);
@@ -21,7 +27,7 @@ function TemplateCardImpl({ template, screens, assets, selected, onSelect }: Tem
         version: 2 as const,
         id: `preview-${template.id}`,
         name: template.name,
-        outputs: [OUTPUT_CATALOG[0]],
+        outputs: [output],
         slides,
         assets,
         span: built.span,
@@ -29,11 +35,7 @@ function TemplateCardImpl({ template, screens, assets, selected, onSelect }: Tem
       },
       slides,
     };
-  }, [assets, screens, template]);
-  const gap = template.category === 'Panorama' ? 0 : 6;
-  const output = OUTPUT_CATALOG[0];
-  const height = 150;
-  const width = height * output.width / output.height;
+  }, [assets, output, screens, template]);
 
   return (
     <button
@@ -45,7 +47,7 @@ function TemplateCardImpl({ template, screens, assets, selected, onSelect }: Tem
       <div className="flex justify-center overflow-hidden bg-black/20" style={{ gap, padding: gap }}>
         {preview.slides.map((slide, index) => (
           <div key={slide.id} className="shrink-0 overflow-hidden rounded-[5px] shadow-lg" style={{ width, height }}>
-            <div style={{ width: output.width, height: output.height, transform: `scale(${height / output.height})`, transformOrigin: 'top left' }}>
+            <div style={{ width: output.width, height: output.height, transform: 'scale(.5)', transformOrigin: 'top left' }}>
               <SlideRenderer project={preview.project} slide={slide} output={output} slideIndex={index} />
             </div>
           </div>
