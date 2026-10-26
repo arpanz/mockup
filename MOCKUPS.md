@@ -72,6 +72,41 @@ An empty or missing `title`/`subtitle` hides it on that screen. For `ipad-13`, g
 
 `--template`, `--sizes`, `--scale`, `--format`, and `--out` override the spec for one run. `--spec` selects another spec file. `--init` creates a starter spec from images in `screenshots` (or the current folder); use `--screens` to choose a folder and `--force` to replace an existing spec.
 
+## Flow sets
+
+Use the `flow` pseudo-template when you want one continuous wave background across a story of screens. The first and last slides can act as solid-color bookends; add optional Lucide icons, icon tiles, screenshot call-outs, logos, and stickers per screen.
+
+| `flow` option | Meaning |
+| --- | --- |
+| `theme` | `light` (default) or `night`, which uses an ink page and white text. |
+| `bookends` | Whether the first and last slides use the solid wave color (`true` by default). |
+| `tilt` | Add small rotations to bookend phones and call-outs (`false` by default). |
+| `motifs` | Wave decorations: `grid`, `corners`, or both. Defaults to `["grid"]`. |
+| `colors` | Optional six-digit hex overrides: `page`, `wave`, `deep`, `band`, `accent`, and `ink`. Unset colors derive from `brandColor` (default `#0B7D45`). |
+
+Screen extras work only with `template: "flow"`:
+
+| Extra | Meaning |
+| --- | --- |
+| `logo` | PNG, JPEG, WebP or SVG shown above the headline. Only on a bookend slide (usually the first). |
+| `icon` | A Lucide icon name (kebab-case, e.g. `moon`) under the headline. Unknown names print a `!` warning and are left out. |
+| `tiles` | Up to four `{ "icon", "label" }` tiles in a row under the headline; the phone moves down to make room. Keep labels to one word. |
+| `callout` | A piece of the screenshot floated over the phone, larger than the phone shows it. `crop` is `[x, y, width, height]` in **source-screenshot pixels**; `y` is the center as a fraction of the canvas height (default `0.5`); `width` is a fraction of a phone canvas width (default `1.06`, slightly wider than the slide). |
+| `sticker` | Any image on the slide: `image`, center `x`/`y` (fractions; `x` past 1 crosses into the next slide), `width` (fraction, default `0.4`), `rotation` in degrees. |
+
+The background is drawn separately for each store size, so the wave lines up on Android and iPhone canvases alike.
+
+```json
+{
+  "template": "flow",
+  "flow": { "theme": "light", "bookends": true, "motifs": ["grid", "corners"] },
+  "screens": [
+    { "image": "screens/home.png", "logo": "assets/mark.svg", "title": "Make space for *focus*", "icon": "sparkles" },
+    { "image": "screens/tasks.png", "title": "Keep work *moving*", "tiles": [{ "icon": "check", "label": "Done" }, { "icon": "clock", "label": "Soon" }], "callout": { "crop": [40, 260, 860, 320], "y": 0.48, "width": 0.94 } }
+  ]
+}
+```
+
 ## Getting screenshots
 
 - iOS Simulator: `xcrun simctl io booted screenshot shot.png`

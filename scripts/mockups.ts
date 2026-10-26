@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 import sharp from 'sharp';
 import { chromium, type Browser } from 'playwright-core';
 import { build, preview, type PreviewServer } from 'vite';
-import { DEFAULT_SIZE_IDS, DEFAULT_TEMPLATE_ID, type AgentBuildInput, type FrameflowAgent, type MockupSpec } from '../src/studio/agent/spec';
+import { DEFAULT_SIZE_IDS, DEFAULT_TEMPLATE_ID, type AgentBuildInput, type FlowOptions, type FrameflowAgent, type MockupSpec, type ScreenSpec } from '../src/studio/agent/spec';
 import { sizeInfos, templateInfos } from '../src/studio/agent/templateInfo';
 
 declare global {
@@ -16,6 +16,8 @@ declare global {
 const root = path.resolve(import.meta.dirname, '..');
 const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp']);
 const imageMime: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
+const extraImageExtensions = new Set([...imageExtensions, '.svg']);
+const extraImageMime: Record<string, string> = { ...imageMime, '.svg': 'image/svg+xml' };
 const help = `Frameflow mockups: turn raw app screenshots + headlines into store-ready screenshots.
 
 Usage (from your app's folder):
@@ -36,6 +38,7 @@ mockups.json (paths relative to it):
       { "image": "screenshots/stats.png", "images": { "ipad-13": "ipad/stats.png" }, "title": "See your *progress*" }
     ]
   }
+  Flow set example: "template": "flow", "flow": { "theme": "light", "bookends": true }, and a screen may add "icon": "moon", "tiles": [{ "icon": "sparkles", "label": "Focus" }].
   Title markup: *word* takes the template's accent style, \\n breaks the line. Empty title/subtitle hides it.
   "images" gives one size its own screenshot (iPad sizes need iPad screenshots).
 
@@ -71,7 +74,7 @@ function printList(json: boolean) {
   const templates = templateInfos();
   const sizes = sizeInfos();
   if (json) {
-    console.log(JSON.stringify({ templates, sizes }, null, 2));
+    console.log(JSON.stringify({ templates, custom: [{ id: 'flow', name: 'Flow', description: 'One wave across the whole set, with call-outs, icon tiles and stickers from your spec.', panorama: true }], sizes }, null, 2));
     return;
   }
   console.log('Templates');
@@ -88,6 +91,8 @@ function printList(json: boolean) {
       console.log(`  ${item.id.padEnd(16)} ${item.name} — ${item.description}${flags.length ? ` [${flags.join('; ')}]` : ''}`);
     }
   }
+  console.log(' Custom');
+  console.log('  flow             Flow — One wave across the whole set, with call-outs, icon tiles and stickers from your spec. [panorama]');
   console.log('\nSizes');
   for (const item of sizes) console.log(`  ${item.id.padEnd(16)} ${item.label.padEnd(20)} ${`${item.width}×${item.height}`.padEnd(10)} ${item.store}${item.required ? '  (required)' : ''}`);
 }
@@ -168,7 +173,7 @@ async function loadSpec(specPath: string) {
   const scaleText = values.scale ?? String(spec.scale ?? 1);
   const format = values.format ?? spec.format ?? 'png';
   const templates = templateInfos();
-  if (!templates.some((item) => item.id === templateId)) {
+  if (templateId !== 'flow' && !templates.some((item) => item.id === templateId)) {
     const closest = templates.map((item) => ({ id: item.id, distance: editDistance(templateId, item.id) })).sort((a, b) => a.distance - b.distance).slice(0, 3).map((item) => item.id);
     fail(`Unknown template "${templateId}". Closest: ${closest.join(', ')}. Run --list to see all templates.`);
   }
@@ -179,14 +184,16 @@ async function loadSpec(specPath: string) {
   if (format !== 'png' && format !== 'jpeg') fail('Format must be png or jpeg.');
   if (spec.brandColor !== undefined && !/^#[0-9a-f]{6}$/i.test(spec.brandColor)) fail('brandColor must be a six-digit hex color such as #4F46E5.');
   if (spec.subtitles !== undefined && typeof spec.subtitles !== 'boolean') fail('subtitles must be true or false (or left out to let the template decide).');
+  if (spec.flow !== undefined) validateFlow(spec.flow);
   if (!Array.isArray(spec.screens) || spec.screens.length === 0) fail('Spec needs a non-empty screens array. Add at least one screenshot.');
-  const resolved: Array<{ image: string; images: Record<string, string>; title: string; subtitle: string }> = [];
+  const resolved: Array<{ image: string; images: Record<string, string>; title: string; subtitle: string } & FlowExtras> = [];
   for (let index = 0; index < spec.screens.length; index++) {
     const screen = spec.screens[index];
     if (!screen || typeof screen.image !== 'string' || !screen.image) fail(`screens[${index}].image must be a file path.`);
     for (const key of ['title', 'subtitle'] as const) {
       if (screen[key] !== undefined && typeof screen[key] !== 'string') fail(`screens[${index}].${key} must be a string.`);
     }
+    const extras = templateId === 'flow' ? await flowExtras(screen, index, specDir) : {};
     const image = absoluteFrom(specDir, screen.image);
     validateImageFile(image, `screens[${index}].image`);
     try { await stat(image); } catch { fail(`Image not found: ${image} (screens[${index}].image)`); }
@@ -198,16 +205,78 @@ async function loadSpec(specPath: string) {
       validateImageFile(images[id], `screens[${index}].images[${id}]`);
       try { await stat(images[id]); } catch { fail(`Image not found: ${images[id]} (screens[${index}].images[${id}])`); }
     }
-    resolved.push({ image, images, title: screen.title ?? '', subtitle: screen.subtitle ?? '' });
+    resolved.push({ image, images, title: screen.title ?? '', subtitle: screen.subtitle ?? '', ...extras });
   }
+  const usesExtras = spec.screens.some((screen) => FLOW_EXTRAS.some((key) => screen[key] !== undefined));
+  if (templateId !== 'flow' && (spec.flow !== undefined || usesExtras)) console.log(`  ! "flow" options and screen extras (${FLOW_EXTRAS.join(', ')}) only apply with "template": "flow"; ignoring them for "${templateId}".`);
   return { spec, specDir, templateId, sizes, scale: Number(scaleText) as 1 | 2, format: format as 'png' | 'jpeg', resolved };
 }
 
-async function dataUrl(file: string, cache: Map<string, { name: string; src: string }>) {
+function validateOptionalNumbers(index: number, field: string, value: object, keys: string[]) {
+  const fields = value as Record<string, unknown>;
+  for (const key of keys) if (fields[key] !== undefined && (typeof fields[key] !== 'number' || !Number.isFinite(fields[key]))) fail(`screens[${index}].${field}.${key} must be a finite number.`);
+}
+
+function validateExtraImageFile(file: string, label: string) {
+  if (!extraImageExtensions.has(path.extname(file).toLowerCase())) fail(`${label} must be .png, .jpg, .jpeg, .webp, or .svg: ${file}`);
+}
+
+function validateFlow(value: FlowOptions) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) fail('flow must be an object.');
+  if (value.theme !== undefined && value.theme !== 'light' && value.theme !== 'night') fail('flow.theme must be "light" or "night".');
+  for (const key of ['bookends', 'tilt'] as const) if (value[key] !== undefined && typeof value[key] !== 'boolean') fail(`flow.${key} must be true or false.`);
+  if (value.motifs !== undefined && (!Array.isArray(value.motifs) || value.motifs.some((motif) => motif !== 'grid' && motif !== 'corners'))) fail('flow.motifs must contain only "grid" and/or "corners".');
+  if (value.colors !== undefined) {
+    if (!value.colors || typeof value.colors !== 'object' || Array.isArray(value.colors)) fail('flow.colors must be an object.');
+    for (const key of ['page', 'wave', 'deep', 'band', 'accent', 'ink'] as const) if (value.colors[key] !== undefined && (typeof value.colors[key] !== 'string' || !/^#[0-9a-f]{6}$/i.test(value.colors[key]))) fail(`flow.colors.${key} must be a six-digit hex color.`);
+  }
+}
+
+const FLOW_EXTRAS = ['logo', 'icon', 'tiles', 'callout', 'sticker'] as const;
+type FlowExtras = Pick<ScreenSpec, 'icon' | 'tiles' | 'callout' | 'sticker' | 'logo'>;
+
+/** A flow screen's extras, validated, with image paths resolved against the spec. */
+async function flowExtras(screen: ScreenSpec, index: number, specDir: string): Promise<FlowExtras> {
+  const at = `screens[${index}]`;
+  const extras: FlowExtras = {};
+  const imageAt = async (value: unknown, label: string) => {
+    if (typeof value !== 'string' || !value) fail(`${label} must be a file path.`);
+    const file = absoluteFrom(specDir, value);
+    validateExtraImageFile(file, label);
+    try { await stat(file); } catch { fail(`Image not found: ${file} (${label})`); }
+    return file;
+  };
+  if (screen.logo !== undefined) extras.logo = await imageAt(screen.logo, `${at}.logo`);
+  if (screen.icon !== undefined) {
+    if (typeof screen.icon !== 'string' || !screen.icon.trim()) fail(`${at}.icon must be a Lucide icon name such as "moon".`);
+    extras.icon = screen.icon.trim();
+  }
+  if (screen.tiles !== undefined) {
+    if (!Array.isArray(screen.tiles) || screen.tiles.length > 4) fail(`${at}.tiles must be an array of up to four tiles.`);
+    screen.tiles.forEach((tile, tileIndex) => {
+      if (!tile || typeof tile.icon !== 'string' || !tile.icon.trim() || typeof tile.label !== 'string' || !tile.label.trim()) fail(`${at}.tiles[${tileIndex}] needs an icon and a label.`);
+    });
+    extras.tiles = screen.tiles.map((tile) => ({ icon: tile.icon.trim(), label: tile.label.trim() }));
+  }
+  if (screen.callout !== undefined) {
+    const crop = screen.callout?.crop;
+    if (!Array.isArray(crop) || crop.length !== 4 || crop.some((n) => typeof n !== 'number' || !Number.isFinite(n) || n < 0)) fail(`${at}.callout.crop must be [x, y, width, height] in screenshot pixels.`);
+    if (crop[2] === 0 || crop[3] === 0) fail(`${at}.callout.crop needs a width and height above 0.`);
+    validateOptionalNumbers(index, 'callout', screen.callout, ['y', 'width']);
+    extras.callout = screen.callout;
+  }
+  if (screen.sticker !== undefined) {
+    validateOptionalNumbers(index, 'sticker', screen.sticker ?? {}, ['x', 'y', 'width', 'rotation']);
+    extras.sticker = { ...screen.sticker, image: await imageAt(screen.sticker?.image, `${at}.sticker.image`) };
+  }
+  return extras;
+}
+
+async function dataUrl(file: string, cache: Map<string, { name: string; src: string }>, allowSvg = false) {
   const existing = cache.get(file);
   if (existing) return existing;
   const ext = path.extname(file).toLowerCase();
-  const value = { name: path.basename(file), src: `data:${imageMime[ext]};base64,${(await readFile(file)).toString('base64')}` };
+  const value = { name: path.basename(file), src: `data:${(allowSvg ? extraImageMime : imageMime)[ext]};base64,${(await readFile(file)).toString('base64')}` };
   cache.set(file, value);
   return value;
 }
@@ -234,11 +303,17 @@ async function main() {
     sizeIds: loaded.sizes,
     ...(loaded.spec.brandColor ? { brandColor: loaded.spec.brandColor } : {}),
     ...(loaded.spec.subtitles === undefined ? {} : { subtitles: loaded.spec.subtitles }),
+    ...(loaded.templateId === 'flow' && loaded.spec.flow ? { flow: loaded.spec.flow } : {}),
     screens: await Promise.all(loaded.resolved.map(async (screen) => ({
       image: await dataUrl(screen.image, imagesCache),
       images: Object.fromEntries(await Promise.all(Object.entries(screen.images).map(async ([id, file]) => [id, await dataUrl(file, imagesCache)] as const))),
       title: screen.title,
       subtitle: screen.subtitle,
+      ...(screen.logo ? { logo: await dataUrl(screen.logo, imagesCache, true) } : {}),
+      ...(screen.icon ? { icon: screen.icon } : {}),
+      ...(screen.tiles ? { tiles: screen.tiles } : {}),
+      ...(screen.callout ? { callout: screen.callout } : {}),
+      ...(screen.sticker ? { sticker: { ...screen.sticker, image: await dataUrl(screen.sticker.image, imagesCache, true) } } : {}),
     }))),
   };
   const outDir = values.out ? absoluteFrom(base, values.out) : loaded.spec.out ? absoluteFrom(loaded.specDir, loaded.spec.out) : path.join(loaded.specDir, 'store-screenshots');

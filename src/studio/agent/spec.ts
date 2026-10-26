@@ -21,6 +21,21 @@ export interface MockupSpec {
   /** 1 = the store's exact pixel size (what stores want). 2 = double, for retina previews. */
   scale?: 1 | 2;
   screens: ScreenSpec[];
+  /** Options for template "flow". Ignored by other templates. */
+  flow?: FlowOptions;
+}
+
+export interface FlowOptions {
+  /** light: paper page, dark type. night: ink page, white type everywhere. Default light. */
+  theme?: 'light' | 'night';
+  /** First and last slides are solid wave color (white type). Default true. */
+  bookends?: boolean;
+  /** Small rotations on bookend phones and alternating call-outs. Default false. */
+  tilt?: boolean;
+  /** Wave decorations. Default ["grid"]. */
+  motifs?: Array<'grid' | 'corners'>;
+  /** Color overrides; remaining colors derive from brandColor. */
+  colors?: { page?: string; wave?: string; deep?: string; band?: string; accent?: string; ink?: string };
 }
 
 export interface ScreenSpec {
@@ -32,7 +47,21 @@ export interface ScreenSpec {
   title?: string;
   /** Empty or omitted hides it. */
   subtitle?: string;
+  /** Image above the headline, e.g. the app icon (png/jpg/webp/svg). */
+  logo?: string;
+  /** A Lucide icon name (kebab-case, e.g. "moon") shown under the headline. */
+  icon?: string;
+  /** Up to four tiles under the headline, each a Lucide icon and a one-word label. */
+  tiles?: Array<{ icon: string; label: string }>;
+  /** A piece of this screenshot floated over the phone, larger than the phone shows it. */
+  callout?: { crop: [number, number, number, number]; y?: number; width?: number };
+  /** Any image placed on the slide. */
+  sticker?: { image: string; x?: number; y?: number; width?: number; rotation?: number };
 }
+
+export interface FlowTile { icon: string; label: string }
+export interface FlowCallout { crop: [number, number, number, number]; y?: number; width?: number }
+export interface FlowSticker { image: AgentImage; x?: number; y?: number; width?: number; rotation?: number }
 
 export const DEFAULT_TEMPLATE_ID = 'clean-center';
 export const DEFAULT_SIZE_IDS = ['ios-69'];
@@ -51,7 +80,8 @@ export interface AgentBuildInput {
   sizeIds: string[];
   brandColor?: string;
   subtitles?: boolean;
-  screens: Array<{ image: AgentImage; images: Record<string, AgentImage>; title: string; subtitle: string }>;
+  flow?: FlowOptions;
+  screens: Array<{ image: AgentImage; images: Record<string, AgentImage>; title: string; subtitle: string; logo?: AgentImage; icon?: string; tiles?: FlowTile[]; callout?: FlowCallout; sticker?: FlowSticker }>;
 }
 
 export interface AgentBuildResult {
