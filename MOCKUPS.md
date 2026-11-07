@@ -83,6 +83,11 @@ Use the `flow` pseudo-template when you want one continuous wave background acro
 | `tilt` | Add small rotations to bookend phones and call-outs (`false` by default). |
 | `motifs` | Wave decorations: `grid`, `corners`, or both. Defaults to `["grid"]`. |
 | `colors` | Optional six-digit hex overrides: `page`, `wave`, `deep`, `band`, `accent`, and `ink`. Unset colors derive from `brandColor` (default `#0B7D45`). |
+| `device` | Optional phone frame for every slide; unset fields keep the house frame. `style` (`real`, `clay`, `matte`, `minimal`, `glass`, `outline`, `none`), `tint` (hex body color), `finish` (catalog finish for `real`), `bezel` and `corner` (multiples of the model's own), `material` (`default`, `gloss`, `satin`, `brushed`, `frosted`), `cutout` (`auto`, `dynamic-island`, `notch`, `punch-hole`, `none`), `rim` (0..1), `showButtons`, `glare` (0..1). |
+
+Headline colors: bookend slides and every `night` slide use white type with `accent` on the starred words; middle slides of a `light` set use `ink` with `wave` on the starred words. So on a light set with a dark or saturated `page`, the accent disappears; use `"theme": "night"` with your own `page` color instead.
+
+A slim premium frame: `{ "style": "minimal", "tint": "#0B0F1A", "bezel": 0.75, "corner": 0.9, "cutout": "punch-hole", "showButtons": false, "glare": 0, "rim": 0.25 }`. Thinner bezels with rounder corners clip the screenshot's status bar; check the clock in a preview.
 
 Screen extras work only with `template: "flow"`:
 

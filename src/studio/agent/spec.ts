@@ -36,6 +36,28 @@ export interface FlowOptions {
   motifs?: Array<'grid' | 'corners'>;
   /** Color overrides; remaining colors derive from brandColor. */
   colors?: { page?: string; wave?: string; deep?: string; band?: string; accent?: string; ink?: string };
+  /** Phone frame on every slide. Unset fields keep the house frame. */
+  device?: FlowDevice;
+}
+
+/** Device frame overrides for a flow set; same meaning as the studio's device settings. */
+export interface FlowDevice {
+  style?: 'real' | 'clay' | 'matte' | 'minimal' | 'glass' | 'outline' | 'none';
+  /** Body color for clay, matte, minimal and outline. */
+  tint?: string;
+  /** Catalog finish for `real`, e.g. "natural-titanium". */
+  finish?: string;
+  /** Bezel thickness as a multiple of the model's own; 0 is edge to edge. */
+  bezel?: number;
+  /** Corner roundness as a multiple of the model's own. */
+  corner?: number;
+  material?: 'default' | 'gloss' | 'satin' | 'brushed' | 'frosted';
+  cutout?: 'auto' | 'dynamic-island' | 'notch' | 'punch-hole' | 'none';
+  /** Light rim around the outer edge, 0..1. */
+  rim?: number;
+  showButtons?: boolean;
+  /** Screen reflection, 0..1. */
+  glare?: number;
 }
 
 export interface ScreenSpec {

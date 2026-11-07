@@ -199,6 +199,7 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
     const device = built.elements.find((element): element is DeviceElement => element.type === 'device')!;
     elements.push({
       ...device,
+      ...options.device,
       x: 0.5,
       y: solid ? 0.69 : tiles.length ? 0.715 : 0.645,
       h: solid ? 0.74 : tiles.length ? 0.7 : 0.79,

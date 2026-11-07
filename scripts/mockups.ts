@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 import sharp from 'sharp';
 import { chromium, type Browser } from 'playwright-core';
 import { build, preview, type PreviewServer } from 'vite';
-import { DEFAULT_SIZE_IDS, DEFAULT_TEMPLATE_ID, type AgentBuildInput, type FlowOptions, type FrameflowAgent, type MockupSpec, type ScreenSpec } from '../src/studio/agent/spec';
+import { DEFAULT_SIZE_IDS, DEFAULT_TEMPLATE_ID, type AgentBuildInput, type FlowDevice, type FlowOptions, type FrameflowAgent, type MockupSpec, type ScreenSpec } from '../src/studio/agent/spec';
 import { sizeInfos, templateInfos } from '../src/studio/agent/templateInfo';
 
 declare global {
@@ -229,6 +229,24 @@ function validateFlow(value: FlowOptions) {
   if (value.colors !== undefined) {
     if (!value.colors || typeof value.colors !== 'object' || Array.isArray(value.colors)) fail('flow.colors must be an object.');
     for (const key of ['page', 'wave', 'deep', 'band', 'accent', 'ink'] as const) if (value.colors[key] !== undefined && (typeof value.colors[key] !== 'string' || !/^#[0-9a-f]{6}$/i.test(value.colors[key]))) fail(`flow.colors.${key} must be a six-digit hex color.`);
+  }
+  if (value.device !== undefined) validateFlowDevice(value.device);
+}
+
+function validateFlowDevice(device: FlowDevice) {
+  if (!device || typeof device !== 'object' || Array.isArray(device)) fail('flow.device must be an object.');
+  const oneOf = (key: keyof FlowDevice, allowed: string[]) => {
+    if (device[key] !== undefined && !allowed.includes(device[key] as string)) fail(`flow.device.${key} must be one of: ${allowed.join(', ')}.`);
+  };
+  oneOf('style', ['real', 'clay', 'matte', 'minimal', 'glass', 'outline', 'none']);
+  oneOf('material', ['default', 'gloss', 'satin', 'brushed', 'frosted']);
+  oneOf('cutout', ['auto', 'dynamic-island', 'notch', 'punch-hole', 'none']);
+  if (device.tint !== undefined && (typeof device.tint !== 'string' || !/^#[0-9a-f]{6}$/i.test(device.tint))) fail('flow.device.tint must be a six-digit hex color.');
+  if (device.finish !== undefined && typeof device.finish !== 'string') fail('flow.device.finish must be a string.');
+  if (device.showButtons !== undefined && typeof device.showButtons !== 'boolean') fail('flow.device.showButtons must be true or false.');
+  for (const key of ['bezel', 'corner', 'rim', 'glare'] as const) {
+    const n = device[key];
+    if (n !== undefined && (typeof n !== 'number' || !Number.isFinite(n) || n < 0)) fail(`flow.device.${key} must be a number of 0 or more.`);
   }
 }
 
