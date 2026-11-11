@@ -83,6 +83,10 @@ Use the `flow` pseudo-template when you want one continuous wave background acro
 | `tilt` | Add small rotations to bookend phones and call-outs (`false` by default). |
 | `motifs` | Wave decorations: `grid`, `corners`, or both. Defaults to `["grid"]`. |
 | `colors` | Optional six-digit hex overrides: `page`, `wave`, `deep`, `band`, `accent`, and `ink`. Unset colors derive from `brandColor` (default `#0B7D45`). |
+| `layout` | `classic` (default) or `snug`: headline near the top, the phone right under it and running off the bottom, so there's no dead space between them. |
+| `phoneWidth` | `snug` only: phone width as a fraction of the slide width (`0.8`). |
+| `type` | Headline type for the set: `font` (catalog family, e.g. `Bricolage Grotesque`), `weight`, `size` (units; house size 112), `tracking` (em), `lineHeight`, `accent` (`color`, `italic-serif`, `highlight`, `underline`). |
+| `callouts` | `framed` (default, white border) or `lifted` (no border, deeper shadow, so the piece reads as raised off the phone). |
 | `device` | Optional phone frame for every slide; unset fields keep the house frame. `style` (`real`, `clay`, `matte`, `minimal`, `glass`, `outline`, `none`), `tint` (hex body color), `finish` (catalog finish for `real`), `bezel` and `corner` (multiples of the model's own), `material` (`default`, `gloss`, `satin`, `brushed`, `frosted`), `cutout` (`auto`, `dynamic-island`, `notch`, `punch-hole`, `none`), `rim` (0..1), `showButtons`, `glare` (0..1). |
 
 Headline colors: bookend slides and every `night` slide use white type with `accent` on the starred words; middle slides of a `light` set use `ink` with `wave` on the starred words. So on a light set with a dark or saturated `page`, the accent disappears; use `"theme": "night"` with your own `page` color instead.
@@ -96,7 +100,7 @@ Screen extras work only with `template: "flow"`:
 | `logo` | PNG, JPEG, WebP or SVG shown above the headline. Only on a bookend slide (usually the first). |
 | `icon` | A Lucide icon name (kebab-case, e.g. `moon`) under the headline. Unknown names print a `!` warning and are left out. |
 | `tiles` | Up to four `{ "icon", "label" }` tiles in a row under the headline; the phone moves down to make room. Keep labels to one word. |
-| `callout` | A piece of the screenshot floated over the phone, larger than the phone shows it. `crop` is `[x, y, width, height]` in **source-screenshot pixels**; `y` is the center as a fraction of the canvas height (default `0.5`); `width` is a fraction of a phone canvas width (default `1.06`, slightly wider than the slide). |
+| `callout` | A piece of the screenshot floated over the phone, larger than the phone shows it. `crop` is `[x, y, width, height]` in **source-screenshot pixels**; `y` is the center as a fraction of the canvas height (default `0.5`); `width` is a fraction of a phone canvas width (default `1.06`, or `0.96` with lifted call-outs); optional `x` (center, fraction of width) and `rotation` (degrees). Place a call-out over the spot it comes from, or the phone shows the same piece twice. |
 | `sticker` | Any image on the slide: `image`, center `x`/`y` (fractions; `x` past 1 crosses into the next slide), `width` (fraction, default `0.4`), `rotation` in degrees. |
 
 The background is drawn separately for each store size, so the wave lines up on Android and iPhone canvases alike.

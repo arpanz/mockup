@@ -1,6 +1,9 @@
 import dynamicIconImports from 'lucide-react/dist/esm/dynamicIconImports.js';
 import { createImage, createShape, createText, makeId } from '../model/defaults';
 import type { Asset, DeviceElement, Project, Shadow, Slide, StudioElement, TextElement } from '../model/types';
+import { elementBox } from '../render/geometry';
+import { getFont } from '../text/fontCatalog';
+import { baseUnit } from '../model/units';
 import { buildFromSpec, type SizedBuildInput, type SizedImage } from './buildFromSpec';
 import type { FlowOptions, FlowSticker } from './spec';
 
@@ -140,6 +143,16 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
   const base = buildFromSpec({ ...input, templateId: 'clean-center', subtitles: false });
   const warnings = [...base.warnings];
   const title0 = base.project.slides[0].elements.find((element): element is TextElement => element.type === 'text' && element.role === 'title')!;
+  const type = options.type ?? {};
+  if (type.font && !getFont(type.font)) warnings.push(`flow.type.font "${type.font}" isn't in the font catalog, so the house font is used.`);
+  const titleType: Partial<TextElement> = {
+    ...(type.font && getFont(type.font) ? { fontFamily: type.font } : {}),
+    ...(type.weight !== undefined ? { fontWeight: type.weight } : {}),
+    ...(type.tracking !== undefined ? { letterSpacing: type.tracking } : {}),
+    ...(type.lineHeight !== undefined ? { lineHeight: type.lineHeight } : {}),
+  };
+  const snug = options.layout === 'snug';
+  const lifted = options.callouts === 'lifted';
 
   const assets: Record<string, Asset> = { ...base.project.assets };
   const bySrc = new Map(Object.values(assets).map((asset) => [asset.src, asset.id]));
@@ -180,9 +193,10 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
       visible: Boolean(screen.title.trim()),
       text: screen.title,
       y: logoAbove ? 0.165 : solid ? 0.11 : 0.105,
-      fontSize: logoAbove ? 118 : 112,
+      ...titleType,
+      fontSize: type.size ?? (logoAbove ? 118 : 112),
       fill: { kind: 'solid', color: lightType ? '#FFFFFF' : palette.ink },
-      accent: { ...title0.accent, style: 'color', color: lightType ? palette.accent : palette.wave },
+      accent: { ...title0.accent, style: type.accent ?? 'color', color: lightType ? palette.accent : palette.wave },
     });
     if (screen.icon) {
       const icon = await iconElement(index, screen.icon, lightType ? palette.accent : palette.wave, 0.5, 0.215, 95);
@@ -207,15 +221,16 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
     });
     if (screen.callout) {
       const image = await crop(screen.image, screen.callout.crop);
-      const w = (screen.callout.width ?? 1.06) * 1000;
+      const w = (screen.callout.width ?? (lifted ? 0.96 : 1.06)) * 1000;
       elements.push(createImage(assetFor(image), w, w * image.height / image.width, {
         name: 'Call-out',
+        x: screen.callout.x ?? 0.5,
         y: screen.callout.y ?? 0.5,
         fit: 'contain',
-        radius: 34,
-        rotation: options.tilt ? (index % 2 ? 2 : -2) : 0,
-        shadow: softShadow(34, 79, 0.28),
-        stroke: { enabled: true, width: 8, color: '#FFFFFF', opacity: 1 },
+        radius: lifted ? 40 : 34,
+        rotation: screen.callout.rotation ?? (options.tilt ? (index % 2 ? 2 : -2) : 0),
+        shadow: lifted ? softShadow(46, 110, 0.42, mix(palette.deep, '#000000', 0.55)) : softShadow(34, 79, 0.28),
+        stroke: lifted ? { enabled: true, width: 2, color: '#0B1210', opacity: 0.08 } : { enabled: true, width: 8, color: '#FFFFFF', opacity: 1 },
       }));
     }
     if (screen.sticker) {
@@ -230,6 +245,61 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
       if (screenPatch) overrides[outputId] = { [device.id]: { screen: screenPatch } };
     }
     slides.push({ ...built, background: { kind: 'solid', color: palette.page, noise: 0 }, elements, overrides });
+  }
+
+  if (snug) {
+    // Stack from the top: logo, headline, icon or tiles, then the phone right under them, running off the bottom.
+    // Positions depend on the canvas shape, so the first output sets the elements and the rest get overrides.
+    for (const [index, slide] of slides.entries()) {
+      const screen = input.screens[index];
+      for (const [o, output] of base.project.outputs.entries()) {
+        const W = output.width;
+        const H = output.height;
+        const u = baseUnit(W, H);
+        const place: Record<string, Partial<StudioElement>> = {};
+        let cursor = H * 0.058;
+        const logo = slide.elements.find((element) => element.name === 'Logo');
+        if (logo && logo.type === 'image') {
+          place[logo.id] = { y: (cursor + logo.h * u / 2) / H };
+          cursor += logo.h * u + 44 * u;
+        }
+        const title = slide.elements.find((element): element is TextElement => element.type === 'text' && element.role === 'title');
+        if (title?.visible) {
+          const height = elementBox(title, output).height;
+          place[title.id] = { y: (cursor + height / 2) / H };
+          cursor += height;
+        }
+        const icon = slide.elements.find((element) => element.name === 'Icon' && !screen.tiles?.length);
+        if (icon && icon.type === 'image') {
+          cursor += 40 * u;
+          place[icon.id] = { y: (cursor + icon.h * u / 2) / H };
+          cursor += icon.h * u;
+        }
+        if (screen.tiles?.length) {
+          cursor += 48 * u;
+          const tileH = 221 * u;
+          for (const element of slide.elements) {
+            if (element.name === 'Tile') place[element.id] = { y: (cursor + tileH / 2) / H };
+            if (element.name === 'Icon') place[element.id] = { y: (cursor + tileH * 0.42) / H };
+            if (element.type === 'text' && element.role === 'caption') place[element.id] = { y: (cursor + tileH * 0.78) / H };
+          }
+          cursor += tileH;
+        }
+        cursor += 64 * u;
+        const device = slide.elements.find((element): element is DeviceElement => element.type === 'device')!;
+        const aspect = elementBox({ ...device, h: 1 }, output).width / H;
+        const height = (options.phoneWidth ?? 0.8) * W / aspect;
+        place[device.id] = { y: (cursor + height / 2) / H, h: height / H, rotation: 0 };
+        for (const [id, patch] of Object.entries(place)) {
+          if (o === 0) {
+            const at = slide.elements.findIndex((element) => element.id === id);
+            slide.elements[at] = { ...slide.elements[at], ...patch } as StudioElement;
+          } else {
+            slide.overrides[output.id] = { ...slide.overrides[output.id], [id]: { ...slide.overrides[output.id]?.[id], ...patch } };
+          }
+        }
+      }
+    }
   }
 
   const projects: Record<string, Project> = {};

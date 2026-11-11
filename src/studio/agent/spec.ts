@@ -38,6 +38,30 @@ export interface FlowOptions {
   colors?: { page?: string; wave?: string; deep?: string; band?: string; accent?: string; ink?: string };
   /** Phone frame on every slide. Unset fields keep the house frame. */
   device?: FlowDevice;
+  /**
+   * classic (default): fixed places for headline and phone. snug: headline near the top, the phone right under it,
+   * sized by `phoneWidth` and running off the bottom, so there's no dead space between them.
+   */
+  layout?: 'classic' | 'snug';
+  /** snug only: phone width as a fraction of the slide width. Default 0.8. */
+  phoneWidth?: number;
+  /** Headline type for the whole set. Unset fields keep the house style. */
+  type?: FlowType;
+  /** framed (default): white border. lifted: no border, deeper shadow, so the piece reads as raised off the phone. */
+  callouts?: 'framed' | 'lifted';
+}
+
+export interface FlowType {
+  /** A family from the font catalog, e.g. "Bricolage Grotesque". */
+  font?: string;
+  weight?: number;
+  /** Units; the house size is 112. */
+  size?: number;
+  /** Letter spacing in em, e.g. -0.03. */
+  tracking?: number;
+  lineHeight?: number;
+  /** How starred words stand out. Default color. */
+  accent?: 'color' | 'italic-serif' | 'highlight' | 'underline';
 }
 
 /** Device frame overrides for a flow set; same meaning as the studio's device settings. */
@@ -76,13 +100,13 @@ export interface ScreenSpec {
   /** Up to four tiles under the headline, each a Lucide icon and a one-word label. */
   tiles?: Array<{ icon: string; label: string }>;
   /** A piece of this screenshot floated over the phone, larger than the phone shows it. */
-  callout?: { crop: [number, number, number, number]; y?: number; width?: number };
+  callout?: FlowCallout;
   /** Any image placed on the slide. */
   sticker?: { image: string; x?: number; y?: number; width?: number; rotation?: number };
 }
 
 export interface FlowTile { icon: string; label: string }
-export interface FlowCallout { crop: [number, number, number, number]; y?: number; width?: number }
+export interface FlowCallout { crop: [number, number, number, number]; y?: number; width?: number; x?: number; rotation?: number }
 export interface FlowSticker { image: AgentImage; x?: number; y?: number; width?: number; rotation?: number }
 
 export const DEFAULT_TEMPLATE_ID = 'clean-center';

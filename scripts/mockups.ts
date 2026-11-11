@@ -231,6 +231,18 @@ function validateFlow(value: FlowOptions) {
     for (const key of ['page', 'wave', 'deep', 'band', 'accent', 'ink'] as const) if (value.colors[key] !== undefined && (typeof value.colors[key] !== 'string' || !/^#[0-9a-f]{6}$/i.test(value.colors[key]))) fail(`flow.colors.${key} must be a six-digit hex color.`);
   }
   if (value.device !== undefined) validateFlowDevice(value.device);
+  if (value.layout !== undefined && value.layout !== 'classic' && value.layout !== 'snug') fail('flow.layout must be "classic" or "snug".');
+  if (value.phoneWidth !== undefined && (typeof value.phoneWidth !== 'number' || !(value.phoneWidth > 0.2 && value.phoneWidth <= 1.2))) fail('flow.phoneWidth must be a number between 0.2 and 1.2.');
+  if (value.callouts !== undefined && value.callouts !== 'framed' && value.callouts !== 'lifted') fail('flow.callouts must be "framed" or "lifted".');
+  if (value.type !== undefined) {
+    const type = value.type;
+    if (!type || typeof type !== 'object' || Array.isArray(type)) fail('flow.type must be an object.');
+    if (type.font !== undefined && (typeof type.font !== 'string' || !type.font.trim())) fail('flow.type.font must be a font family name.');
+    if (type.accent !== undefined && !['color', 'italic-serif', 'highlight', 'underline'].includes(type.accent)) fail('flow.type.accent must be one of: color, italic-serif, highlight, underline.');
+    for (const key of ['weight', 'size', 'tracking', 'lineHeight'] as const) {
+      if (type[key] !== undefined && (typeof type[key] !== 'number' || !Number.isFinite(type[key]))) fail(`flow.type.${key} must be a number.`);
+    }
+  }
 }
 
 function validateFlowDevice(device: FlowDevice) {
@@ -280,7 +292,7 @@ async function flowExtras(screen: ScreenSpec, index: number, specDir: string): P
     const crop = screen.callout?.crop;
     if (!Array.isArray(crop) || crop.length !== 4 || crop.some((n) => typeof n !== 'number' || !Number.isFinite(n) || n < 0)) fail(`${at}.callout.crop must be [x, y, width, height] in screenshot pixels.`);
     if (crop[2] === 0 || crop[3] === 0) fail(`${at}.callout.crop needs a width and height above 0.`);
-    validateOptionalNumbers(index, 'callout', screen.callout, ['y', 'width']);
+    validateOptionalNumbers(index, 'callout', screen.callout, ['y', 'width', 'x', 'rotation']);
     extras.callout = screen.callout;
   }
   if (screen.sticker !== undefined) {
