@@ -21,6 +21,15 @@ function mix(a: string, b: string, amount: number) {
   return `#${[0, 1, 2].map((i) => Math.round(channel(a, i) * (1 - amount) + channel(b, i) * amount).toString(16).padStart(2, '0')).join('')}`;
 }
 
+/** Relative luminance of a #RRGGBB color, 0..1. */
+function luminance(hex: string) {
+  const [r, g, b] = [0, 1, 2].map((i) => {
+    const c = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
 function paletteFor(options: FlowOptions, brandColor?: string): Palette {
   const night = options.theme === 'night';
   const page = options.colors?.page ?? (night ? '#0F1714' : '#F5F6F2');
@@ -176,11 +185,18 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
 
   const last = input.screens.length - 1;
   const slides: Slide[] = [];
+  const waveIsDark = luminance(palette.deep) < 0.18; // where white and black text read equally well
+  const phone2Ids = new Map<number, string>();
   for (const [index, screen] of input.screens.entries()) {
     const built = base.project.slides[index];
     const solid = bookends && (index === 0 || index === last);
-    const lightType = solid || night;
-    const tiles = screen.tiles ?? [];
+    // Flipped: the phone hangs from the top edge and the headline sits under it, on the wave. Bookends never flip.
+    const flip = Boolean(screen.flip) && !solid;
+    if (screen.flip && solid) warnings.push(`Slide ${index + 1}: bookend slides don't flip, so "flip" is ignored there.`);
+    if (flip && screen.tiles?.length) warnings.push(`Slide ${index + 1}: a flipped slide has no room for tiles, so they're left out.`);
+    // A flipped headline sits on the wave's deep colour: light type when that is dark.
+    const lightType = solid || night || (flip && waveIsDark);
+    const tiles = flip ? [] : screen.tiles ?? [];
     const elements: StudioElement[] = [];
 
     const logoAbove = Boolean(screen.logo && solid);
@@ -192,14 +208,14 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
       id: makeId(),
       visible: Boolean(screen.title.trim()),
       text: screen.title,
-      y: logoAbove ? 0.165 : solid ? 0.11 : 0.105,
+      y: flip ? 0.865 : logoAbove ? 0.165 : solid ? 0.11 : 0.105,
       ...titleType,
       fontSize: type.size ?? (logoAbove ? 118 : 112),
       fill: { kind: 'solid', color: lightType ? '#FFFFFF' : palette.ink },
       accent: { ...title0.accent, style: type.accent ?? 'color', color: lightType ? palette.accent : palette.wave },
     });
     if (screen.icon) {
-      const icon = await iconElement(index, screen.icon, lightType ? palette.accent : palette.wave, 0.5, 0.215, 95);
+      const icon = await iconElement(index, screen.icon, lightType ? palette.accent : palette.wave, 0.5, flip ? 0.765 : 0.215, 95);
       if (icon) elements.push(icon);
     }
     for (const [i, tile] of tiles.entries()) {
@@ -211,13 +227,23 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
     }
     // The template's device keeps its id, so the per-size screenshot overrides still apply; only its place changes.
     const device = built.elements.find((element): element is DeviceElement => element.type === 'device')!;
+    if (screen.phone2) {
+      const other = input.screens[screen.phone2.screen];
+      if (!other) warnings.push(`Slide ${index + 1}: phone2.screen ${screen.phone2.screen} isn't a screen of this set, so the second phone is left out.`);
+      else {
+        const { x = 0.7, y = 0.6, height = 0.66, rotation = 6 } = screen.phone2;
+        const id = makeId();
+        phone2Ids.set(index, id);
+        elements.push({ ...device, ...options.device, id, name: 'Second phone', x, y, h: height, rotation, screen: { ...device.screen, assetId: assetFor(other.image) } });
+      }
+    }
     elements.push({
       ...device,
       ...options.device,
-      x: 0.5,
-      y: solid ? 0.69 : tiles.length ? 0.715 : 0.645,
-      h: solid ? 0.74 : tiles.length ? 0.7 : 0.79,
-      rotation: options.tilt && solid ? (index === 0 ? -3 : 3) : 0,
+      x: screen.phone?.x ?? 0.5,
+      y: screen.phone?.y ?? (flip ? 0.33 : solid ? 0.69 : tiles.length ? 0.715 : 0.645),
+      h: screen.phone?.height ?? (solid ? 0.74 : tiles.length ? 0.7 : 0.79),
+      rotation: screen.phone?.rotation ?? (options.tilt && solid ? (index === 0 ? -3 : 3) : 0),
     });
     if (screen.callout) {
       const image = await crop(screen.image, screen.callout.crop);
@@ -234,15 +260,24 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
       }));
     }
     if (screen.sticker) {
-      const { image, x = 0.5, y = 0.5, width = 0.4, rotation = 0 } = screen.sticker;
+      const { image, x = 0.5, y = 0.5, width = 0.4, rotation = 0, shadow = true } = screen.sticker;
       const w = width * 1000;
-      elements.push(createImage(assetFor(image), w, w * image.height / image.width, { name: 'Sticker', x, y, rotation, fit: 'contain', radius: 30, shadow: softShadow(24, 60, 0.22) }));
+      elements.push(createImage(assetFor(image), w, w * image.height / image.width, { name: 'Sticker', x, y, rotation, fit: 'contain', radius: 30, ...(shadow ? { shadow: softShadow(24, 60, 0.22) } : {}) }));
     }
     // Only screenshot swaps carry over from the template's overrides; its per-size layout tweaks would fight ours.
     const overrides: Slide['overrides'] = {};
     for (const [outputId, patches] of Object.entries(built.overrides)) {
       const screenPatch = (patches[device.id] as Partial<DeviceElement> | undefined)?.screen;
-      if (screenPatch) overrides[outputId] = { [device.id]: { screen: screenPatch } };
+      if (screenPatch) overrides[outputId] = { ...overrides[outputId], [device.id]: { screen: screenPatch } };
+    }
+    // The second phone swaps to the other screen's per-size screenshot too.
+    const phone2Id = phone2Ids.get(index);
+    if (phone2Id && screen.phone2) {
+      const other = input.screens[screen.phone2.screen];
+      for (const output of base.project.outputs) {
+        const image = other.images[output.id];
+        if (image) overrides[output.id] = { ...overrides[output.id], [phone2Id]: { screen: { ...device.screen, assetId: assetFor(image) } } };
+      }
     }
     slides.push({ ...built, background: { kind: 'solid', color: palette.page, noise: 0 }, elements, overrides });
   }
@@ -252,44 +287,67 @@ export async function buildFlow(input: SizedFlowInput): Promise<{ projects: Reco
     // Positions depend on the canvas shape, so the first output sets the elements and the rest get overrides.
     for (const [index, slide] of slides.entries()) {
       const screen = input.screens[index];
+      // A flipped slide stacks from the bottom instead: headline, icon, then the phone running off the top.
+      const flipped = Boolean(screen.flip) && !(bookends && (index === 0 || index === last));
       for (const [o, output] of base.project.outputs.entries()) {
         const W = output.width;
         const H = output.height;
         const u = baseUnit(W, H);
         const place: Record<string, Partial<StudioElement>> = {};
-        let cursor = H * 0.058;
-        const logo = slide.elements.find((element) => element.name === 'Logo');
-        if (logo && logo.type === 'image') {
-          place[logo.id] = { y: (cursor + logo.h * u / 2) / H };
-          cursor += logo.h * u + 44 * u;
-        }
-        const title = slide.elements.find((element): element is TextElement => element.type === 'text' && element.role === 'title');
-        if (title?.visible) {
-          const height = elementBox(title, output).height;
-          place[title.id] = { y: (cursor + height / 2) / H };
-          cursor += height;
-        }
-        const icon = slide.elements.find((element) => element.name === 'Icon' && !screen.tiles?.length);
-        if (icon && icon.type === 'image') {
-          cursor += 40 * u;
-          place[icon.id] = { y: (cursor + icon.h * u / 2) / H };
-          cursor += icon.h * u;
-        }
-        if (screen.tiles?.length) {
-          cursor += 48 * u;
-          const tileH = 221 * u;
-          for (const element of slide.elements) {
-            if (element.name === 'Tile') place[element.id] = { y: (cursor + tileH / 2) / H };
-            if (element.name === 'Icon') place[element.id] = { y: (cursor + tileH * 0.42) / H };
-            if (element.type === 'text' && element.role === 'caption') place[element.id] = { y: (cursor + tileH * 0.78) / H };
-          }
-          cursor += tileH;
-        }
-        cursor += 64 * u;
-        const device = slide.elements.find((element): element is DeviceElement => element.type === 'device')!;
+        const device = slide.elements.find((element): element is DeviceElement => element.type === 'device' && element.name !== 'Second phone')!;
         const aspect = elementBox({ ...device, h: 1 }, output).width / H;
-        const height = (options.phoneWidth ?? 0.8) * W / aspect;
-        place[device.id] = { y: (cursor + height / 2) / H, h: height / H, rotation: 0 };
+        const phoneHeight = (options.phoneWidth ?? 0.8) * W / aspect;
+        if (flipped) {
+          let bottom = H * (1 - 0.058);
+          const title = slide.elements.find((element): element is TextElement => element.type === 'text' && element.role === 'title');
+          if (title?.visible) {
+            const height = elementBox(title, output).height;
+            place[title.id] = { y: (bottom - height / 2) / H };
+            bottom -= height;
+          }
+          const icon = slide.elements.find((element) => element.name === 'Icon');
+          if (icon && icon.type === 'image') {
+            bottom -= 40 * u;
+            place[icon.id] = { y: (bottom - icon.h * u / 2) / H };
+            bottom -= icon.h * u;
+          }
+          bottom -= 64 * u;
+          const h = screen.phone?.height !== undefined ? screen.phone.height * H : phoneHeight;
+          place[device.id] = { y: screen.phone?.y ?? (bottom - h / 2) / H, h: h / H, rotation: screen.phone?.rotation ?? 0 };
+        } else {
+          let cursor = H * 0.058;
+          const logo = slide.elements.find((element) => element.name === 'Logo');
+          if (logo && logo.type === 'image') {
+            place[logo.id] = { y: (cursor + logo.h * u / 2) / H };
+            cursor += logo.h * u + 44 * u;
+          }
+          const title = slide.elements.find((element): element is TextElement => element.type === 'text' && element.role === 'title');
+          if (title?.visible) {
+            const height = elementBox(title, output).height;
+            place[title.id] = { y: (cursor + height / 2) / H };
+            cursor += height;
+          }
+          const icon = slide.elements.find((element) => element.name === 'Icon' && !screen.tiles?.length);
+          if (icon && icon.type === 'image') {
+            cursor += 40 * u;
+            place[icon.id] = { y: (cursor + icon.h * u / 2) / H };
+            cursor += icon.h * u;
+          }
+          if (screen.tiles?.length) {
+            cursor += 48 * u;
+            const tileH = 221 * u;
+            for (const element of slide.elements) {
+              if (element.name === 'Tile') place[element.id] = { y: (cursor + tileH / 2) / H };
+              if (element.name === 'Icon') place[element.id] = { y: (cursor + tileH * 0.42) / H };
+              if (element.type === 'text' && element.role === 'caption') place[element.id] = { y: (cursor + tileH * 0.78) / H };
+            }
+            cursor += tileH;
+          }
+          cursor += 64 * u;
+          // The spec's own phone fields win; the rest come from the stack.
+          const h = screen.phone?.height !== undefined ? screen.phone.height * H : phoneHeight;
+          place[device.id] = { y: screen.phone?.y ?? (cursor + h / 2) / H, h: h / H, rotation: screen.phone?.rotation ?? 0 };
+        }
         for (const [id, patch] of Object.entries(place)) {
           if (o === 0) {
             const at = slide.elements.findIndex((element) => element.id === id);

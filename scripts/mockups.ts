@@ -193,7 +193,7 @@ async function loadSpec(specPath: string) {
     for (const key of ['title', 'subtitle'] as const) {
       if (screen[key] !== undefined && typeof screen[key] !== 'string') fail(`screens[${index}].${key} must be a string.`);
     }
-    const extras = templateId === 'flow' ? await flowExtras(screen, index, specDir) : {};
+    const extras = templateId === 'flow' ? await flowExtras(screen, index, specDir, spec.screens.length) : {};
     const image = absoluteFrom(specDir, screen.image);
     validateImageFile(image, `screens[${index}].image`);
     try { await stat(image); } catch { fail(`Image not found: ${image} (screens[${index}].image)`); }
@@ -262,11 +262,11 @@ function validateFlowDevice(device: FlowDevice) {
   }
 }
 
-const FLOW_EXTRAS = ['logo', 'icon', 'tiles', 'callout', 'sticker'] as const;
-type FlowExtras = Pick<ScreenSpec, 'icon' | 'tiles' | 'callout' | 'sticker' | 'logo'>;
+const FLOW_EXTRAS = ['logo', 'icon', 'tiles', 'callout', 'sticker', 'phone', 'phone2', 'flip'] as const;
+type FlowExtras = Pick<ScreenSpec, 'icon' | 'tiles' | 'callout' | 'sticker' | 'logo' | 'phone' | 'phone2' | 'flip'>;
 
 /** A flow screen's extras, validated, with image paths resolved against the spec. */
-async function flowExtras(screen: ScreenSpec, index: number, specDir: string): Promise<FlowExtras> {
+async function flowExtras(screen: ScreenSpec, index: number, specDir: string, screenCount: number): Promise<FlowExtras> {
   const at = `screens[${index}]`;
   const extras: FlowExtras = {};
   const imageAt = async (value: unknown, label: string) => {
@@ -295,9 +295,29 @@ async function flowExtras(screen: ScreenSpec, index: number, specDir: string): P
     validateOptionalNumbers(index, 'callout', screen.callout, ['y', 'width', 'x', 'rotation']);
     extras.callout = screen.callout;
   }
+  const isObject = (value: unknown) => typeof value === 'object' && value !== null && !Array.isArray(value);
   if (screen.sticker !== undefined) {
     validateOptionalNumbers(index, 'sticker', screen.sticker ?? {}, ['x', 'y', 'width', 'rotation']);
+    if (screen.sticker?.shadow !== undefined && typeof screen.sticker.shadow !== 'boolean') fail(`${at}.sticker.shadow must be true or false.`);
     extras.sticker = { ...screen.sticker, image: await imageAt(screen.sticker?.image, `${at}.sticker.image`) };
+  }
+  if (screen.phone !== undefined) {
+    if (!isObject(screen.phone)) fail(`${at}.phone must be an object such as { "x": 0.6, "rotation": 4 }.`);
+    validateOptionalNumbers(index, 'phone', screen.phone, ['x', 'y', 'height', 'rotation']);
+    if (screen.phone.height !== undefined && screen.phone.height <= 0) fail(`${at}.phone.height must be above 0.`);
+    extras.phone = screen.phone;
+  }
+  if (screen.flip !== undefined) {
+    if (typeof screen.flip !== 'boolean') fail(`${at}.flip must be true or false.`);
+    extras.flip = screen.flip;
+  }
+  if (screen.phone2 !== undefined) {
+    if (!isObject(screen.phone2)) fail(`${at}.phone2 must be an object such as { "screen": 1 }.`);
+    validateOptionalNumbers(index, 'phone2', screen.phone2, ['x', 'y', 'height', 'rotation']);
+    if (!Number.isInteger(screen.phone2.screen) || screen.phone2.screen < 0 || screen.phone2.screen >= screenCount) fail(`${at}.phone2.screen must be the 0-based index of a screen in this set (0 to ${screenCount - 1}).`);
+    if (screen.phone2.screen === index) fail(`${at}.phone2.screen must be another screen, not this one.`);
+    if (screen.phone2.height !== undefined && screen.phone2.height <= 0) fail(`${at}.phone2.height must be above 0.`);
+    extras.phone2 = screen.phone2;
   }
   return extras;
 }
@@ -343,6 +363,9 @@ async function main() {
       ...(screen.icon ? { icon: screen.icon } : {}),
       ...(screen.tiles ? { tiles: screen.tiles } : {}),
       ...(screen.callout ? { callout: screen.callout } : {}),
+      ...(screen.phone ? { phone: screen.phone } : {}),
+      ...(screen.phone2 ? { phone2: screen.phone2 } : {}),
+      ...(screen.flip ? { flip: true } : {}),
       ...(screen.sticker ? { sticker: { ...screen.sticker, image: await dataUrl(screen.sticker.image, imagesCache, true) } } : {}),
     }))),
   };

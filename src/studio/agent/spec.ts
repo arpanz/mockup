@@ -102,12 +102,23 @@ export interface ScreenSpec {
   /** A piece of this screenshot floated over the phone, larger than the phone shows it. */
   callout?: FlowCallout;
   /** Any image placed on the slide. */
-  sticker?: { image: string; x?: number; y?: number; width?: number; rotation?: number };
+  sticker?: { image: string; x?: number; y?: number; width?: number; rotation?: number; /** Box shadow behind the image (default true); turn off for transparent cut-outs. */ shadow?: boolean };
+  /** Where this slide's phone goes, instead of the set's layout: move, enlarge or turn it slide by slide. */
+  phone?: FlowPhone;
+  /** A second phone behind the first, showing another screen of the set. */
+  phone2?: FlowPhone2;
+  /** Phone at the top running off the edge, headline under it (middle slides; alternate it for an up-and-down rhythm). */
+  flip?: boolean;
 }
+
+/** A phone's place: center `x`/`y` (fractions; `x` past 1 crosses into the next slide), `height` (fraction of the canvas height), `rotation` (degrees). */
+export interface FlowPhone { x?: number; y?: number; height?: number; rotation?: number }
+/** `screen` is the 0-based index of the set's screen it shows. */
+export interface FlowPhone2 extends FlowPhone { screen: number }
 
 export interface FlowTile { icon: string; label: string }
 export interface FlowCallout { crop: [number, number, number, number]; y?: number; width?: number; x?: number; rotation?: number }
-export interface FlowSticker { image: AgentImage; x?: number; y?: number; width?: number; rotation?: number }
+export interface FlowSticker { image: AgentImage; x?: number; y?: number; width?: number; rotation?: number; shadow?: boolean }
 
 export const DEFAULT_TEMPLATE_ID = 'clean-center';
 export const DEFAULT_SIZE_IDS = ['ios-69'];
@@ -127,7 +138,7 @@ export interface AgentBuildInput {
   brandColor?: string;
   subtitles?: boolean;
   flow?: FlowOptions;
-  screens: Array<{ image: AgentImage; images: Record<string, AgentImage>; title: string; subtitle: string; logo?: AgentImage; icon?: string; tiles?: FlowTile[]; callout?: FlowCallout; sticker?: FlowSticker }>;
+  screens: Array<{ image: AgentImage; images: Record<string, AgentImage>; title: string; subtitle: string; logo?: AgentImage; icon?: string; tiles?: FlowTile[]; callout?: FlowCallout; sticker?: FlowSticker; phone?: FlowPhone; phone2?: FlowPhone2; flip?: boolean }>;
 }
 
 export interface AgentBuildResult {
